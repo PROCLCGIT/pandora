@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, Package, FileText, Briefcase, Scale, 
   FolderOpen, Settings, ChevronDown, ChevronRight,
-  Code, Layers
+  Code, MapPin, Building, Layers
 } from 'lucide-react';
 
 // Estructura de navegación del sidebar
@@ -40,9 +40,15 @@ const navigationItems = [
     path: '/brief',
   },
   {
-    title: 'Categorías',
-    icon: <Scale size={20} />,
-    path: '/basic/categorias',
+    title: 'Datos Básicos',
+    icon: <Building size={20} />,
+    path: '/basic',
+    submenu: [
+      { title: 'Categorías', path: '/basic/categorias' },
+      { title: 'Ciudades', path: '/basic/ciudades' },
+      { title: 'Marcas', path: '/basic/marcas' },
+      { title: 'Zonas', path: '/basic/zonas' },
+    ],
   },
   {
     title: 'Documentos',
