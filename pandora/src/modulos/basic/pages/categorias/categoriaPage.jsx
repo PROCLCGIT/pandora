@@ -1,10 +1,14 @@
-// pandora/src/modulos/basic/categorias/categoriaPage.jsx
+// /pandora/src/modulos/basic/pages/categorias/categoriaPage.jsx
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileEdit, Trash2, Eye, Filter } from 'lucide-react';
-import axios from 'axios';
+
+// Importaciones del servicio de categoría
+import { useCategories, useDeleteCategoria } from '../../api/categoriaService';
+
+// Importar nuestro hook personalizado para búsqueda con debounce
+import { useSearch } from '@/hooks/custom/useSearch';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,34 +46,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-// Función para obtener categorías
-const fetchCategorias = async (filters) => {
-  const params = new URLSearchParams();
-  if (filters.search) params.append('search', filters.search);
-  if (filters.isActive !== undefined) params.append('is_active', filters.isActive);
-  if (filters.level !== undefined) params.append('level', filters.level);
-  
-  try {
-    const response = await axios.get(`/api/basic/categorias/?${params.toString()}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener categorías:', error);
-    // Propaga el error para que React Query pueda manejarlo
-    throw error.response?.data?.detail || error.message || 'Error al cargar las categorías';
-  }
-};
-
-// Función para eliminar una categoría
-const deleteCategoria = async (id) => {
-  try {
-    const response = await axios.delete(`/api/basic/categorias/${id}/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error al eliminar categoría:', error);
-    throw error.response?.data?.detail || error.message || 'Error al eliminar la categoría';
-  }
-};
-
 // Componente de paginación básico
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
@@ -99,10 +75,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 
 export default function CategoriaPage() {
   const navigate = useNavigate();
-  const { toast } = useToast(); // Añadido: extraer la función toast del hook
+  const { toast } = useToast();
   const [filters, setFilters] = useState({
-    search: '',
-    isActive: undefined,
+    is_active: undefined,
     level: undefined,
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -110,29 +85,63 @@ export default function CategoriaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Consulta de datos con React Query v5
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['categorias', filters, currentPage],
-    queryFn: () => fetchCategorias(filters),
-    staleTime: 5000,
-    retry: 1,
-    onError: (err) => {
+  // Utilizar nuestro hook personalizado para la búsqueda con debounce
+  const { inputValue: searchValue, setInputValue: setSearchValue, debouncedValue: debouncedSearch } = useSearch({
+    initialValue: '',
+    delay: 500,
+  });
+  
+  // Efecto para actualizar los filtros cuando cambia el valor de búsqueda con debounce
+  useEffect(() => {
+    setFilters(prevFilters => ({ ...prevFilters, search: debouncedSearch }));
+  }, [debouncedSearch]);
+
+  // Consulta de datos con useCategories (nuestro hook mejorado)
+  const { data, isLoading, isError, error, refetch } = useCategories({
+    ...filters,
+    search: debouncedSearch, // Usar el valor con debounce
+    page: currentPage,
+    page_size: pageSize
+  }, {
+    // Opciones adicionales para React Query
+    onError: (error) => {
+      // Mostrar notificación de error
       toast({
-        title: "Error de conexión",
-        description: `No se pudo conectar con el servidor: ${err.message}`,
+        title: "Error al cargar datos",
+        description: `No se pudieron cargar las categorías: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutación para eliminar usando nuestro hook mejorado
+  const deleteCategoriaMutation = useDeleteCategoria({
+    onSuccess: (id) => {
+      // Mostrar notificación de éxito
+      toast({
+        title: "Categoría eliminada",
+        description: categoriaToDelete 
+          ? `La categoría "${categoriaToDelete.nombre}" ha sido eliminada correctamente.`
+          : "La categoría ha sido eliminada correctamente.",
+      });
+    },
+    onError: (error) => {
+      // Mostrar notificación de error
+      toast({
+        title: "Error al eliminar",
+        description: `No se pudo eliminar la categoría: ${error.message}`,
         variant: "destructive",
       });
     },
-    placeholderData: (previousData) => previousData, // Reemplazo de keepPreviousData
   });
 
   // Manejadores de eventos
   const handleSearchChange = (e) => {
-    setFilters({ ...filters, search: e.target.value });
+    setSearchValue(e.target.value);
   };
 
   const handleStatusChange = (value) => {
-    setFilters({ ...filters, isActive: value === 'all' ? undefined : value === 'true' });
+    setFilters({ ...filters, is_active: value === 'all' ? undefined : value === 'true' });
   };
 
   const handleLevelChange = (value) => {
@@ -144,31 +153,34 @@ export default function CategoriaPage() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
-    try {
-      await deleteCategoria(categoriaToDelete.id);
-      toast({
-        title: "Categoría eliminada",
-        description: `La categoría "${categoriaToDelete.nombre}" ha sido eliminada correctamente.`,
-      });
-      refetch();
-    } catch (error) {
-      toast({
-        title: "Error al eliminar",
-        description: `No se pudo eliminar la categoría: ${error.message}`,
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteDialogOpen(false);
-      setCategoriaToDelete(null);
-    }
+  const confirmDelete = () => {
+    // Ahora podemos simplificar esta función ya que el manejo de éxito/error
+    // está en el hook useDeleteCategoria
+    deleteCategoriaMutation.mutate(categoriaToDelete.id, {
+      onSettled: () => {
+        // Independientemente del resultado, cerramos el diálogo y limpiamos
+        setDeleteDialogOpen(false);
+        setCategoriaToDelete(null);
+      }
+    });
   };
 
   // Renderizado de la tabla de categorías
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Categorías</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Categorías</h1>
+          <div className="mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/basic/categorias/infinite')}
+            >
+              Ver con paginación infinita
+            </Button>
+          </div>
+        </div>
         <Button onClick={() => navigate('/basic/categorias/add')} className="bg-primary">
           <Plus className="mr-2 h-4 w-4" /> Agregar Categoría
         </Button>
@@ -187,9 +199,14 @@ export default function CategoriaPage() {
                 <Input
                   id="search"
                   placeholder="Buscar por nombre o código..."
-                  value={filters.search}
+                  value={searchValue}
                   onChange={handleSearchChange}
                 />
+                {searchValue && debouncedSearch !== searchValue && (
+                  <div className="absolute right-2 top-2 text-xs text-muted-foreground">
+                    Buscando...
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col space-y-1.5">
@@ -224,9 +241,10 @@ export default function CategoriaPage() {
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button variant="outline" onClick={() => {
+            // Resetear tanto el valor del input como los filtros
+            setSearchValue('');
             setFilters({
-              search: '',
-              isActive: undefined,
+              is_active: undefined,
               level: undefined,
             });
           }} className="mr-2">
@@ -355,8 +373,12 @@ export default function CategoriaPage() {
                 <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button variant="destructive" onClick={confirmDelete}>
-                  Eliminar
+                <Button 
+                  variant="destructive" 
+                  onClick={confirmDelete}
+                  disabled={deleteCategoriaMutation.isPending}
+                >
+                  {deleteCategoriaMutation.isPending ? 'Eliminando...' : 'Eliminar'}
                 </Button>
               </DialogFooter>
             </DialogContent>

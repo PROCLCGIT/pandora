@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, Package, FileText, Briefcase, Scale, 
-  FolderOpen, Settings, ChevronDown, ChevronRight 
+  FolderOpen, Settings, ChevronDown, ChevronRight,
+  Code, Layers
 } from 'lucide-react';
 
 // Estructura de navegación del sidebar
@@ -47,6 +48,14 @@ const navigationItems = [
     title: 'Documentos',
     icon: <FolderOpen size={20} />,
     path: '/docs',
+  },
+  {
+    title: 'Ejemplos',
+    icon: <Code size={20} />,
+    path: '/basic/ejemplos',
+    submenu: [
+      { title: 'Campos Dinámicos', path: '/basic/ejemplos/campos-dinamicos' },
+    ],
   },
   {
     title: 'Configuración',

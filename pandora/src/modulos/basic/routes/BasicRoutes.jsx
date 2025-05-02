@@ -1,12 +1,16 @@
-// pandora/src/modulos/basic/BasicRoutes.jsx
+// pandora/src/modulos/basic/routes/BasicRoutes.jsx
 
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Lazy loading de componentes de categorías
-const CategoriaPage = lazy(() => import('./categorias/categoriaPage'));
-const AddCategoriaPage = lazy(() => import('./categorias/addcategoriaPage'));
-const DetalleCategoria = lazy(() => import('./categorias/detalleCategoria'));
+const CategoriaPage = lazy(() => import('../pages/categorias/categoriaPage'));
+const AddCategoriaPage = lazy(() => import('../pages/categorias/addcategoriaPage'));
+const DetalleCategoria = lazy(() => import('../pages/categorias/detalleCategoria'));
+const CategoriasInfinitePage = lazy(() => import('../pages/categorias/CategoriasInfinitePage'));
+
+// Lazy loading de componentes de ejemplo
+const CamposDinamicosPage = lazy(() => import('../pages/ejemplos/CamposDinamicosPage'));
 
 // Lazy loading de otros componentes (ciudades, etc.)
 
@@ -38,13 +42,15 @@ const BasicRoutes = () => {
           {/* Ruta por defecto del módulo basic */}
           <Route index element={<Navigate to="categorias" replace />} />
           
-          {/* Rutas de Categorías */}
+          {/* Rutas de Categorías - El orden importa */}
           <Route path="categorias" element={<CategoriaPage />} />
+          <Route path="categorias/infinite" element={<CategoriasInfinitePage />} />
           <Route path="categorias/add" element={<AddCategoriaPage />} />
-          <Route path="categorias/:id" element={<DetalleCategoria />} />
           <Route path="categorias/edit/:id" element={<AddCategoriaPage />} />
+          <Route path="categorias/:id" element={<DetalleCategoria />} />
           
-        
+          {/* Rutas de ejemplos */}
+          <Route path="ejemplos/campos-dinamicos" element={<CamposDinamicosPage />} />
           
           {/* Aquí agregarías rutas para los demás componentes básicos */}
           <Route path="*" element={<Navigate to="categorias" replace />} />

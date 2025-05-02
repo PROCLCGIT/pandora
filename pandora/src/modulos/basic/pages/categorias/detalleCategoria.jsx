@@ -1,9 +1,11 @@
-// pandora/src/modulos/basic/categorias/detalleCategoria.jsx
+// pandora/src/modulos/basic/pages/categorias/detalleCategoria.jsx
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { ArrowLeft, FileEdit, List, Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+// Importamos el hook desde el servicio
+import { useCategoriaConHijos } from '../../api/categoriaService';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,27 +27,22 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-// Función para obtener categoría por ID con detalles
-const fetchCategoriaDetalle = async (id) => {
-  try {
-    const response = await axios.get(`/api/basic/categorias/${id}/hijos/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener detalles de categoría:', error);
-    throw error.response?.data?.detail || error.message || 'Error al cargar los detalles de la categoría';
-  }
-};
+// Ya no necesitamos esta función, ahora usamos useCategoriaConHijos
 
 export default function DetalleCategoria() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Obtener datos detallados de la categoría - Actualizado a React Query v5
-  const { data: categoria, isLoading, isError, error } = useQuery({
-    queryKey: ['categoriaDetalle', id],
-    queryFn: () => fetchCategoriaDetalle(id),
-    enabled: Boolean(id),
-    refetchOnWindowFocus: false,
+  // Obtener datos detallados de la categoría usando nuestro hook centralizado
+  const { data: categoria, isLoading, isError, error } = useCategoriaConHijos(id, {
+    onError: (error) => {
+      toast({
+        title: "Error al cargar detalles",
+        description: `No se pudieron cargar los detalles de la categoría: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   });
 
   if (isLoading) {

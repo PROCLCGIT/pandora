@@ -1,13 +1,21 @@
-// pandora/src/modulos/basic/categorias/addcategoriaPage.jsx
+// pandora/src/modulos/basic/pages/categorias/addcategoriaPage.jsx
 
 import { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { Save, ArrowLeft } from 'lucide-react';
+
+// Importar servicios de categoría
+import { 
+  useCategoriaById, 
+  useCreateCategoria, 
+  useUpdateCategoria, 
+  useCategories 
+} from '../../api/categoriaService';
+
+import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import {
   Card,
   CardContent,
@@ -46,34 +53,12 @@ const categoriaSchema = yup.object({
   is_active: yup.boolean().default(true),
 });
 
-// Función para obtener categoría por ID
-const fetchCategoria = async (id) => {
-  try {
-    const response = await axios.get(`/api/basic/categorias/${id}/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener categoría:', error);
-    throw error.response?.data?.detail || error.message || 'Error al cargar la categoría';
-  }
-};
-
-// Función para obtener la lista de categorías padres
-const fetchCategoriasPadre = async () => {
-  try {
-    const response = await axios.get('/api/basic/categorias/');
-    // Asegurar que siempre devolvemos un array incluso si results no existe
-    return response.data.results || [];
-  } catch (error) {
-    console.error('Error al obtener categorías padre:', error);
-    throw error.response?.data?.detail || error.message || 'Error al cargar las categorías';
-  }
-};
+// Nota: Ahora usamos los hooks importados desde categoriaService
 
 export default function AddCategoriaPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditing = Boolean(id);
 
@@ -83,89 +68,123 @@ export default function AddCategoriaPage() {
     defaultValues: {
       nombre: '',
       code: '',
-      parent: null,
+      parent: 'root',
       is_active: true,
     },
   });
 
-  // Consultas de datos - Actualizado a React Query v5
-  const { data: categoriaData, isLoading: isLoadingCategoria } = useQuery({
-    queryKey: ['categoria', id],
-    queryFn: () => fetchCategoria(id),
-    enabled: isEditing,
-    onSuccess: (data) => {
-      form.reset({
-        nombre: data.nombre,
-        code: data.code,
-        parent: data.parent,
-        is_active: data.is_active,
+  // Consulta de datos para edición
+  const { data: categoriaData, isLoading: isLoadingCategoria } = useCategoriaById(id);
+  
+  // Consulta de categorías padre para el select
+  const { data: categoriasData, isLoading: isLoadingCategoriasPadre, isError: isErrorCategorias } = useCategories({
+    page_size: 100, // Obtener suficientes categorías para mostrar en el select
+  });
+  
+  // Lista de categorías para mostrar en el select
+  // El servicio ya garantiza que categoriasData.results siempre será un array
+  const categoriasPadre = categoriasData?.results || [];
+  
+  // Efecto para mostrar errores de carga de categorías
+  useEffect(() => {
+    if (isErrorCategorias) {
+      toast({
+        title: 'Error al cargar categorías',
+        description: 'No se pudieron cargar las categorías padre. Por favor, intenta nuevamente.',
+        variant: 'destructive',
       });
-    },
-  });
-
-  const { data: categoriasPadre, isLoading: isLoadingCategoriasPadre } = useQuery({
-    queryKey: ['categoriasPadre'],
-    queryFn: fetchCategoriasPadre
-  });
+    }
+  }, [isErrorCategorias, toast]);
+  
+  // Actualizar formulario cuando se carga la categoría
+  useEffect(() => {
+    if (isEditing && categoriaData) {
+      form.reset({
+        nombre: categoriaData.nombre,
+        code: categoriaData.code,
+        parent: categoriaData.parent || 'root',
+        is_active: categoriaData.is_active,
+      });
+    }
+  }, [categoriaData, form, isEditing]);
 
   // Verificar si hay un parent preseleccionado desde la ubicación
   useEffect(() => {
-    if (location.state?.parentId && !isEditing) {
+    // Solo intenta acceder a location.state si existe
+    if (location.state && location.state.parentId && !isEditing) {
       form.setValue('parent', location.state.parentId);
     }
   }, [location.state, form, isEditing]);
 
-  // Mutaciones para guardar datos - Actualizado a React Query v5
-  const createCategoria = useMutation({
-    mutationFn: (data) => axios.post('/api/basic/categorias/', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categorias'] });
-      toast({
-        title: 'Categoría creada',
-        description: 'La categoría ha sido creada exitosamente.',
-      });
-      navigate('/basic/categorias');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error al crear',
-        description: `No se pudo crear la categoría: ${error.response?.data?.detail || error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const updateCategoria = useMutation({
-    mutationFn: (data) => axios.put(`/api/basic/categorias/${id}/`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categorias'] });
-      queryClient.invalidateQueries({ queryKey: ['categoria', id] });
-      toast({
-        title: 'Categoría actualizada',
-        description: 'La categoría ha sido actualizada exitosamente.',
-      });
-      navigate('/basic/categorias');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error al actualizar',
-        description: `No se pudo actualizar la categoría: ${error.response?.data?.detail || error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+  // Usar hooks de mutación del servicio
+  const createMutation = useCreateCategoria();
+  const updateMutation = useUpdateCategoria();
+  
+  // Añadir notificaciones a las mutaciones
+  const onCreateSuccess = () => {
+    toast({
+      title: 'Categoría creada',
+      description: 'La categoría ha sido creada exitosamente.',
+    });
+    navigate('/basic/categorias');
+  };
+  
+  const onCreateError = (error) => {
+    toast({
+      title: 'Error al crear',
+      description: `No se pudo crear la categoría: ${error.message || 'Error desconocido'}`,
+      variant: 'destructive',
+    });
+  };
+  
+  const onUpdateSuccess = () => {
+    toast({
+      title: 'Categoría actualizada',
+      description: 'La categoría ha sido actualizada exitosamente.',
+    });
+    navigate('/basic/categorias');
+  };
+  
+  const onUpdateError = (error) => {
+    toast({
+      title: 'Error al actualizar',
+      description: `No se pudo actualizar la categoría: ${error.message || 'Error desconocido'}`,
+      variant: 'destructive',
+    });
+  };
 
   // Manejar envío del formulario
   const onSubmit = (data) => {
-    const formData = {
-      ...data,
-      parent: data.parent === '' ? null : data.parent,
-    };
+    try {
+      const formData = {
+        ...data,
+        parent: data.parent === 'root' || data.parent === '' ? null : data.parent,
+      };
 
-    if (isEditing) {
-      updateCategoria.mutate(formData);
-    } else {
-      createCategoria.mutate(formData);
+      if (isEditing) {
+        updateMutation.mutate(
+          { id, data: formData },
+          { 
+            onSuccess: onUpdateSuccess,
+            onError: onUpdateError
+          }
+        );
+      } else {
+        createMutation.mutate(
+          formData,
+          {
+            onSuccess: onCreateSuccess,
+            onError: onCreateError
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error en formulario:', error);
+      toast({
+        title: 'Error en el formulario',
+        description: 'Hubo un error al procesar el formulario. Por favor, revisa los datos ingresados.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -235,21 +254,23 @@ export default function AddCategoriaPage() {
                     <FormControl>
                       <Select
                         onValueChange={(value) => field.onChange(value)}
-                        value={field.value?.toString() || ''}
+                        value={field.value ? field.value.toString() : 'root'}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar categoría padre (opcional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Ninguna (Categoría Raíz)</SelectItem>
-                          {Array.isArray(categoriasPadre) && categoriasPadre.map((cat) => (
-                            // Evitar ciclos: no mostrar la categoría actual como posible padre
-                            isEditing && cat.id === parseInt(id) ? null : (
-                              <SelectItem key={cat.id} value={cat.id.toString()}>
-                                {cat.nombre} ({cat.path || ''})
-                              </SelectItem>
-                            )
-                          ))}
+                          <SelectItem value="root">Ninguna (Categoría Raíz)</SelectItem>
+                          {Array.isArray(categoriasPadre) && categoriasPadre.length > 0 ? (
+                            categoriasPadre
+                              .filter(cat => cat && typeof cat === 'object' && cat.id)
+                              .filter(cat => !(isEditing && cat.id === parseInt(id)))
+                              .map((cat) => (
+                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                  {cat.nombre || "Sin nombre"} {cat.path ? `(${cat.path})` : ''}
+                                </SelectItem>
+                              ))
+                          ) : null}
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -324,10 +345,10 @@ export default function AddCategoriaPage() {
           </Button>
           <Button
             onClick={form.handleSubmit(onSubmit)}
-            disabled={createCategoria.isPending || updateCategoria.isPending}
+            disabled={createMutation.isPending || updateMutation.isPending}
           >
             <Save className="mr-2 h-4 w-4" />
-            {createCategoria.isPending || updateCategoria.isPending ? (
+            {createMutation.isPending || updateMutation.isPending ? (
               <span>Guardando...</span>
             ) : (
               <span>Guardar</span>

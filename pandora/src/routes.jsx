@@ -12,7 +12,7 @@ const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
 // Lazy loading para los módulos de la aplicación
 const ProductsModule = lazy(() => import('./modulos/productos/ProductsLayout'));
 const ProformasModule = lazy(() => import('./modulos/proformas/ProformasLayout'));
-const BasicModule = lazy(() => import('./modulos/basic/BasicRoutes')); // Módulo Basic
+const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes')); // Módulo Basic
 
 // Componente Loader para Suspense
 const LazyLoadingSpinner = () => (
