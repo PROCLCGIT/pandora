@@ -39,9 +39,9 @@ const navigationItems = [
     path: '/brief',
   },
   {
-    title: 'Legal',
+    title: 'Categorías',
     icon: <Scale size={20} />,
-    path: '/legal',
+    path: '/basic/categorias',
   },
   {
     title: 'Documentos',

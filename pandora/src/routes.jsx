@@ -1,3 +1,5 @@
+// pandora/src/routes.jsx
+
 import { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import MainLayout from './modulos/core/layout/MainLayout';
@@ -10,13 +12,7 @@ const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
 // Lazy loading para los módulos de la aplicación
 const ProductsModule = lazy(() => import('./modulos/productos/ProductsLayout'));
 const ProformasModule = lazy(() => import('./modulos/proformas/ProformasLayout'));
-
-// Nota: Utilizaremos el componente placeholder temporal para los módulos restantes
-/*
-const BriefModule = lazy(() => import('./modulos/brief/BriefLayout'));
-const LegalModule = lazy(() => import('./modulos/legal/LegalLayout'));
-const DocManagerModule = lazy(() => import('./modulos/docmanager/DocManagerLayout'));
-*/
+const BasicModule = lazy(() => import('./modulos/basic/BasicRoutes')); // Módulo Basic
 
 // Componente Loader para Suspense
 const LazyLoadingSpinner = () => (
@@ -25,7 +21,7 @@ const LazyLoadingSpinner = () => (
   </div>
 );
 
-// Rutas de placeholders temporales hasta que se desarrollen los módulos reales
+// Componente placeholder
 const ModulePlaceholder = ({ moduleName }) => (
   <div className="p-4">
     <h2 className="text-xl font-semibold mb-4">Módulo de {moduleName}</h2>
@@ -58,6 +54,14 @@ export const routes = [
         element: (
           <Suspense fallback={<LazyLoadingSpinner />}>
             <Dashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'basic/*',
+        element: (
+          <Suspense fallback={<LazyLoadingSpinner />}>
+            <BasicModule />
           </Suspense>
         ),
       },
