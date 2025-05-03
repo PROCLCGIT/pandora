@@ -2,39 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileEdit, Trash2, Eye, Filter } from 'lucide-react';
+import { Plus, Filter, BookOpen } from 'lucide-react';
 
 // Importaciones del servicio de categoría
 import { useCategories, useDeleteCategoria } from '../../api/categoriaService';
 
-// Importar nuestro hook personalizado para búsqueda con debounce
+// Importar hook de búsqueda personalizado para debounce
 import { useSearch } from '@/hooks/custom/useSearch';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -43,35 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// Componente de paginación básico
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  return (
-    <div className="flex justify-center mt-4 space-x-2">
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        Anterior
-      </Button>
-      <span className="flex items-center px-3 py-1">
-        Página {currentPage} de {totalPages}
-      </span>
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        Siguiente
-      </Button>
-    </div>
-  );
-};
+// Importar componentes personalizados
+import { PageHeader } from '../../components/layout/PageHeader';
+import { FilterCard } from '../../components/layout/FilterCard';
+import { DataTable } from '../../components/data/DataTable';
+import { ActionButtons } from '../../components/ui/ActionButtons';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 export default function CategoriaPage() {
   const navigate = useNavigate();
@@ -85,27 +48,42 @@ export default function CategoriaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Utilizar nuestro hook personalizado para la búsqueda con debounce
-  const { inputValue: searchValue, setInputValue: setSearchValue, debouncedValue: debouncedSearch } = useSearch({
+  // Utilizar hook personalizado para la búsqueda con debounce
+  const { 
+    inputValue: searchValue, 
+    setInputValue: setSearchValue, 
+    debouncedValue: debouncedSearch 
+  } = useSearch({
     initialValue: '',
     delay: 500,
   });
   
   // Efecto para actualizar los filtros cuando cambia el valor de búsqueda con debounce
   useEffect(() => {
+    setCurrentPage(1);
     setFilters(prevFilters => ({ ...prevFilters, search: debouncedSearch }));
   }, [debouncedSearch]);
+  
+  // Efecto para resetear página cuando cambian otros filtros
+  useEffect(() => {
+    const hasNonSearchFilters = Object.entries(filters).some(
+      ([key, value]) => key !== 'search' && value !== undefined
+    );
+    
+    if (hasNonSearchFilters) {
+      setCurrentPage(1);
+    }
+  }, [filters]);
 
-  // Consulta de datos con useCategories (nuestro hook mejorado)
+  // Consulta de datos con useCategories
   const { data, isLoading, isError, error, refetch } = useCategories({
     ...filters,
-    search: debouncedSearch, // Usar el valor con debounce
+    search: debouncedSearch,
     page: currentPage,
     page_size: pageSize
   }, {
-    // Opciones adicionales para React Query
+    keepPreviousData: true,
     onError: (error) => {
-      // Mostrar notificación de error
       toast({
         title: "Error al cargar datos",
         description: `No se pudieron cargar las categorías: ${error.message}`,
@@ -114,10 +92,9 @@ export default function CategoriaPage() {
     }
   });
 
-  // Mutación para eliminar usando nuestro hook mejorado
+  // Mutación para eliminar
   const deleteCategoriaMutation = useDeleteCategoria({
-    onSuccess: (id) => {
-      // Mostrar notificación de éxito
+    onSuccess: () => {
       toast({
         title: "Categoría eliminada",
         description: categoriaToDelete 
@@ -126,7 +103,6 @@ export default function CategoriaPage() {
       });
     },
     onError: (error) => {
-      // Mostrar notificación de error
       toast({
         title: "Error al eliminar",
         description: `No se pudo eliminar la categoría: ${error.message}`,
@@ -154,237 +130,204 @@ export default function CategoriaPage() {
   };
 
   const confirmDelete = () => {
-    // Ahora podemos simplificar esta función ya que el manejo de éxito/error
-    // está en el hook useDeleteCategoria
     deleteCategoriaMutation.mutate(categoriaToDelete.id, {
       onSettled: () => {
-        // Independientemente del resultado, cerramos el diálogo y limpiamos
         setDeleteDialogOpen(false);
         setCategoriaToDelete(null);
+        refetch();
       }
     });
   };
 
-  // Renderizado de la tabla de categorías
+  // Definición de columnas para la tabla
+  const columns = [
+    {
+      header: 'Nombre',
+      accessor: 'nombre',
+      cell: (categoria) => (
+        <div className="font-medium flex items-center text-gray-800">
+          <BookOpen className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" />
+          <span className="truncate" title={categoria.nombre}>{categoria.nombre}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Código',
+      accessor: 'code',
+      cell: (categoria) => (
+        <Badge variant="outline" className="font-mono bg-blue-50 text-blue-800 border-blue-200">
+          {categoria.code || 'N/A'}
+        </Badge>
+      )
+    },
+    {
+      header: 'Nivel',
+      accessor: 'level',
+      cell: (categoria) => (
+        <span className="text-gray-700">
+          {categoria.level}
+        </span>
+      )
+    },
+    {
+      header: 'Ruta',
+      accessor: 'path',
+      cell: (categoria) => (
+        <span className="text-xs font-mono bg-muted p-1 rounded">
+          {categoria.path}
+        </span>
+      )
+    },
+    {
+      header: 'Estado',
+      accessor: 'is_active',
+      cell: (categoria) => (
+        categoria.is_active ? (
+          <Badge className="bg-green-500 hover:bg-green-600">Activo</Badge>
+        ) : (
+          <Badge variant="secondary">Inactivo</Badge>
+        )
+      )
+    },
+    {
+      header: 'Acciones',
+      accessor: 'id',
+      style: { textAlign: 'center', width: '7rem' },
+      cell: (categoria) => (
+        <ActionButtons 
+          onView={() => navigate(`/basic/categorias/${categoria.id}`)}
+          onEdit={() => navigate(`/basic/categorias/edit/${categoria.id}`)}
+          onDelete={() => handleDeleteClick(categoria)}
+        />
+      )
+    }
+  ];
+
+  // Renderizado de la página
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Categorías</h1>
-          <div className="mt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/basic/categorias/infinite')}
-            >
-              Ver con paginación infinita
-            </Button>
+    <div className="container mx-auto p-4 max-w-7xl">
+      {/* Cabecera de la página */}
+      <PageHeader 
+        icon={<BookOpen size={40} strokeWidth={1.5} />}
+        title="Gestión de Categorías"
+        description="Administra las categorías para clasificar productos y servicios."
+        action={{
+          label: "Agregar Categoría",
+          icon: <Plus className="h-4 w-4" />,
+          onClick: () => navigate('/basic/categorias/add')
+        }}
+      />
+
+      {/* Tarjeta de filtros */}
+      <FilterCard
+        title="Filtros de Búsqueda"
+        description="Busca categorías por nombre, código, nivel o estado."
+        icon={<Filter className="mr-2 h-5 w-5 text-blue-600" />}
+        onClear={() => {
+          setSearchValue('');
+          setFilters({
+            is_active: undefined,
+            level: undefined,
+          });
+        }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="search" className="text-sm font-medium">Buscar</label>
+            <SearchInput 
+              value={searchValue}
+              onChange={handleSearchChange}
+              placeholder="Buscar por nombre o código..."
+              debouncedValue={debouncedSearch}
+              inputProps={{ id: "search" }}
+            />
+          </div>
+          
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="status" className="text-sm font-medium">Estado</label>
+            <Select onValueChange={handleStatusChange} defaultValue="all">
+              <SelectTrigger id="status" className="h-9 border-blue-200 focus:border-blue-400">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Activo</SelectItem>
+                <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="level" className="text-sm font-medium">Nivel</label>
+            <Select onValueChange={handleLevelChange} defaultValue="all">
+              <SelectTrigger id="level" className="h-9 border-blue-200 focus:border-blue-400">
+                <SelectValue placeholder="Todos los niveles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="0">Nivel 0 (Raíz)</SelectItem>
+                <SelectItem value="1">Nivel 1</SelectItem>
+                <SelectItem value="2">Nivel 2</SelectItem>
+                <SelectItem value="3">Nivel 3</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <Button onClick={() => navigate('/basic/categorias/add')} className="bg-primary">
-          <Plus className="mr-2 h-4 w-4" /> Agregar Categoría
+      </FilterCard>
+      
+      <div className="mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate('/basic/categorias/infinite')}
+          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          Ver con paginación infinita
         </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl">Filtros</CardTitle>
-          <CardDescription>Filtra las categorías por diversos criterios</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="search" className="text-sm font-medium">Buscar</label>
-              <div className="relative">
-                <Input
-                  id="search"
-                  placeholder="Buscar por nombre o código..."
-                  value={searchValue}
-                  onChange={handleSearchChange}
-                />
-                {searchValue && debouncedSearch !== searchValue && (
-                  <div className="absolute right-2 top-2 text-xs text-muted-foreground">
-                    Buscando...
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="status" className="text-sm font-medium">Estado</label>
-              <Select onValueChange={handleStatusChange} defaultValue="all">
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Todos los estados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="true">Activo</SelectItem>
-                  <SelectItem value="false">Inactivo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="level" className="text-sm font-medium">Nivel</label>
-              <Select onValueChange={handleLevelChange} defaultValue="all">
-                <SelectTrigger id="level">
-                  <SelectValue placeholder="Todos los niveles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="0">Nivel 0 (Raíz)</SelectItem>
-                  <SelectItem value="1">Nivel 1</SelectItem>
-                  <SelectItem value="2">Nivel 2</SelectItem>
-                  <SelectItem value="3">Nivel 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button variant="outline" onClick={() => {
-            // Resetear tanto el valor del input como los filtros
-            setSearchValue('');
-            setFilters({
-              is_active: undefined,
-              level: undefined,
-            });
-          }} className="mr-2">
-            Limpiar Filtros
-          </Button>
-          <Button onClick={() => refetch()}>
-            <Filter className="mr-2 h-4 w-4" /> Filtrar
-          </Button>
-        </CardFooter>
-      </Card>
+      {/* Tabla de datos */}
+      <DataTable 
+        columns={columns}
+        data={data?.results}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={error?.message}
+        onRetry={refetch}
+        emptyMessage="No se encontraron categorías que coincidan con la búsqueda."
+        pagination={{
+          currentPage,
+          totalPages: Math.ceil((data?.count || 0) / pageSize),
+          totalItems: data?.count || 0,
+          pageSize,
+          onPageChange: setCurrentPage
+        }}
+      />
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      ) : isError ? (
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle>Error al cargar datos</CardTitle>
-            <CardDescription>No se pudieron cargar las categorías</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>{error?.message || 'Error desconocido'}</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => refetch()} variant="outline">
-              Intentar nuevamente
+      {/* Diálogo de confirmación para eliminar */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar la categoría "{categoriaToDelete?.nombre}"?
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
             </Button>
-          </CardFooter>
-        </Card>
-      ) : (
-        <>
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Nivel</TableHead>
-                    <TableHead>Ruta</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.results?.length ? (
-                    data.results.map((categoria) => (
-                      <TableRow key={categoria.id}>
-                        <TableCell className="font-medium">{categoria.nombre}</TableCell>
-                        <TableCell>{categoria.code}</TableCell>
-                        <TableCell>{categoria.level}</TableCell>
-                        <TableCell>
-                          <span className="text-xs font-mono bg-muted p-1 rounded">{categoria.path}</span>
-                        </TableCell>
-                        <TableCell>
-                          {categoria.is_active ? (
-                            <Badge className="bg-green-500">Activo</Badge>
-                          ) : (
-                            <Badge variant="secondary">Inactivo</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => navigate(`/basic/categorias/${categoria.id}`)}
-                              title="Ver detalles"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => navigate(`/basic/categorias/edit/${categoria.id}`)}
-                              title="Editar"
-                            >
-                              <FileEdit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(categoria)}
-                              title="Eliminar"
-                              className="text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
-                        No se encontraron categorías
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-            {data?.count > pageSize && (
-              <CardFooter className="flex justify-center py-4">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={Math.ceil(data.count / pageSize)}
-                  onPageChange={(page) => setCurrentPage(page)}
-                />
-              </CardFooter>
-            )}
-          </Card>
-
-          {/* Diálogo de confirmación para eliminar */}
-          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar eliminación</DialogTitle>
-                <DialogDescription>
-                  ¿Estás seguro de que deseas eliminar la categoría "{categoriaToDelete?.nombre}"?
-                  Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={confirmDelete}
-                  disabled={deleteCategoriaMutation.isPending}
-                >
-                  {deleteCategoriaMutation.isPending ? 'Eliminando...' : 'Eliminar'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteCategoriaMutation.isPending}
+            >
+              {deleteCategoriaMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

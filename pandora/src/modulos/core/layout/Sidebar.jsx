@@ -4,7 +4,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, Package, FileText, Briefcase, Scale, 
   FolderOpen, Settings, ChevronDown, ChevronRight,
-  Code, MapPin, Building, Layers
+  Code, MapPin, Building, Layers, Users, 
+  Ruler, Globe, Stethoscope, FileSignature
 } from 'lucide-react';
 
 // Estructura de navegación del sidebar
@@ -46,7 +47,13 @@ const navigationItems = [
     submenu: [
       { title: 'Categorías', path: '/basic/categorias' },
       { title: 'Ciudades', path: '/basic/ciudades' },
+      { title: 'Empresas CLC', path: '/basic/empresas' },
+      { title: 'Especialidades', path: '/basic/especialidades' },
       { title: 'Marcas', path: '/basic/marcas' },
+      { title: 'Procedencias', path: '/basic/procedencias' },
+      { title: 'Tipos de Cliente', path: '/basic/tiposcliente' },
+      { title: 'Tipos de Contratación', path: '/basic/tiposcontratacion' },
+      { title: 'Unidades de Medida', path: '/basic/unidades' },
       { title: 'Zonas', path: '/basic/zonas' },
     ],
   },

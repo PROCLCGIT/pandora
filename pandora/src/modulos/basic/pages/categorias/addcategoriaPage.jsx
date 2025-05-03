@@ -1,11 +1,11 @@
-// pandora/src/modulos/basic/pages/categorias/addcategoriaPage.jsx
+// /pandora/src/modulos/basic/pages/categorias/addcategoriaPage.jsx
 
 import { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Save, ArrowLeft } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 // Importar servicios de categoría
 import { 
@@ -17,7 +17,6 @@ import {
 
 import { useToast } from '@/hooks/use-toast';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -36,14 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+
+// Importar componente personalizado para formularios
+import { FormCard } from '../../components/form/FormCard';
 
 // Esquema de validación con Yup
 const categoriaSchema = yup.object({
@@ -52,8 +46,6 @@ const categoriaSchema = yup.object({
   parent: yup.number().nullable().transform(value => (isNaN(value) ? null : value)),
   is_active: yup.boolean().default(true),
 });
-
-// Nota: Ahora usamos los hooks importados desde categoriaService
 
 export default function AddCategoriaPage() {
   const { id } = useParams();
@@ -125,6 +117,7 @@ export default function AddCategoriaPage() {
     toast({
       title: 'Categoría creada',
       description: 'La categoría ha sido creada exitosamente.',
+      variant: 'success',
     });
     navigate('/basic/categorias');
   };
@@ -141,6 +134,7 @@ export default function AddCategoriaPage() {
     toast({
       title: 'Categoría actualizada',
       description: 'La categoría ha sido actualizada exitosamente.',
+      variant: 'success',
     });
     navigate('/basic/categorias');
   };
@@ -188,174 +182,148 @@ export default function AddCategoriaPage() {
     }
   };
 
+  // Determinar si el formulario está en estado de envío
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
   return (
-    <div className="container mx-auto py-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/basic/categorias')}
-        className="mb-4"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Volver a categorías
-      </Button>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Categoría' : 'Nueva Categoría'}</CardTitle>
-          <CardDescription>
-            {isEditing
-              ? 'Actualiza la información de la categoría existente'
-              : 'Completa el formulario para crear una nueva categoría'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nombre de la categoría" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Nombre descriptivo para la categoría
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Código" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Código único para identificar la categoría
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="parent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoría Padre</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={(value) => field.onChange(value)}
-                        value={field.value ? field.value.toString() : 'root'}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar categoría padre (opcional)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="root">Ninguna (Categoría Raíz)</SelectItem>
-                          {Array.isArray(categoriasPadre) && categoriasPadre.length > 0 ? (
-                            categoriasPadre
-                              .filter(cat => cat && typeof cat === 'object' && cat.id)
-                              .filter(cat => !(isEditing && cat.id === parseInt(id)))
-                              .map((cat) => (
-                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                  {cat.nombre || "Sin nombre"} {cat.path ? `(${cat.path})` : ''}
-                                </SelectItem>
-                              ))
-                          ) : null}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormDescription>
-                      Selecciona una categoría padre o deja en blanco para una categoría raíz
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="is_active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Activo</FormLabel>
-                      <FormDescription>
-                        Las categorías inactivas no se mostrarán en listados públicos
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {isEditing && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormItem>
-                    <FormLabel>Nivel</FormLabel>
-                    <FormControl>
-                      <Input
-                        value={categoriaData?.level || 0}
-                        disabled
-                        className="bg-muted"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Nivel jerárquico (calculado automáticamente)
-                    </FormDescription>
-                  </FormItem>
-                  <FormItem>
-                    <FormLabel>Ruta</FormLabel>
-                    <FormControl>
-                      <Input
-                        value={categoriaData?.path || ''}
-                        disabled
-                        className="bg-muted font-mono text-sm"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Ruta jerárquica completa (calculada automáticamente)
-                    </FormDescription>
-                  </FormItem>
-                </div>
+    <FormCard
+      title={isEditing ? 'Editar Categoría' : 'Nueva Categoría'}
+      description={isEditing
+        ? 'Actualiza la información de la categoría existente'
+        : 'Completa el formulario para crear una nueva categoría'}
+      onSubmit={form.handleSubmit(onSubmit)}
+      onCancel={() => navigate('/basic/categorias')}
+      backLink="Volver a categorías"
+      isSubmitting={isSubmitting}
+      icon={<BookOpen size={24} strokeWidth={1.5} />}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre de la categoría" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nombre descriptivo para la categoría
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/basic/categorias')}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {createMutation.isPending || updateMutation.isPending ? (
-              <span>Guardando...</span>
-            ) : (
-              <span>Guardar</span>
+            />
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Código" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Código único para identificar la categoría
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="parent"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoría Padre</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={(value) => field.onChange(value)}
+                    value={field.value ? field.value.toString() : 'root'}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar categoría padre (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="root">Ninguna (Categoría Raíz)</SelectItem>
+                      {Array.isArray(categoriasPadre) && categoriasPadre.length > 0 ? (
+                        categoriasPadre
+                          .filter(cat => cat && typeof cat === 'object' && cat.id)
+                          .filter(cat => !(isEditing && cat.id === parseInt(id)))
+                          .map((cat) => (
+                            <SelectItem key={cat.id} value={String(cat.id)}>
+                              {cat.nombre || "Sin nombre"} {cat.path ? `(${cat.path})` : ''}
+                            </SelectItem>
+                          ))
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>
+                  Selecciona una categoría padre o deja en blanco para una categoría raíz
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
             )}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+          />
+
+          <FormField
+            control={form.control}
+            name="is_active"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 border-blue-100">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Activo</FormLabel>
+                  <FormDescription>
+                    Las categorías inactivas no se mostrarán en listados públicos
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {isEditing && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormItem>
+                <FormLabel>Nivel</FormLabel>
+                <FormControl>
+                  <Input
+                    value={categoriaData?.level || 0}
+                    disabled
+                    className="bg-muted"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Nivel jerárquico (calculado automáticamente)
+                </FormDescription>
+              </FormItem>
+              <FormItem>
+                <FormLabel>Ruta</FormLabel>
+                <FormControl>
+                  <Input
+                    value={categoriaData?.path || ''}
+                    disabled
+                    className="bg-muted font-mono text-sm"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Ruta jerárquica completa (calculada automáticamente)
+                </FormDescription>
+              </FormItem>
+            </div>
+          )}
+        </form>
+      </Form>
+    </FormCard>
   );
 }

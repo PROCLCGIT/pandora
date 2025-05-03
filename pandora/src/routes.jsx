@@ -1,27 +1,33 @@
 // pandora/src/routes.jsx
 
-import { lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import MainLayout from './modulos/core/layout/MainLayout';
 import ProtectedRoute from './modulos/core/layout/ProtectedRoute';
 import LoginPage from './modulos/auth/LoginPage';
 
-// Lazy loading de componentes para mejorar el rendimiento
-const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
-
-// Lazy loading para los módulos de la aplicación
-const ProductsModule = lazy(() => import('./modulos/productos/ProductsLayout'));
-const ProformasModule = lazy(() => import('./modulos/proformas/ProformasLayout'));
-const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes')); // Módulo Basic
-
-// Componente Loader para Suspense
+// Spinner mostrado durante la carga de módulos perezosos
 const LazyLoadingSpinner = () => (
   <div className="flex justify-center items-center h-full w-full min-h-[200px]">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
   </div>
 );
 
-// Componente placeholder
+// Helper para envolver componentes lazy con Suspense
+const withSuspense = (Component) => (
+  <Suspense fallback={<LazyLoadingSpinner />}>
+    <Component />
+  </Suspense>
+);
+
+// Componentes lazy de cada módulo
+const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
+const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes'));
+const ProductsModule = lazy(() => import('./modulos/productos/ProductsLayout'));
+const ProformasModule = lazy(() => import('./modulos/proformas/ProformasLayout'));
+const BriefModule = lazy(() => import('./modulos/brief/pages/BriefDetallePage'));
+
+// Placeholder genérico para módulos en desarrollo
 const ModulePlaceholder = ({ moduleName }) => (
   <div className="p-4">
     <h2 className="text-xl font-semibold mb-4">Módulo de {moduleName}</h2>
@@ -31,16 +37,21 @@ const ModulePlaceholder = ({ moduleName }) => (
   </div>
 );
 
-// Objeto con todas las rutas de la aplicación
+// Definición de rutas de manera más lineal y DRY
+const protectedChildren = [
+  { path: 'dashboard', element: withSuspense(Dashboard) },
+  { path: 'basic/*', element: withSuspense(BasicModule) },
+  { path: 'products/*', element: withSuspense(ProductsModule) },
+  { path: 'proformas/*', element: withSuspense(ProformasModule) },
+  { path: 'brief/*', element: withSuspense(BriefModule) },
+  { path: 'legal/*', element: withSuspense(() => <ModulePlaceholder moduleName="Legal" />) },
+  { path: 'docs/*', element: withSuspense(() => <ModulePlaceholder moduleName="Gestión Documental" />) },
+  { path: 'settings/*', element: withSuspense(() => <ModulePlaceholder moduleName="Configuración" />) },
+];
+
 export const routes = [
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/',
-    element: <Navigate to="/dashboard" replace />,
-  },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/', element: <Navigate to="/dashboard" replace /> },
   {
     path: '/',
     element: (
@@ -48,72 +59,7 @@ export const routes = [
         <MainLayout />
       </ProtectedRoute>
     ),
-    children: [
-      {
-        path: 'dashboard',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <Dashboard />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'basic/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <BasicModule />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'products/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ProductsModule />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'proformas/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ProformasModule />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'brief/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ModulePlaceholder moduleName="Brief" />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'legal/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ModulePlaceholder moduleName="Legal" />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'docs/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ModulePlaceholder moduleName="Gestión Documental" />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'settings/*',
-        element: (
-          <Suspense fallback={<LazyLoadingSpinner />}>
-            <ModulePlaceholder moduleName="Configuración" />
-          </Suspense>
-        ),
-      },
-    ],
+    children: protectedChildren,
   },
   {
     path: '*',

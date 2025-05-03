@@ -1,11 +1,11 @@
-// pandora/src/modulos/basic/pages/ciudades/addCiudadPage.jsx
+// /pandora/src/modulos/basic/pages/ciudades/addCiudadPage.jsx
 
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Building } from 'lucide-react';
 
 // Importar servicios
 import { 
@@ -16,7 +16,6 @@ import {
 
 import { useToast } from '@/hooks/use-toast';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Form,
@@ -27,14 +26,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+
+// Importar componente personalizado para formularios
+import { FormCard } from '../../components/form/FormCard';
 
 // Esquema de validación con Yup
 const ciudadSchema = yup.object({
@@ -139,103 +133,77 @@ export default function AddCiudadPage() {
       });
     }
   };
+  
+  // Determinar si el formulario está en estado de envío
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="container mx-auto py-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/basic/ciudades')}
-        className="mb-4"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Volver a ciudades
-      </Button>
+    <FormCard
+      title={isEditing ? 'Editar Ciudad' : 'Nueva Ciudad'}
+      description={isEditing
+        ? 'Actualiza la información de la ciudad existente'
+        : 'Completa el formulario para crear una nueva ciudad'}
+      onSubmit={form.handleSubmit(onSubmit)}
+      onCancel={() => navigate('/basic/ciudades')}
+      backLink="Volver a ciudades"
+      isSubmitting={isSubmitting}
+      icon={<Building size={24} strokeWidth={1.5} />}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre de la ciudad" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nombre completo de la ciudad
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="provincia"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Provincia</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Provincia" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Provincia a la que pertenece la ciudad
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Ciudad' : 'Nueva Ciudad'}</CardTitle>
-          <CardDescription>
-            {isEditing
-              ? 'Actualiza la información de la ciudad existente'
-              : 'Completa el formulario para crear una nueva ciudad'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nombre de la ciudad" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Nombre completo de la ciudad
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="provincia"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Provincia</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Provincia" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Provincia a la que pertenece la ciudad
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Código" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Código único para identificar la ciudad
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/basic/ciudades')}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {createMutation.isPending || updateMutation.isPending ? (
-              <span>Guardando...</span>
-            ) : (
-              <span>Guardar</span>
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código</FormLabel>
+                <FormControl>
+                  <Input placeholder="Código" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Código único para identificar la ciudad
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
             )}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+          />
+        </form>
+      </Form>
+    </FormCard>
   );
 }

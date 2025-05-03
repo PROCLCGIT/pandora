@@ -1,13 +1,13 @@
 // src/store.js
 import { configureStore } from '@reduxjs/toolkit';
 
-// Aquí puedes importar tus reducers
-// import exampleReducer from './features/example/exampleSlice';
+// Importar reducers
+import uiReducer from './features/ui/uiSlice';
 
 export const store = configureStore({
   reducer: {
-    // Añade tus reducers aquí
-    // example: exampleReducer,
+    // Añadir reducers al store
+    ui: uiReducer,
   },
   // Configuración opcional
   middleware: (getDefaultMiddleware) =>

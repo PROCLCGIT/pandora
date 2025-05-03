@@ -1,11 +1,11 @@
-// pandora/src/modulos/basic/pages/zonas/addZonaPage.jsx
+// /pandora/src/modulos/basic/pages/zonas/addZonaPage.jsx
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Save, ArrowLeft, Plus, X, MapPin } from 'lucide-react';
+import { Plus, X, MapPin } from 'lucide-react';
 
 // Importar servicios
 import { 
@@ -33,14 +33,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -48,6 +40,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+
+// Importar componente personalizado para formularios
+import { FormCard } from '../../components/form/FormCard';
 
 // Esquema de validación con Yup
 const zonaSchema = yup.object({
@@ -247,175 +242,148 @@ export default function AddZonaPage() {
   const handleRemoveCity = (cityId) => {
     setSelectedCities(selectedCities.filter(city => city.id !== cityId));
   };
+  
+  // Determinar si el formulario está en estado de envío
+  const isSubmitting = createMutation.isPending || 
+                      updateMutation.isPending || 
+                      asignarCiudadesMutation.isPending;
 
   return (
-    <div className="container mx-auto py-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/basic/zonas')}
-        className="mb-4"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Volver a zonas
-      </Button>
+    <FormCard
+      title={isEditing ? 'Editar Zona' : 'Nueva Zona'}
+      description={isEditing
+        ? 'Actualiza la información de la zona existente'
+        : 'Completa el formulario para crear una nueva zona'}
+      onSubmit={form.handleSubmit(onSubmit)}
+      onCancel={() => navigate('/basic/zonas')}
+      backLink="Volver a zonas"
+      isSubmitting={isSubmitting}
+      icon={<MapPin size={24} strokeWidth={1.5} />}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre de la zona" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nombre descriptivo para la zona
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Código" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Código único para identificar la zona
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Zona' : 'Nueva Zona'}</CardTitle>
-          <CardDescription>
-            {isEditing
-              ? 'Actualiza la información de la zona existente'
-              : 'Completa el formulario para crear una nueva zona'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nombre de la zona" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Nombre descriptivo para la zona
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Código" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Código único para identificar la zona
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="cobertura"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción de cobertura</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Descripción detallada de la cobertura..." 
-                        className="min-h-[120px]" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Describe el área o alcance de cobertura de esta zona
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Sección para asignar ciudades a la zona */}
-              <div className="border rounded-md p-4">
-                <FormLabel className="text-base">Ciudades en esta zona</FormLabel>
-                <FormDescription className="mb-4">
-                  Selecciona las ciudades que pertenecen a esta zona geográfica
+          <FormField
+            control={form.control}
+            name="cobertura"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descripción de cobertura</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Descripción detallada de la cobertura..." 
+                    className="min-h-[120px]" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  Describe el área o alcance de cobertura de esta zona
                 </FormDescription>
-
-                <div className="flex gap-2 mb-4">
-                  <div className="flex-1">
-                    <Select value={selectedCityId} onValueChange={setSelectedCityId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar ciudad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ciudadesData?.results?.map(ciudad => (
-                          <SelectItem key={ciudad.id} value={ciudad.id.toString()}>
-                            {ciudad.nombre}, {ciudad.provincia}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleAddCity}
-                    disabled={!selectedCityId}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Añadir
-                  </Button>
-                </div>
-
-                {/* Lista de ciudades seleccionadas */}
-                <div className="border rounded-md p-3 min-h-[100px] bg-muted/30">
-                  {selectedCities.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                      No hay ciudades seleccionadas
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCities.map(city => (
-                        <Badge 
-                          key={city.id} 
-                          variant="secondary"
-                          className="flex items-center gap-1 py-1.5 pr-1.5"
-                        >
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {city.nombre}, {city.provincia}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 rounded-full ml-1 hover:bg-muted"
-                            onClick={() => handleRemoveCity(city.id)}
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/basic/zonas')}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={
-              createMutation.isPending || 
-              updateMutation.isPending || 
-              asignarCiudadesMutation.isPending
-            }
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {createMutation.isPending || updateMutation.isPending || asignarCiudadesMutation.isPending ? (
-              <span>Guardando...</span>
-            ) : (
-              <span>Guardar</span>
+                <FormMessage />
+              </FormItem>
             )}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+          />
+
+          {/* Sección para asignar ciudades a la zona */}
+          <div className="border rounded-md p-4 border-blue-100">
+            <FormLabel className="text-base">Ciudades en esta zona</FormLabel>
+            <FormDescription className="mb-4">
+              Selecciona las ciudades que pertenecen a esta zona geográfica
+            </FormDescription>
+
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1">
+                <Select value={selectedCityId} onValueChange={setSelectedCityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar ciudad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ciudadesData?.results?.map(ciudad => (
+                      <SelectItem key={ciudad.id} value={ciudad.id.toString()}>
+                        {ciudad.nombre}, {ciudad.provincia}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleAddCity}
+                disabled={!selectedCityId}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Añadir
+              </Button>
+            </div>
+
+            {/* Lista de ciudades seleccionadas */}
+            <div className="border rounded-md p-3 min-h-[100px] bg-muted/30 border-blue-100">
+              {selectedCities.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  No hay ciudades seleccionadas
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {selectedCities.map(city => (
+                    <Badge 
+                      key={city.id} 
+                      variant="secondary"
+                      className="flex items-center gap-1 py-1.5 pr-1.5"
+                    >
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {city.nombre}, {city.provincia}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 rounded-full ml-1 hover:bg-muted"
+                        onClick={() => handleRemoveCity(city.id)}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      </Form>
+    </FormCard>
   );
 }

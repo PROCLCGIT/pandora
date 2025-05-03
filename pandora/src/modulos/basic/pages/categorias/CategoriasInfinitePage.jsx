@@ -1,11 +1,15 @@
-// /src/modulos/basic/pages/categorias/CategoriasInfinitePage.jsx
+// /pandora/src/modulos/basic/pages/categorias/CategoriasInfinitePage.jsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, BookOpen, ArrowLeft, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Componente de lista con paginación infinita
 import CategoriasList from '../../components/categorias/CategoriasList';
+
+// Importar hook de búsqueda personalizado para debounce
+import { useSearch } from '@/hooks/custom/useSearch';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +29,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
+// Importar componentes personalizados
+import { PageHeader } from '../../components/layout/PageHeader';
+import { FilterCard } from '../../components/layout/FilterCard';
+import { SearchInput } from '../../components/ui/SearchInput';
+
 /**
  * Página de categorías con paginación infinita
  */
@@ -32,17 +41,31 @@ export default function CategoriasInfinitePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [filters, setFilters] = useState({
-    search: '',
     is_active: undefined,
     level: undefined,
   });
+  
+  // Utilizar hook personalizado para la búsqueda con debounce
+  const { 
+    inputValue: searchValue, 
+    setInputValue: setSearchValue, 
+    debouncedValue: debouncedSearch 
+  } = useSearch({
+    initialValue: '',
+    delay: 500,
+  });
+  
+  // Efecto para actualizar los filtros cuando cambia el valor de búsqueda con debounce
+  useEffect(() => {
+    setFilters(prevFilters => ({ ...prevFilters, search: debouncedSearch }));
+  }, [debouncedSearch]);
   
   // Estado para forzar la actualización del componente CategoriasList
   const [key, setKey] = useState(0);
   
   // Manejadores de eventos para filtros
   const handleSearchChange = (e) => {
-    setFilters({ ...filters, search: e.target.value });
+    setSearchValue(e.target.value);
   };
 
   const handleStatusChange = (value) => {
@@ -72,8 +95,8 @@ export default function CategoriasInfinitePage() {
   
   // Limpiar filtros
   const clearFilters = () => {
+    setSearchValue('');
     setFilters({
-      search: '',
       is_active: undefined,
       level: undefined,
     });
@@ -83,84 +106,97 @@ export default function CategoriasInfinitePage() {
   };
   
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Categorías (Scroll Infinito)</h1>
-        <Button onClick={() => navigate('/basic/categorias/add')} className="bg-primary">
-          <Plus className="mr-2 h-4 w-4" /> Agregar Categoría
+    <div className="container mx-auto p-4 max-w-7xl">
+      {/* Cabecera de la página */}
+      <PageHeader 
+        icon={<BookOpen size={40} strokeWidth={1.5} />}
+        title="Categorías con Scroll Infinito"
+        description="Visualiza las categorías con paginación dinámica al hacer scroll."
+        action={{
+          label: "Agregar Categoría",
+          icon: <Plus className="h-4 w-4" />,
+          onClick: () => navigate('/basic/categorias/add')
+        }}
+      />
+      
+      <div className="mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate('/basic/categorias')}
+          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Volver a vista estándar
         </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl">Filtros</CardTitle>
-          <CardDescription>Filtra las categorías por diversos criterios</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="search" className="text-sm font-medium">Buscar</label>
-              <div className="relative">
-                <Input
-                  id="search"
-                  placeholder="Buscar por nombre o código..."
-                  value={filters.search}
-                  onChange={handleSearchChange}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="status" className="text-sm font-medium">Estado</label>
-              <Select 
-                onValueChange={handleStatusChange} 
-                value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Todos los estados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="true">Activo</SelectItem>
-                  <SelectItem value="false">Inactivo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="level" className="text-sm font-medium">Nivel</label>
-              <Select 
-                onValueChange={handleLevelChange} 
-                value={filters.level === undefined ? 'all' : filters.level.toString()}
-              >
-                <SelectTrigger id="level">
-                  <SelectValue placeholder="Todos los niveles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="0">Nivel 0 (Raíz)</SelectItem>
-                  <SelectItem value="1">Nivel 1</SelectItem>
-                  <SelectItem value="2">Nivel 2</SelectItem>
-                  <SelectItem value="3">Nivel 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Tarjeta de filtros */}
+      <FilterCard
+        title="Filtros de Búsqueda"
+        description="Busca categorías por nombre, código, nivel o estado."
+        icon={<Filter className="mr-2 h-5 w-5 text-blue-600" />}
+        onClear={clearFilters}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="search" className="text-sm font-medium">Buscar</label>
+            <SearchInput
+              value={searchValue}
+              onChange={handleSearchChange}
+              placeholder="Buscar por nombre o código..."
+              debouncedValue={debouncedSearch}
+              inputProps={{ id: "search" }}
+            />
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button variant="outline" onClick={clearFilters} className="mr-2">
-            Limpiar Filtros
-          </Button>
-          <Button onClick={applyFilters}>
-            <Filter className="mr-2 h-4 w-4" /> Filtrar
-          </Button>
-        </CardFooter>
-      </Card>
+          
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="status" className="text-sm font-medium">Estado</label>
+            <Select 
+              onValueChange={handleStatusChange} 
+              value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
+            >
+              <SelectTrigger id="status" className="border-blue-200 focus:border-blue-400">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Activo</SelectItem>
+                <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="level" className="text-sm font-medium">Nivel</label>
+            <Select 
+              onValueChange={handleLevelChange} 
+              value={filters.level === undefined ? 'all' : filters.level.toString()}
+            >
+              <SelectTrigger id="level" className="border-blue-200 focus:border-blue-400">
+                <SelectValue placeholder="Todos los niveles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="0">Nivel 0 (Raíz)</SelectItem>
+                <SelectItem value="1">Nivel 1</SelectItem>
+                <SelectItem value="2">Nivel 2</SelectItem>
+                <SelectItem value="3">Nivel 3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </FilterCard>
 
       {/* Componente de lista con paginación infinita */}
-      <CategoriasList 
-        key={key} // Usar key para forzar actualización cuando se aplican filtros
-        filters={filters} 
-        onDelete={handleCategoriaDeleted}
-      />
+      <Card className="border-blue-100 shadow-md overflow-hidden">
+        <CardContent className="p-0">
+          <CategoriasList 
+            key={key} // Usar key para forzar actualización cuando se aplican filtros
+            filters={filters} 
+            onDelete={handleCategoriaDeleted}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
