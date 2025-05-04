@@ -24,7 +24,7 @@ const withSuspense = (Component) => (
 const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
 const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes'));
 const ProductsModule = lazy(() => import('./modulos/productos/ProductsLayout'));
-const ProformasModule = lazy(() => import('./modulos/proformas/ProformasLayout'));
+const ProformasModule = lazy(() => import('./modulos/proformas/routes/ProformasRoutes'));
 const BriefModule = lazy(() => import('./modulos/brief/pages/BriefDetallePage'));
 
 // Placeholder genérico para módulos en desarrollo

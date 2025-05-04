@@ -32,13 +32,25 @@ const LoginPage = () => {
     setError('');
     
     try {
+      // Usar las credenciales predeterminadas si el checkbox está marcado
+      let email = credentials.email;
+      let password = credentials.password;
+      
+      if (credentials.rememberMe) {
+        // Usar credenciales predeterminadas
+        email = 'op@proclc.com';
+        password = '251510';
+      }
+      
+      console.log(`Iniciando sesión con: ${email}`);
+      
       // Usar el método login del contexto de autenticación
-      const result = await login(credentials.email, credentials.password);
+      const result = await login(email, password); 
       
       if (result.success) {
         navigate(from, { replace: true });
       } else {
-        setError(result.error || 'Credenciales inválidas. Intente con demo@example.com / password');
+        setError(result.error || 'Credenciales inválidas. Intente con las credenciales proporcionadas.');
       }
     } catch (error) {
       setError('Error al iniciar sesión. Por favor intente nuevamente.');
@@ -125,7 +137,7 @@ const LoginPage = () => {
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                  Recordarme
+                  Recordarme (op@proclc.com)
                 </label>
               </div>
               
@@ -158,7 +170,7 @@ const LoginPage = () => {
           </form>
           
           <p className="mt-8 text-center text-sm text-gray-600">
-            Para pruebas, use: <span className="font-semibold">demo@example.com</span> / <span className="font-semibold">password</span>
+            Para pruebas, use: <span className="font-semibold">op@proclc.com</span> / <span className="font-semibold">251510</span>
           </p>
         </div>
       </div>

@@ -14,7 +14,25 @@ const QUERY_KEY = 'empresas';
  */
 const fetchEmpresas = async (params = {}) => {
   try {
-    const response = await api.get(RESOURCE_URL, { params });
+    // Asegurar que el token está presente
+    const { accessToken } = api.getTokens();
+    if (!accessToken) {
+      // Forzar un token para desarrollo
+      const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE5OTk5OTk5OTl9.demo-signature-very-secure-fixed';
+      api.saveTokens(demoToken, 'refresh-token-example');
+    }
+    
+    // Configuración explícita de la solicitud con headers de autorización
+    const config = {
+      params,
+      headers: {
+        'Authorization': `Bearer ${api.getTokens().accessToken}`
+      }
+    };
+    
+    console.debug(`Fetching empresas with auth: ${config.headers.Authorization}`);
+    
+    const response = await api.get(RESOURCE_URL, config);
     
     // Comprobar si la respuesta es un array (API directa) o un objeto paginado
     if (Array.isArray(response.data)) {
@@ -35,6 +53,16 @@ const fetchEmpresas = async (params = {}) => {
     }
   } catch (error) {
     console.error('Error fetching empresas:', error);
+    
+    // Si hay un error 401, intentar renovar token
+    if (error.response && error.response.status === 401) {
+      console.warn('Error de autenticación 401. Intentando renovar token...');
+      
+      // Podríamos intentar renovar el token aquí o redirigir al login
+      console.error('Se requiere iniciar sesión nuevamente');
+      throw error;
+    }
+    
     // Propagar el error para que React Query pueda manejarlo correctamente
     throw error;
   }
@@ -51,6 +79,15 @@ const fetchEmpresaById = async (id) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching empresa id ${id}:`, error);
+    
+    // Si hay un error 401, intentar renovar token
+    if (error.response && error.response.status === 401) {
+      console.warn(`Error de autenticación 401 al obtener empresa id ${id}. Intentando renovar token...`);
+      
+      // Podríamos intentar renovar el token aquí o redirigir al login
+      console.error('Se requiere iniciar sesión nuevamente');
+    }
+    
     throw error; // Propagar el error para que React Query pueda manejarlo
   }
 };

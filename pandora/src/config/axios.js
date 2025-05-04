@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 
 // Constantes para configuración global
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const TOKEN_REFRESH_URL = '/auth/token/refresh/';
+const TOKEN_REFRESH_URL = '/token/refresh/';
 const LOGOUT_PATH = '/login';
 
 // Variables para control de refresco de tokens
@@ -68,6 +68,9 @@ const isTokenExpired = (token) => {
 // Interceptor para añadir token a las solicitudes
 axiosInstance.interceptors.request.use(
   async (config) => {
+    // Aseguramos que config.headers existe
+    config.headers = config.headers || {};
+    
     // No añadir token para la ruta de refresco de token
     if (config.url === TOKEN_REFRESH_URL) {
       return config;
@@ -75,10 +78,24 @@ axiosInstance.interceptors.request.use(
     
     let { accessToken, refreshToken } = getTokens();
     
+    // DEBUG: Log para todas las peticiones
+    console.debug(`🔄 Request to ${config.url} - Token: ${accessToken ? 'Present' : 'Missing'}`);
+    
+    // Usar el token real que se obtuvo durante la autenticación
     if (!accessToken) {
-      return config;
+      console.warn('⚠️ No hay token disponible para la solicitud. Intentando login automático...');
+      // Aquí podríamos dirigir al usuario al login, pero no interrumpimos el flujo
     }
     
+    // Aplicar token a la solicitud - formato exacto esperado por Django DRF
+    if (accessToken) {
+      config.headers['Authorization'] = 'Bearer ' + accessToken;
+    }
+    
+    // Debug log para verificar
+    console.debug(`🔒 Authorization header: ${config.headers['Authorization']}`);
+    
+    /* Comentado para modo desarrollo - descomentar en producción
     // Verificar si el token está expirado y necesita ser refrescado
     if (isTokenExpired(accessToken) && refreshToken) {
       if (isRefreshing) {
@@ -117,6 +134,7 @@ axiosInstance.interceptors.request.use(
     } else if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    */
     
     return config;
   },

@@ -11,22 +11,41 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Inicializar environ
+env = environ.Env(
+    # Valores por defecto
+    DEBUG=(bool, True),
+    ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1']),
+    CORS_ALLOWED_ORIGINS=(list, ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']),
+    SECRET_KEY=(str, 'django-insecure-=&$t*#_n$wj+-afnsdlqu@3um4!^-6!zhy-+sii7u!p6u!g_aq'),
+    DB_NAME=(str, 'dbappclc'),
+    DB_USER=(str, 'clc'),
+    DB_PASSWORD=(str, 'Ws112244QQ+'),
+    DB_HOST=(str, '192.168.50.202'),
+    DB_PORT=(str, '3306'),
+)
+
+# Construir ruta al archivo .env
+env_path = BASE_DIR / '.env'
+# Lee el archivo .env si existe
+environ.Env.read_env(env_file=str(env_path))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=&$t*#_n$wj+-afnsdlqu@3um4!^-6!zhy-+sii7u!p6u!g_aq'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 # Application definition
 
@@ -37,10 +56,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Paquetes de terceros
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # Añadido para blacklist de tokens
     'django_filters',
     'corsheaders',
+    'drf_yasg',
+    # Aplicaciones propias
+    'users.apps.UsersConfig',  # Nueva app para modelo de usuario personalizado
     'basic',
+    'directorio',
 ]
 
 MIDDLEWARE = [
@@ -52,10 +78,34 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.AuthenticationErrorMiddleware',  # Middleware personalizado para errores de autenticación
 ]
 
+# Configuración del modelo de usuario personalizado
+AUTH_USER_MODEL = 'users.User'
+
 # CORS configuration
-CORS_ALLOW_ALL_ORIGINS = True  # En producción, deberías limitar esto a orígenes específicos
+CORS_ALLOW_ALL_ORIGINS = True  # Temporalmente permitimos todos los orígenes para diagnóstico
+# CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')  # Comentado temporalmente
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 ROOT_URLCONF = 'pandora.urls'
 
@@ -76,18 +126,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pandora.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dbappclc', 
-        'USER': 'clc',
-        'PASSWORD': 'Ws112244QQ+',
-        'HOST': '192.168.50.202',
-        'PORT': '3306',  
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -99,7 +148,6 @@ DATABASES = {
         'CONN_MAX_AGE': 60,  # Mantener conexiones abiertas por 60 segundos
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -119,7 +167,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -131,13 +178,100 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ============================================
+# Configuración avanzada de REST Framework
+# ============================================
+
+REST_FRAMEWORK = {
+    # Paginación - Se maneja específicamente en cada ViewSet
+    'PAGE_SIZE': 10,
+    
+    # Filtrado
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    
+    # Autenticación
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    
+    # Permisos - Cambiado para requerir autenticación por defecto
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    
+    # Throttling - Añadidas clases por defecto
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/min',
+        'user': '100/min',
+        'burst': '60/min',
+        'sustained': '1000/day',
+        'user_burst': '100/min',
+        'user_sustained': '5000/day',
+    },
+    
+    # Renderers (formatos de respuesta)
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    
+    # Manejo de excepciones
+    'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
+    
+    # Versionado de API
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+}
+
+# Configuración de Swagger para documentación de API
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'PERSIST_AUTH': True,
+    'REFETCH_SCHEMA_WITH_AUTH': True,
+    'REFETCH_SCHEMA_ON_LOGOUT': True,
+}
+
+# Configuración de JWT para autenticación - Duración reducida
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}

@@ -1,6 +1,6 @@
 # backend/basic/views.py
 
-from rest_framework import viewsets, filters, status
+from rest_framework import viewsets, filters, status, permissions, throttling
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,11 +15,19 @@ from .serializers import (
     ZonaSerializer, ZonaCiudadSerializer, ZonaDetalleSerializer,
     CategoriaDetalleSerializer
 )
+from .pagination import BasicStandardResultsSetPagination
 
 
 class BaseCrudViewSet(viewsets.ModelViewSet):
     """ViewSet base con funcionalidades comunes para todos los modelos"""
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    pagination_class = BasicStandardResultsSetPagination
+    # Usar la clase de permisos estándar de DRF
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [
+        throttling.UserRateThrottle,
+        throttling.AnonRateThrottle,
+    ]
     
 
 class CategoriaViewSet(BaseCrudViewSet):
@@ -29,6 +37,7 @@ class CategoriaViewSet(BaseCrudViewSet):
     filterset_fields = ['nombre', 'code', 'parent', 'level', 'is_active']
     search_fields = ['nombre', 'code', 'path']
     ordering_fields = ['nombre', 'code', 'level', 'path']
+    permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
     
     @action(detail=True, methods=['get'])
     def hijos(self, request, pk=None):
