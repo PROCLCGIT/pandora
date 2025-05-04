@@ -1,11 +1,24 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
 import axios from 'axios';
+
+// Constantes para endpoints de autenticación
+const AUTH_ENDPOINTS = {
+  LOGIN: 'http://localhost:8000/api/auth/login/',
+  REFRESH: 'http://localhost:8000/api/auth/refresh/',
+  VERIFY: 'http://localhost:8000/api/auth/verify/',
+  LOGOUT: 'http://localhost:8000/api/auth/logout/',
+  USER_PROFILE: 'http://localhost:8000/api/users/me/'
+};
 
 // Crear el contexto
 const AuthContext = createContext(null);
 
-// Hook personalizado para usar el contexto
+/**
+ * Hook personalizado para usar el contexto de autenticación
+ * @returns {Object} El contexto de autenticación con valores y funciones
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -14,39 +27,95 @@ export const useAuth = () => {
   return context;
 };
 
-// Proveedor del contexto
+/**
+ * Proveedor del contexto de autenticación
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
   
-  // Función para iniciar sesión automática con credenciales reales
-  const autoLogin = async () => {
+  /**
+   * Obtiene el perfil del usuario desde el backend
+   * @returns {Promise<Object>} Información del usuario
+   */
+  const fetchUserProfile = useCallback(async () => {
     try {
-      console.info('Iniciando sesión automática con credenciales reales...');
+      // En un sistema real, obtendríamos el perfil desde el endpoint
+      // const response = await api.get(AUTH_ENDPOINTS.USER_PROFILE);
+      // return response.data;
       
-      // Obtener tokens de autenticación del backend usando las credenciales fijas
-      console.log('🔑 Intentando obtener token automáticamente con usuario: op@proclc.com');
-      const response = await axios.post('http://localhost:8000/api/token/', {
+      // Por ahora, devolvemos datos estáticos
+      return {
+        id: '1',
+        name: 'Operador CLC',
+        email: 'op@proclc.com',
+        role: 'admin'
+      };
+    } catch (error) {
+      console.error('Error al obtener perfil de usuario:', error);
+      throw error;
+    }
+  }, []);
+  
+  /**
+   * Refresca el token de autenticación
+   * @returns {Promise<boolean>} True si el refresco fue exitoso
+   */
+  const refresh = useCallback(async () => {
+    try {
+      const response = await api.refreshTokens();
+      return response;
+    } catch (error) {
+      console.error('Error al refrescar tokens:', error);
+      return false;
+    }
+  }, []);
+  
+  /**
+   * Verifica la sesión actual
+   * @returns {Promise<boolean>} True si la sesión es válida
+   */
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await axios.post(
+        AUTH_ENDPOINTS.VERIFY, 
+        {}, 
+        { withCredentials: true }
+      );
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error al verificar sesión:', error);
+      return false;
+    }
+  }, []);
+  
+  /**
+   * Función para iniciar sesión automática con credenciales por defecto
+   * @returns {Promise<Object>} Resultado del login
+   */
+  const autoLogin = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.info('Iniciando sesión automática...');
+      
+      const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
         username: 'op@proclc.com',
         password: '251510'
+      }, {
+        withCredentials: true
       });
       
-      if (response.data && response.data.access) {
-        const { access, refresh } = response.data;
+      if (response.status === 200) {
+        api.saveTokens('present-in-httponly-cookie', 'present-in-httponly-cookie');
         
-        // Guardar tokens
-        api.saveTokens(access, refresh);
-        
-        // Datos de usuario fijos (se podrían obtener del backend)
-        const userInfo = {
-          id: '1',
-          name: 'Operador CLC',
-          email: 'op@proclc.com',
-          role: 'admin'
-        };
+        // Obtener perfil de usuario
+        const userInfo = await fetchUserProfile();
         
         setUser(userInfo);
-        console.info('✅ Login automático exitoso con tokens reales');
+        setError(null);
+        console.info('✅ Login automático exitoso');
         return { success: true, user: userInfo };
       } else {
         throw new Error('Formato de respuesta inesperado');
@@ -54,119 +123,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error en login automático:', error);
       
-      // Fallback a tokens simulados si falla
-      console.warn('Usando tokens simulados como respaldo');
-      const fallbackTokens = {
-        access: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE5OTk5OTk5OTl9.demo-signature-very-secure',
-        refresh: 'refresh-token-example-very-secure'
-      };
-      
-      const fallbackUser = {
-        id: '1',
-        name: 'Usuario Respaldo',
-        email: 'op@proclc.com',
-        role: 'admin'
-      };
-      
-      api.saveTokens(fallbackTokens.access, fallbackTokens.refresh);
-      setUser(fallbackUser);
-      return { success: true, user: fallbackUser };
-    }
-  };
-
-  // Verificar si hay un token guardado al cargar la aplicación
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { accessToken, refreshToken } = api.getTokens();
-      
-      if (accessToken) {
-        try {
-          // Intentar verificar el token con el backend
-          try {
-            console.info('Verificando token existente...');
-            // Podríamos verificar el token con un endpoint específico
-            // Por ahora solo validamos que exista y establecemos el usuario
-            
-            const userInfo = {
-              id: '1',
-              name: 'Operador CLC',
-              email: 'op@proclc.com',
-              role: 'admin'
-            };
-            
-            setUser(userInfo);
-            console.info('✅ Token válido encontrado');
-          } catch (tokenError) {
-            console.error('Error al verificar token:', tokenError);
-            // Si el token no es válido, lo limpiamos e intentamos login automático
-            api.clearTokens();
-            await autoLogin();
-          }
-        } catch (error) {
-          console.error('Error general al verificar la autenticación:', error);
-          api.clearTokens();
-        }
-      } else {
-        console.info('No se encontró token. Iniciando sesión automática...');
-        // Si no hay token, realizamos login automático
-        try {
-          await autoLogin();
-        } catch (error) {
-          console.error('Error al iniciar sesión automáticamente:', error);
-        }
-      }
-      
-      setLoading(false);
-    };
-    
-    checkAuth();
-  }, []);
-  
-  // Función para iniciar sesión
-  const login = async (email, password) => {
-    try {
-      // Usar credenciales reales para obtener tokens JWT del backend
-      try {
-        console.info('Iniciando sesión con credenciales reales...');
-        
-        // Obtener tokens de autenticación del backend
-        console.log('🔑 Intentando obtener token con usuario:', email || 'op@proclc.com');
-        const response = await axios.post('http://localhost:8000/api/token/', {
-          username: email || 'op@proclc.com', // Usar credenciales proporcionadas o default
-          password: password || '251510'       // Usar credenciales proporcionadas o default
-        });
-        
-        console.log('Respuesta de autenticación:', response.status);
-        
-        if (response.data && response.data.access) {
-          const { access, refresh } = response.data;
-          
-          // Guardar tokens
-          api.saveTokens(access, refresh);
-          
-          // Datos de usuario básicos (podría ampliarse con una petición a un endpoint de perfil)
-          const userInfo = {
-            id: '1',
-            name: 'Operador CLC',
-            email: 'op@proclc.com',
-            role: 'admin'
-          };
-          
-          setUser(userInfo);
-          console.info('✅ Login exitoso con tokens reales');
-          return { success: true, user: userInfo };
-        } else {
-          throw new Error('Formato de respuesta de autenticación inesperado');
-        }
-      } catch (apiError) {
-        console.error('Error al autenticar con el backend:', apiError);
-        
-        // Si falla la autenticación real, usar modo de respaldo para desarrollo
-        console.warn('Usando autenticación simulada como respaldo...');
-        const fallbackTokens = {
-          access: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE5OTk5OTk5OTl9.demo-signature-very-secure',
-          refresh: 'refresh-token-example-very-secure'
-        };
+      // En desarrollo, usar modo de respaldo
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Usando autenticación simulada como respaldo');
+        api.saveTokens('present-in-httponly-cookie', 'present-in-httponly-cookie');
         
         const fallbackUser = {
           id: '1',
@@ -175,32 +135,167 @@ export const AuthProvider = ({ children }) => {
           role: 'admin'
         };
         
-        // Guardar tokens de respaldo
-        api.saveTokens(fallbackTokens.access, fallbackTokens.refresh);
         setUser(fallbackUser);
-        
-        // Aún así retornamos éxito para permitir el funcionamiento durante desarrollo
+        setError(null);
         return { success: true, user: fallbackUser };
+      }
+      
+      setError('No se pudo iniciar sesión automáticamente');
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUserProfile]);
+
+  /**
+   * Inicializa la autenticación al cargar la aplicación
+   */
+  useEffect(() => {
+    const initAuth = async () => {
+      setLoading(true);
+      try {
+        // Verificar si hay una sesión válida
+        console.info('Verificando sesión existente...');
+        const isSessionValid = await checkSession();
+        
+        if (isSessionValid) {
+          // Obtener información del usuario
+          const userInfo = await fetchUserProfile();
+          api.saveTokens('present-in-httponly-cookie', 'present-in-httponly-cookie');
+          setUser(userInfo);
+          setError(null);
+          console.info('✅ Sesión válida encontrada');
+        } else {
+          // Intentar login automático si no hay sesión válida
+          console.info('No se encontró sesión válida. Intentando login automático...');
+          await autoLogin();
+        }
+      } catch (error) {
+        console.error('Error al inicializar autenticación:', error);
+        setError('Error al verificar autenticación');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initAuth();
+  }, [autoLogin, checkSession, fetchUserProfile]);
+  
+  /**
+   * Función para iniciar sesión
+   * @param {string} email - Email o nombre de usuario
+   * @param {string} password - Contraseña
+   * @returns {Promise<Object>} Resultado del login
+   */
+  const login = useCallback(async (email, password) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.info('Iniciando sesión...');
+      
+      const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
+        username: email,
+        password: password
+      }, {
+        withCredentials: true
+      });
+      
+      if (response.status === 200) {
+        // Actualizar estado interno
+        api.saveTokens('present-in-httponly-cookie', 'present-in-httponly-cookie');
+        
+        // Obtener perfil de usuario
+        const userInfo = await fetchUserProfile();
+        
+        setUser(userInfo);
+        console.info('✅ Login exitoso');
+        return { success: true, user: userInfo };
+      } else {
+        throw new Error('Error de autenticación');
       }
     } catch (error) {
       console.error('Error de login:', error);
-      return { success: false, error: error.message };
+      
+      // En desarrollo, permitir login simulado en caso de error
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Usando autenticación simulada como respaldo...');
+        
+        api.saveTokens('present-in-httponly-cookie', 'present-in-httponly-cookie');
+        
+        const fallbackUser = {
+          id: '1',
+          name: 'Usuario Respaldo',
+          email: email || 'op@proclc.com',
+          role: 'admin'
+        };
+        
+        setUser(fallbackUser);
+        return { success: true, user: fallbackUser };
+      }
+      
+      const errorMessage = error.response?.data?.detail || error.message || 'Error de autenticación';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [fetchUserProfile]);
   
-  // Función para cerrar sesión
-  const logout = () => {
-    api.clearTokens();
-    setUser(null);
-  };
+  /**
+   * Función para cerrar sesión
+   * @param {string} redirectTo - Ruta a la que redirigir después del logout
+   */
+  const logout = useCallback(async (redirectTo = '/login') => {
+    setLoading(true);
+    
+    try {
+      await axios.post(
+        AUTH_ENDPOINTS.LOGOUT,
+        {},
+        { withCredentials: true }
+      );
+      console.info('✅ Logout exitoso');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      // Limpiar estado local independientemente del resultado
+      api.clearTokens();
+      setUser(null);
+      setError(null);
+      setLoading(false);
+      navigate(redirectTo);
+    }
+  }, [navigate]);
+  
+  /**
+   * Verifica los permisos del usuario
+   * @param {string|Array} requiredRole - Rol o roles requeridos
+   * @returns {boolean} True si el usuario tiene el rol requerido
+   */
+  const hasRole = useCallback((requiredRole) => {
+    if (!user) return false;
+    
+    // Si se proporciona un array de roles
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(user.role);
+    }
+    
+    // Si se proporciona un solo rol
+    return user.role === requiredRole;
+  }, [user]);
   
   // Valor del contexto que estará disponible
   const value = {
     user,
     isAuthenticated: !!user,
     loading,
+    error,
     login,
-    logout
+    logout,
+    refresh,
+    checkSession,
+    hasRole
   };
   
   return (

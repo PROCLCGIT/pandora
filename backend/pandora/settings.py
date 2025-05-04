@@ -19,16 +19,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Inicializar environ
 env = environ.Env(
-    # Valores por defecto
-    DEBUG=(bool, True),
+    # Valores por defecto - no se usarán si están definidos en .env
+    DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1']),
-    CORS_ALLOWED_ORIGINS=(list, ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']),
-    SECRET_KEY=(str, 'django-insecure-=&$t*#_n$wj+-afnsdlqu@3um4!^-6!zhy-+sii7u!p6u!g_aq'),
-    DB_NAME=(str, 'dbappclc'),
-    DB_USER=(str, 'clc'),
-    DB_PASSWORD=(str, 'Ws112244QQ+'),
-    DB_HOST=(str, '192.168.50.202'),
-    DB_PORT=(str, '3306'),
+    CORS_ALLOWED_ORIGINS=(list, ['http://localhost:3000', 'http://localhost:5173']),
+    SECRET_KEY=(str, ''),  # Valor vacío para forzar el uso de variable de entorno
+    DB_NAME=(str, ''),
+    DB_USER=(str, ''),
+    DB_PASSWORD=(str, ''),
+    DB_HOST=(str, ''),
+    DB_PORT=(str, ''),
+    JWT_COOKIE_SECURE=(bool, False),  # False por defecto para desarrollo, True para producción
 )
 
 # Construir ruta al archivo .env
@@ -87,6 +88,7 @@ AUTH_USER_MODEL = 'users.User'
 # CORS configuration
 CORS_ALLOW_ALL_ORIGINS = True  # Temporalmente permitimos todos los orígenes para diagnóstico
 # CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')  # Comentado temporalmente
+CORS_ALLOW_CREDENTIALS = True  # Necesario para permitir cookies en peticiones CORS
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -106,6 +108,15 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# CSRF configuration
+CSRF_USE_SESSIONS = False  # No usar sesiones para el token CSRF
+CSRF_COOKIE_SECURE = not DEBUG  # En producción, solo por HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Javascript debe acceder a este token
+CSRF_COOKIE_SAMESITE = 'Lax'  # Compromiso entre seguridad y usabilidad
+
+# Permitir que las cookies se incluyan en las solicitudes
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'pandora.urls'
 
@@ -198,6 +209,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ============================================
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'users.auth.CookieTokenAuthenticationBackend',  # Nuevo backend para cookies JWT
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Mantener para compatibilidad
+    ),
+    
     # Paginación - Se maneja específicamente en cada ViewSet
     'PAGE_SIZE': 10,
     
@@ -206,12 +222,6 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ],
-    
-    # Autenticación
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ],
     
     # Permisos - Cambiado para requerir autenticación por defecto
@@ -261,17 +271,33 @@ SWAGGER_SETTINGS = {
     'REFETCH_SCHEMA_ON_LOGOUT': True,
 }
 
-# Configuración de JWT para autenticación - Duración reducida
+# Configuración de CSRF para trabajar con cookies HttpOnly
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False  # Debe ser False para que JavaScript pueda acceder al token CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = env.bool('JWT_COOKIE_SECURE', default=not DEBUG)
+
+# Configuración de JWT para autenticación - Valores desde variables de entorno
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(env('JWT_ACCESS_TOKEN_LIFETIME_MINUTES', default=5))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(env('JWT_REFRESH_TOKEN_LIFETIME_DAYS', default=1))),
+    'ROTATE_REFRESH_TOKENS': env.bool('JWT_ROTATE_REFRESH_TOKENS', default=True),
+    'BLACKLIST_AFTER_ROTATION': env.bool('JWT_BLACKLIST_AFTER_ROTATION', default=True),
     'ALGORITHM': 'HS256',
+    # La clave secreta se obtiene de las configuraciones de Django
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+    
+    # Nuevas configuraciones para cookies JWT
+    'AUTH_COOKIE': 'access_token',  # Nombre de la cookie de token de acceso
+    'AUTH_COOKIE_REFRESH': 'refresh_token',  # Nombre de la cookie de token de refresco
+    'AUTH_COOKIE_DOMAIN': None,  # Dominio para las cookies
+    'AUTH_COOKIE_SECURE': env.bool('JWT_COOKIE_SECURE', default=not DEBUG),  # Solo HTTPS en producción
+    'AUTH_COOKIE_HTTP_ONLY': True,  # No accesible por JavaScript
+    'AUTH_COOKIE_PATH': '/',  # Ruta de la cookie
+    'AUTH_COOKIE_SAMESITE': 'Lax'  # Configuración SameSite para evitar CSRF
 }

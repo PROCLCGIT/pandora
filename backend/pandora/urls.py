@@ -11,6 +11,12 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from users.auth import (
+    CookieTokenObtainPairView,
+    CookieTokenRefreshView,
+    CookieTokenVerifyView,
+    CookieTokenLogoutView,
+)
 
 # Configuración de la documentación Swagger/OpenAPI
 schema_view = get_schema_view(
@@ -34,7 +40,13 @@ urlpatterns = [
     path('api/basic/', include('basic.urls')),
     path('api/directorio/', include('directorio.urls')),
     
-    # URLs para autenticación JWT
+    # URLs para autenticación JWT con cookies (nuevas)
+    path('api/auth/login/', CookieTokenObtainPairView.as_view(), name='token_obtain_pair_cookie'),
+    path('api/auth/refresh/', CookieTokenRefreshView.as_view(), name='token_refresh_cookie'),
+    path('api/auth/verify/', CookieTokenVerifyView.as_view(), name='token_verify_cookie'),
+    path('api/auth/logout/', CookieTokenLogoutView.as_view(), name='token_logout_cookie'),
+    
+    # URLs para autenticación JWT tradicional (mantener para compatibilidad)
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),

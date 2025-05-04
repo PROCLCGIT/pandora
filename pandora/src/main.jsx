@@ -29,10 +29,8 @@ const queryClient = new QueryClient({
         // Log para errores de autenticación
         if (error?.response?.status === 401) {
           console.warn('Error de autenticación 401 en React Query');
-          // Forzar un token para desarrollo
-          const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE5OTk5OTk5OTl9.demo-signature-very-secure-fixed';
-          localStorage.setItem('accessToken', demoToken);
-          localStorage.setItem('refreshToken', 'refresh-token-example');
+          // No almacenamos tokens en localStorage - las cookies HttpOnly se manejan automáticamente
+          // Refrescaremos el token en el interceptor de axios
         }
       }
     },
