@@ -15,6 +15,9 @@ from directorio.serializers import ProveedorSerializer, ClienteSerializer
 class ImagenReferenciaProductoOfertadoSerializer(serializers.ModelSerializer):
     """Serializer para el modelo ImagenReferenciaProductoOfertado"""
     imagen_url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+    webp_url = serializers.SerializerMethodField()
+    original_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ImagenReferenciaProductoOfertado
@@ -22,12 +25,39 @@ class ImagenReferenciaProductoOfertadoSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at')
     
     def get_imagen_url(self, obj):
-        """Devuelve la URL completa de la imagen"""
-        if obj.imagen:
+        """Devuelve la URL completa de la imagen principal (webp o la original)"""
+        request = self.context.get('request')
+        # Usar las propiedades del modelo que ya incluyen /media/
+        url = obj.webp_url or obj.thumbnail_url or obj.original_url or (obj.imagen.url if obj.imagen else None)
+        if url and request:
+            return request.build_absolute_uri(url)
+        return url
+    
+    def get_thumbnail_url(self, obj):
+        """Devuelve la URL de la miniatura"""
+        if obj.imagen_thumbnail:
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.imagen.url)
-            return obj.imagen.url
+                return request.build_absolute_uri(obj.thumbnail_url)
+            return obj.thumbnail_url  # Usar la propiedad que agrega /media/
+        return None
+    
+    def get_webp_url(self, obj):
+        """Devuelve la URL de la versión WebP"""
+        if obj.imagen_webp:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.webp_url)
+            return obj.webp_url  # Usar la propiedad que agrega /media/
+        return None
+    
+    def get_original_url(self, obj):
+        """Devuelve la URL de la imagen original"""
+        if obj.imagen_original:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.original_url)
+            return obj.original_url  # Usar la propiedad que agrega /media/
         return None
 
 
@@ -123,10 +153,51 @@ class ProductoDisponibleSerializer(serializers.ModelSerializer):
 
 class ImagenProductoDisponibleSerializer(serializers.ModelSerializer):
     """Serializer para el modelo ImagenProductoDisponible"""
+    imagen_url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+    webp_url = serializers.SerializerMethodField()
+    original_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = ImagenProductoDisponible
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at')
+    
+    def get_imagen_url(self, obj):
+        """Devuelve la URL completa de la imagen principal (webp o la original)"""
+        request = self.context.get('request')
+        # Usar las propiedades del modelo que ya incluyen /media/
+        url = obj.webp_url or obj.thumbnail_url or obj.original_url or (obj.imagen.url if obj.imagen else None)
+        if url and request:
+            return request.build_absolute_uri(url)
+        return url
+    
+    def get_thumbnail_url(self, obj):
+        """Devuelve la URL de la miniatura"""
+        if obj.imagen_thumbnail:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.thumbnail_url)
+            return obj.thumbnail_url  # Usar la propiedad que agrega /media/
+        return None
+    
+    def get_webp_url(self, obj):
+        """Devuelve la URL de la versión WebP"""
+        if obj.imagen_webp:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.webp_url)
+            return obj.webp_url  # Usar la propiedad que agrega /media/
+        return None
+    
+    def get_original_url(self, obj):
+        """Devuelve la URL de la imagen original"""
+        if obj.imagen_original:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.original_url)
+            return obj.original_url  # Usar la propiedad que agrega /media/
+        return None
 
 
 class DocumentoProductoDisponibleSerializer(serializers.ModelSerializer):

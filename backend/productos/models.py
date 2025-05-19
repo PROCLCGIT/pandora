@@ -3,6 +3,65 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+import logging
+import os
+from datetime import datetime
+from PIL import Image
+
+logger = logging.getLogger(__name__)
+
+# Funciones upload_to personalizadas
+def upload_imagen_producto_ofertado(instance, filename):
+    """
+    Función personalizada para definir la ruta de subida de imágenes de productos ofertados.
+    La imagen se procesará para crear múltiples versiones.
+    """
+    codigo = instance.producto_ofertado.code
+    
+    # Solo retornar la carpeta base, el procesador manejará las subcarpetas
+    return f'productos/productosofertados/imagenes/{codigo}/temp_{filename}'
+
+def upload_documento_producto_ofertado(instance, filename):
+    """
+    Función personalizada para definir la ruta de subida de documentos de productos ofertados.
+    Formato: productos/productosofertados/documentos/{codigo}/{tipo_documento}_{timestamp}.{ext}
+    """
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    codigo = instance.producto_ofertado.code
+    tipo_doc = instance.tipo_documento.replace(' ', '_').replace('/', '-')
+    ext = filename.split('.')[-1]
+    
+    # Usar solo el código como nombre de carpeta
+    carpeta = codigo
+    nuevo_nombre = f"{tipo_doc}_{timestamp}.{ext}"
+    
+    return f'productos/productosofertados/documentos/{carpeta}/{nuevo_nombre}'
+
+def upload_imagen_producto_disponible(instance, filename):
+    """
+    Función personalizada para definir la ruta de subida de imágenes de productos disponibles.
+    La imagen se procesará para crear múltiples versiones.
+    """
+    codigo = instance.producto_disponible.code
+    
+    # Solo retornar la carpeta base, el procesador manejará las subcarpetas
+    return f'productos/productosdisponibles/imagenes/{codigo}/temp_{filename}'
+
+def upload_documento_producto_disponible(instance, filename):
+    """
+    Función personalizada para definir la ruta de subida de documentos de productos disponibles.
+    Formato: productos/productosdisponibles/documentos/{codigo}/{tipo_documento}_{timestamp}.{ext}
+    """
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    codigo = instance.producto_disponible.code
+    tipo_doc = instance.tipo_documento.replace(' ', '_').replace('/', '-')
+    ext = filename.split('.')[-1]
+    
+    # Usar solo el código como nombre de carpeta
+    carpeta = codigo
+    nuevo_nombre = f"{tipo_doc}_{timestamp}.{ext}"
+    
+    return f'productos/productosdisponibles/documentos/{carpeta}/{nuevo_nombre}'
 
 class ProductoOfertado(models.Model):
     """
@@ -80,10 +139,20 @@ class ImagenReferenciaProductoOfertado(models.Model):
         related_name='imagenes',
         verbose_name='Producto Ofertado'
     )
-    imagen = models.FileField(upload_to='productos/imagenes/%Y/%m/%d/', verbose_name='Imagen')
+    imagen = models.FileField(upload_to=upload_imagen_producto_ofertado, verbose_name='Imagen')
     descripcion = models.CharField(max_length=255, blank=True, verbose_name='Descripción')
     orden = models.IntegerField(default=0, verbose_name='Orden')
     is_primary = models.BooleanField(default=False, verbose_name='Imagen principal')
+    # Nuevos campos para mejor gestión
+    titulo = models.CharField(max_length=255, blank=True, verbose_name='Título')
+    alt_text = models.CharField(max_length=255, blank=True, verbose_name='Texto alternativo')
+    tags = models.CharField(max_length=500, blank=True, verbose_name='Etiquetas')
+    # Campos de metadatos
+    file_size = models.PositiveIntegerField(null=True, blank=True, verbose_name='Tamaño (bytes)')
+    width = models.PositiveIntegerField(null=True, blank=True, verbose_name='Ancho')
+    height = models.PositiveIntegerField(null=True, blank=True, verbose_name='Alto')
+    format = models.CharField(max_length=10, blank=True, verbose_name='Formato')
+    # Tracking
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -93,6 +162,10 @@ class ImagenReferenciaProductoOfertado(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')
+    # Campos adicionales para las versiones de imagen
+    imagen_original = models.CharField(max_length=500, blank=True, verbose_name='Ruta imagen original')
+    imagen_thumbnail = models.CharField(max_length=500, blank=True, verbose_name='Ruta miniatura')
+    imagen_webp = models.CharField(max_length=500, blank=True, verbose_name='Ruta WebP')
 
     class Meta:
         verbose_name = 'Imagen de Referencia'
@@ -101,6 +174,122 @@ class ImagenReferenciaProductoOfertado(models.Model):
 
     def __str__(self):
         return f"Imagen {self.orden} de {self.producto_ofertado}"
+    
+    @property
+    def original_url(self):
+        """Retorna la URL de la imagen original"""
+        if self.imagen_original:
+            return f"{settings.MEDIA_URL}{self.imagen_original}"
+        return None
+    
+    @property
+    def thumbnail_url(self):
+        """Retorna la URL de la miniatura"""
+        if self.imagen_thumbnail:
+            return f"{settings.MEDIA_URL}{self.imagen_thumbnail}"
+        return None
+    
+    @property
+    def webp_url(self):
+        """Retorna la URL de la versión WebP"""
+        if self.imagen_webp:
+            return f"{settings.MEDIA_URL}{self.imagen_webp}"
+        return None
+    
+    @property
+    def get_absolute_url(self):
+        """Retorna la URL principal de la imagen (WebP preferida)"""
+        return self.webp_url or self.thumbnail_url or self.original_url or self.imagen.url
+    
+    def save(self, *args, **kwargs):
+        # Si es una imagen nueva y no ha sido procesada
+        if self.imagen and not self.pk:
+            from productos.image_processor import ImageProcessor
+            from django.core.files.storage import default_storage
+            import os
+            
+            processor = ImageProcessor()
+            
+            # Obtener la ruta base para las imágenes
+            codigo = self.producto_ofertado.code
+            base_path = f'productos/productosofertados/imagenes/{codigo}'
+            media_root = settings.MEDIA_ROOT
+            full_base_path = os.path.join(media_root, base_path)
+            
+            try:
+                # Procesar la imagen y obtener las rutas de las versiones
+                versions = processor.process_image(self.imagen, full_base_path)
+                
+                # Guardar las rutas relativas
+                if 'original' in versions:
+                    self.imagen_original = os.path.relpath(versions['original'], media_root)
+                if 'thumbnail' in versions:
+                    self.imagen_thumbnail = os.path.relpath(versions['thumbnail'], media_root)
+                if 'webp' in versions:
+                    self.imagen_webp = os.path.relpath(versions['webp'], media_root)
+                    # Usar la versión WebP como imagen principal
+                    self.imagen.name = self.imagen_webp
+                
+                # Obtener metadatos de la imagen original
+                if versions.get('original'):
+                    img = Image.open(versions['original'])
+                    self.width = img.width
+                    self.height = img.height
+                    self.format = img.format
+                    self.file_size = os.path.getsize(versions['original'])
+                
+            except Exception as e:
+                logger.error(f"Error al procesar imagen: {e}")
+                raise
+        
+        # Establecer título y alt_text si no existen
+        if not self.titulo:
+            self.titulo = f"Imagen {self.orden + 1} - {self.producto_ofertado.nombre}"
+        if not self.alt_text:
+            self.alt_text = f"{self.producto_ofertado.nombre} - {self.descripcion or 'Imagen del producto'}"
+        
+        # Si es la imagen principal, quitar ese estado de otras imágenes
+        if self.is_primary and self.pk is None:
+            ImagenReferenciaProductoOfertado.objects.filter(
+                producto_ofertado=self.producto_ofertado,
+                is_primary=True
+            ).update(is_primary=False)
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def get_absolute_url(self):
+        return self.imagen.url if self.imagen else None
+    
+    @property
+    def original_url(self):
+        """URL de la imagen original"""
+        if self.imagen_original:
+            return os.path.join(settings.MEDIA_URL, self.imagen_original)
+        return None
+    
+    @property
+    def thumbnail_url(self):
+        """URL de la miniatura"""
+        if self.imagen_thumbnail:
+            return os.path.join(settings.MEDIA_URL, self.imagen_thumbnail)
+        return None
+    
+    @property
+    def webp_url(self):
+        """URL de la versión WebP"""
+        if self.imagen_webp:
+            return os.path.join(settings.MEDIA_URL, self.imagen_webp)
+        return None
+    
+    def get_version_urls(self):
+        """Retorna un diccionario con todas las URLs disponibles"""
+        return {
+            'original': self.original_url,
+            'thumbnail': self.thumbnail_url,
+            'webp': self.webp_url,
+            'default': self.get_absolute_url
+        }
 
 class DocumentoProductoOfertado(models.Model):
     """
@@ -113,7 +302,7 @@ class DocumentoProductoOfertado(models.Model):
         related_name='documentos',
         verbose_name='Producto Ofertado'
     )
-    documento = models.FileField(upload_to='productos/documentos/%Y/%m/%d/', verbose_name='Documento')
+    documento = models.FileField(upload_to=upload_documento_producto_ofertado, verbose_name='Documento')
     tipo_documento = models.CharField(max_length=100, verbose_name='Tipo de documento')
     titulo = models.CharField(max_length=255, verbose_name='Título')
     descripcion = models.TextField(blank=True, verbose_name='Descripción')
@@ -243,10 +432,20 @@ class ImagenProductoDisponible(models.Model):
         related_name='imagenes',
         verbose_name='Producto Disponible'
     )
-    imagen = models.FileField(upload_to='productos/imagenes/%Y/%m/%d/', verbose_name='Imagen')
+    imagen = models.FileField(upload_to=upload_imagen_producto_disponible, verbose_name='Imagen')
     descripcion = models.CharField(max_length=255, blank=True, verbose_name='Descripción')
     orden = models.IntegerField(default=0, verbose_name='Orden')
     is_primary = models.BooleanField(default=False, verbose_name='Imagen principal')
+    # Nuevos campos para mejor gestión
+    titulo = models.CharField(max_length=255, blank=True, verbose_name='Título')
+    alt_text = models.CharField(max_length=255, blank=True, verbose_name='Texto alternativo')
+    tags = models.CharField(max_length=500, blank=True, verbose_name='Etiquetas')
+    # Campos de metadatos
+    file_size = models.PositiveIntegerField(null=True, blank=True, verbose_name='Tamaño (bytes)')
+    width = models.PositiveIntegerField(null=True, blank=True, verbose_name='Ancho')
+    height = models.PositiveIntegerField(null=True, blank=True, verbose_name='Alto')
+    format = models.CharField(max_length=10, blank=True, verbose_name='Formato')
+    # Tracking
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -256,6 +455,10 @@ class ImagenProductoDisponible(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')
+    # Campos adicionales para las versiones de imagen
+    imagen_original = models.CharField(max_length=500, blank=True, verbose_name='Ruta imagen original')
+    imagen_thumbnail = models.CharField(max_length=500, blank=True, verbose_name='Ruta miniatura')
+    imagen_webp = models.CharField(max_length=500, blank=True, verbose_name='Ruta WebP')
 
     class Meta:
         verbose_name = 'Imagen de Producto Disponible'
@@ -264,6 +467,122 @@ class ImagenProductoDisponible(models.Model):
 
     def __str__(self):
         return f"Imagen {self.orden} de {self.producto_disponible}"
+    
+    @property
+    def original_url(self):
+        """Retorna la URL de la imagen original"""
+        if self.imagen_original:
+            return f"{settings.MEDIA_URL}{self.imagen_original}"
+        return None
+    
+    @property
+    def thumbnail_url(self):
+        """Retorna la URL de la miniatura"""
+        if self.imagen_thumbnail:
+            return f"{settings.MEDIA_URL}{self.imagen_thumbnail}"
+        return None
+    
+    @property
+    def webp_url(self):
+        """Retorna la URL de la versión WebP"""
+        if self.imagen_webp:
+            return f"{settings.MEDIA_URL}{self.imagen_webp}"
+        return None
+    
+    @property
+    def get_absolute_url(self):
+        """Retorna la URL principal de la imagen (WebP preferida)"""
+        return self.webp_url or self.thumbnail_url or self.original_url or self.imagen.url
+    
+    def save(self, *args, **kwargs):
+        # Si es una imagen nueva y no ha sido procesada
+        if self.imagen and not self.pk:
+            from productos.image_processor import ImageProcessor
+            from django.core.files.storage import default_storage
+            import os
+            
+            processor = ImageProcessor()
+            
+            # Obtener la ruta base para las imágenes
+            codigo = self.producto_disponible.code
+            base_path = f'productos/productosdisponibles/imagenes/{codigo}'
+            media_root = settings.MEDIA_ROOT
+            full_base_path = os.path.join(media_root, base_path)
+            
+            try:
+                # Procesar la imagen y obtener las rutas de las versiones
+                versions = processor.process_image(self.imagen, full_base_path)
+                
+                # Guardar las rutas relativas
+                if 'original' in versions:
+                    self.imagen_original = os.path.relpath(versions['original'], media_root)
+                if 'thumbnail' in versions:
+                    self.imagen_thumbnail = os.path.relpath(versions['thumbnail'], media_root)
+                if 'webp' in versions:
+                    self.imagen_webp = os.path.relpath(versions['webp'], media_root)
+                    # Usar la versión WebP como imagen principal
+                    self.imagen.name = self.imagen_webp
+                
+                # Obtener metadatos de la imagen original
+                if versions.get('original'):
+                    img = Image.open(versions['original'])
+                    self.width = img.width
+                    self.height = img.height
+                    self.format = img.format
+                    self.file_size = os.path.getsize(versions['original'])
+                
+            except Exception as e:
+                logger.error(f"Error al procesar imagen: {e}")
+                raise
+        
+        # Establecer título y alt_text si no existen
+        if not self.titulo:
+            self.titulo = f"Imagen {self.orden + 1} - {self.producto_disponible.nombre}"
+        if not self.alt_text:
+            self.alt_text = f"{self.producto_disponible.nombre} - {self.descripcion or 'Imagen del producto'}"
+        
+        # Si es la imagen principal, quitar ese estado de otras imágenes
+        if self.is_primary and self.pk is None:
+            ImagenProductoDisponible.objects.filter(
+                producto_disponible=self.producto_disponible,
+                is_primary=True
+            ).update(is_primary=False)
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def get_absolute_url(self):
+        return self.imagen.url if self.imagen else None
+    
+    @property
+    def original_url(self):
+        """URL de la imagen original"""
+        if self.imagen_original:
+            return os.path.join(settings.MEDIA_URL, self.imagen_original)
+        return None
+    
+    @property
+    def thumbnail_url(self):
+        """URL de la miniatura"""
+        if self.imagen_thumbnail:
+            return os.path.join(settings.MEDIA_URL, self.imagen_thumbnail)
+        return None
+    
+    @property
+    def webp_url(self):
+        """URL de la versión WebP"""
+        if self.imagen_webp:
+            return os.path.join(settings.MEDIA_URL, self.imagen_webp)
+        return None
+    
+    def get_version_urls(self):
+        """Retorna un diccionario con todas las URLs disponibles"""
+        return {
+            'original': self.original_url,
+            'thumbnail': self.thumbnail_url,
+            'webp': self.webp_url,
+            'default': self.get_absolute_url
+        }
 
 class DocumentoProductoDisponible(models.Model):
     """
@@ -276,7 +595,7 @@ class DocumentoProductoDisponible(models.Model):
         related_name='documentos',
         verbose_name='Producto Disponible'
     )
-    documento = models.FileField(upload_to='productos/documentos/%Y/%m/%d/', verbose_name='Documento')
+    documento = models.FileField(upload_to=upload_documento_producto_disponible, verbose_name='Documento')
     tipo_documento = models.CharField(max_length=100, verbose_name='Tipo de documento')
     titulo = models.CharField(max_length=255, verbose_name='Título')
     descripcion = models.TextField(blank=True, verbose_name='Descripción')

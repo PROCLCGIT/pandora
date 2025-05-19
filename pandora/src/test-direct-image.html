@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Directo de Imagen</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        img { border: 2px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test Directo de Imagen</h1>
+    
+    <h2>URLs a probar:</h2>
+    
+    <div>
+        <h3>1. Desde el backend directo:</h3>
+        <img src="http://localhost:8000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg" 
+             width="200" 
+             alt="Backend directo">
+        <p>URL: http://localhost:8000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+    </div>
+    
+    <div>
+        <h3>2. Desde el frontend (con proxy):</h3>
+        <img src="/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg" 
+             width="200" 
+             alt="Frontend proxy">
+        <p>URL: /media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+    </div>
+    
+    <script>
+        console.log('Página cargada');
+        
+        // Test con fetch
+        fetch('/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg')
+            .then(response => {
+                console.log('Fetch response:', response.status, response.type);
+                return response.blob();
+            })
+            .then(blob => {
+                console.log('Blob size:', blob.size);
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+    </script>
+</body>
+</html>

@@ -36,29 +36,48 @@ export default function ProductosOfertadosList({
     {
       header: 'Imagen',
       accessor: 'imagenes',
-      style: { width: '80px', textAlign: 'center' },
       cell: (producto) => {
-        // Usar la primera imagen disponible o mostrar un placeholder
-        const primeraImagen = producto.imagenes?.find(img => img.is_primary) || producto.imagenes?.[0];
+        // Agregar logs para depuración
+        console.log(`[DEBUG ${producto.code}] Producto:`, producto);
+        console.log(`[DEBUG ${producto.code}] Imágenes:`, producto.imagenes);
         
-        if (primeraImagen && primeraImagen.imagen_url) {
+        // Obtener la primera imagen o la imagen principal
+        const imagen = producto.imagenes?.find(img => img.is_primary) || producto.imagenes?.[0];
+        
+        console.log(`[DEBUG ${producto.code}] Imagen seleccionada:`, imagen);
+        
+        if (imagen?.thumbnail_url) {
+          // Asegurar que la URL use el backend correcto
+          const imageUrl = imagen.thumbnail_url.replace('http://localhost:8000', 'http://localhost:8000');
+          
+          console.log(`[DEBUG ${producto.code}] URL final:`, imageUrl);
+          
           return (
             <div className="flex items-center justify-center">
-              <img
-                src={primeraImagen.imagen_url}
-                alt={producto.nombre}
-                className="w-12 h-12 object-cover rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:opacity-80 hover:shadow-md transition-all"
-                onClick={() => window.open(primeraImagen.imagen_url, '_blank')}
-                title="Click para ver imagen completa"
+              <img 
+                src={imageUrl} 
+                alt={imagen.alt_text || `Miniatura de ${producto.nombre}`}
+                className="w-12 h-12 object-cover rounded border border-gray-200"
+                loading="lazy"
+                onError={(e) => {
+                  console.error(`[ERROR ${producto.code}] No se pudo cargar imagen:`, e.target.src);
+                  console.error(`[ERROR ${producto.code}] Error completo:`, e);
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<div class="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center"><svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
+                }}
               />
             </div>
           );
         }
         
+        console.log(`[DEBUG ${producto.code}] No hay imagen con thumbnail_url`);
+        
         return (
           <div className="flex items-center justify-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
-              <Package className="h-6 w-6 text-gray-400" />
+            <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
           </div>
         );

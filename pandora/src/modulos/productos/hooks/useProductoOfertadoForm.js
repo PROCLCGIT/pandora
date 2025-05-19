@@ -32,6 +32,13 @@ const productoOfertadoSchema = z.object({
  * @param {Function} setDocumentos - Función para actualizar el estado de documentos
  * @returns {Object} Métodos y estados del formulario
  */
+// Función para generar código aleatorio de producto ofertado
+const generateOftCode = () => {
+  const randomNumber = Math.floor(Math.random() * 1000); // Genera un número entre 0 y 999
+  const paddedNumber = randomNumber.toString().padStart(3, '0'); // Asegura que tenga 3 dígitos, ej: 007, 056, 123
+  return `OFT-A${paddedNumber}`;
+};
+
 export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
   const isEditing = !!id;
 
@@ -67,12 +74,13 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
     }
   );
 
-  // Efecto para limpiar los datos cuando el ID cambia
+  // Efecto para limpiar los datos cuando el ID cambia y generar código para nuevos productos
   useEffect(() => {
     // Limpiar imágenes y documentos al cambiar el ID o al montar el componente
     if (!isEditing) {
+      const newCode = generateOftCode(); // Generar código aleatorio
       reset({
-        code: '',
+        code: newCode, // Usar el código generado
         cudim: '',
         nombre: '',
         descripcion: '',

@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_yasg',
-    'imagekit',  # Para procesamiento de imágenes
+    # 'imagekit',  # Para procesamiento de imágenes (no es necesario con nuestro procesador personalizado)
     # Aplicaciones propias
     'users.apps.UsersConfig',  # Nueva app para modelo de usuario personalizado
     'basic',
@@ -300,13 +300,33 @@ CSRF_COOKIE_SECURE = env.bool('JWT_COOKIE_SECURE', default=not DEBUG)
 
 # Configuración para imágenes de productos
 PRODUCT_IMAGE_SIZES = {
-    'thumbnail': (150, 150),
-    'standard': (800, 600),
-    'large': (1200, 900),
+    'thumbnail': (150, 150),    # Miniatura pequeña
+    'webp': (800, 600),         # WebP optimizado para web
+    'original': None,           # Mantener tamaño original
 }
 
-IMAGE_QUALITY = 85
-IMAGE_FORMAT = 'WEBP'  # Alternativas: 'JPEG', 'PNG'
+# Configuración de calidad para cada formato
+IMAGE_QUALITY_SETTINGS = {
+    'thumbnail': 75,
+    'webp': 85,
+    'original': 100,
+}
+
+# Configuraciones de procesamiento de imagen
+IMAGE_PROCESSING_CONFIG = {
+    'preserve_original': True,
+    'create_thumbnail': True,
+    'create_webp': True,
+    'webp_quality': 85,
+    'thumbnail_quality': 75,
+    'original_folder': 'originales',
+    'thumbnail_folder': 'miniaturas',
+    'webp_folder': 'webp',
+}
+
+# Configuraciones adicionales de imagen requeridas
+IMAGE_FORMAT = 'WEBP'  # Formato por defecto para imágenes
+IMAGE_QUALITY = 85     # Calidad por defecto
 
 # Configuración de JWT para autenticación - Valores desde variables de entorno
 SIMPLE_JWT = {

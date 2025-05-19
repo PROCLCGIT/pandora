@@ -25,6 +25,7 @@ const withSuspense = (Component) => (
 const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
 const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes'));
 const ProductosModule = lazy(() => import('./modulos/productos/routes/ProductosRoutes'));
+const ProductosDebugModule = lazy(() => import('./modulos/productos/routes/ProductosDebugRoutes'));
 const ProformasModule = lazy(() => import('./modulos/proformas/routes/ProformasRoutes'));
 const BriefModule = lazy(() => import('./modulos/brief/routes/BriefRoutes'));
 const DirectorioModule = lazy(() => import('./modulos/directorio/routes/DirectorioRoutes'));
@@ -50,6 +51,7 @@ const protectedChildren = [
   { path: 'basic/*', element: withSuspense(BasicModule) },
   { path: 'directorio/*', element: withSuspense(DirectorioModule) },
   { path: 'productos/*', element: withSuspense(ProductosModule) },
+  { path: 'productos-debug/*', element: withSuspense(ProductosDebugModule) },
   { path: 'proformas/*', element: withSuspense(ProformasModule) },
   { path: 'brief/*', element: withSuspense(BriefModule) },
   { path: 'legal/*', element: withSuspense(() => <ModulePlaceholder moduleName="Legal" />) },

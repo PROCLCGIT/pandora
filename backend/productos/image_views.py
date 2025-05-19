@@ -1,175 +1,198 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .product_images import ProductImage
-from .models import ProductoOfertado, ProductoDisponible
+from django.views.decorators.http import require_http_methods
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import ProductoOfertado, ProductoDisponible, ImagenReferenciaProductoOfertado, ImagenProductoDisponible
+from .image_processor import ImageProcessor
 import json
+import logging
 
-@csrf_exempt
+logger = logging.getLogger(__name__)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def upload_product_image(request, product_id, product_type='ofertado'):
     """
     Vista para subir una imagen a un producto.
-    Args:
-        request: Objeto HttpRequest
-        product_id: ID del producto
-        product_type: Tipo de producto ('ofertado' o 'disponible')
+    Procesa la imagen creando versiones: original, miniatura y webp.
     """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
     try:
+        # Obtener el producto
         if product_type == 'ofertado':
-            product = ProductoOfertado.objects.get(id=product_id)
-            product_field = 'producto_ofertado'
-        else:  # 'disponible'
-            product = ProductoDisponible.objects.get(id=product_id)
-            product_field = 'producto_disponible'
+            producto = ProductoOfertado.objects.get(pk=product_id)
+            ImageModel = ImagenReferenciaProductoOfertado
+        else:
+            producto = ProductoDisponible.objects.get(pk=product_id)
+            ImageModel = ImagenProductoDisponible
+        
+        # Verificar archivo de imagen
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'No se proporcionó ninguna imagen'}, status=400)
+        
+        image_file = request.FILES['image']
+        
+        # Obtener metadatos si se proporcionan
+        metadata = {
+            'titulo': request.POST.get('titulo', ''),
+            'descripcion': request.POST.get('descripcion', ''),
+            'orden': int(request.POST.get('orden', 0)),
+            'is_primary': request.POST.get('is_primary', 'false').lower() == 'true'
+        }
+        
+        # Crear instancia de imagen
+        kwargs = {'imagen': image_file,
+                  'titulo': metadata['titulo'],
+                  'descripcion': metadata['descripcion'],
+                  'orden': metadata['orden'],
+                  'is_primary': metadata['is_primary'],
+                  'created_by': request.user}
+        
+        if product_type == 'ofertado':
+            kwargs['producto_ofertado'] = producto
+        else:
+            kwargs['producto_disponible'] = producto
+        
+        imagen = ImageModel(**kwargs)
+        
+        # Guardar - el procesamiento se hace automáticamente en el método save()
+        imagen.save()
+        
+        # Preparar respuesta
+        response_data = {
+            'id': imagen.id,
+            'titulo': imagen.titulo,
+            'descripcion': imagen.descripcion,
+            'orden': imagen.orden,
+            'is_primary': imagen.is_primary,
+            'urls': {
+                'original': imagen.original_url,
+                'thumbnail': imagen.thumbnail_url,
+                'webp': imagen.webp_url,
+                'default': imagen.get_absolute_url
+            },
+            'metadata': {
+                'width': imagen.width,
+                'height': imagen.height,
+                'size': imagen.file_size,
+                'format': imagen.format
+            }
+        }
+        
+        return JsonResponse(response_data, status=201)
+        
     except (ProductoOfertado.DoesNotExist, ProductoDisponible.DoesNotExist):
         return JsonResponse({'error': 'Producto no encontrado'}, status=404)
-    
-    if 'image' not in request.FILES:
-        return JsonResponse({'error': 'No se proporcionó ninguna imagen'}, status=400)
-    
-    image_file = request.FILES['image']
-    title = request.POST.get('title', '')
-    alt_text = request.POST.get('alt_text', '')
-    is_featured = json.loads(request.POST.get('is_featured', 'false').lower())
-    
-    # Datos para crear la nueva imagen
-    image_data = {
-        product_field: product,
-        'title': title,
-        'alt_text': alt_text,
-        'original': image_file,
-        'is_featured': is_featured,
-        'order': ProductImage.objects.filter(**{product_field: product}).count(),  # Orden al final
-        'created_by': request.user if request.user.is_authenticated else None
-    }
-    
-    # Crear la nueva imagen
-    image = ProductImage(**image_data)
-    image.save()
-    
-    # Devolver URLs de las diferentes versiones
-    return JsonResponse({
-        'id': image.id,
-        'original': request.build_absolute_uri(image.original.url),
-        'thumbnail': request.build_absolute_uri(image.thumbnail.url),
-        'standard': request.build_absolute_uri(image.standard.url),
-        'large': request.build_absolute_uri(image.large.url),
-        'title': image.title,
-        'alt_text': image.alt_text,
-        'is_featured': image.is_featured,
-    }, status=201)
+    except Exception as e:
+        logger.error(f"Error al subir imagen: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
-@csrf_exempt
-def delete_product_image(request, image_id):
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_product_images(request, product_id, product_type='ofertado'):
     """
-    Vista para eliminar una imagen de un producto.
-    Args:
-        request: Objeto HttpRequest
-        image_id: ID de la imagen a eliminar
+    Obtiene todas las imágenes de un producto.
     """
-    if request.method != 'DELETE':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
     try:
-        image = ProductImage.objects.get(id=image_id)
-    except ProductImage.DoesNotExist:
-        return JsonResponse({'error': 'Imagen no encontrada'}, status=404)
-    
-    # Verificar los permisos aquí si es necesario
-    
-    image.delete()
-    return JsonResponse({'success': True}, status=200)
-
-@csrf_exempt
-def update_product_image(request, image_id):
-    """
-    Vista para actualizar una imagen de un producto.
-    Args:
-        request: Objeto HttpRequest
-        image_id: ID de la imagen a actualizar
-    """
-    if request.method != 'PATCH':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
-    try:
-        image = ProductImage.objects.get(id=image_id)
-    except ProductImage.DoesNotExist:
-        return JsonResponse({'error': 'Imagen no encontrada'}, status=404)
-    
-    data = json.loads(request.body)
-    
-    # Actualizar campos según los datos recibidos
-    if 'title' in data:
-        image.title = data['title']
-    
-    if 'alt_text' in data:
-        image.alt_text = data['alt_text']
-    
-    if 'is_featured' in data and data['is_featured']:
-        image.is_featured = True
-    
-    image.save()  # El método save se encarga de actualizar el estado "is_featured" de otras imágenes
-    
-    return JsonResponse({
-        'id': image.id,
-        'original': request.build_absolute_uri(image.original.url),
-        'thumbnail': request.build_absolute_uri(image.thumbnail.url),
-        'standard': request.build_absolute_uri(image.standard.url),
-        'large': request.build_absolute_uri(image.large.url),
-        'title': image.title,
-        'alt_text': image.alt_text,
-        'is_featured': image.is_featured,
-    })
-
-@csrf_exempt
-def reorder_product_images(request, product_id, product_type='ofertado'):
-    """
-    Vista para reordenar las imágenes de un producto.
-    Args:
-        request: Objeto HttpRequest
-        product_id: ID del producto
-        product_type: Tipo de producto ('ofertado' o 'disponible')
-    """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
-    data = json.loads(request.body)
-    image_id = data.get('image_id')
-    new_order = data.get('new_order')
-    
-    if image_id is None or new_order is None:
-        return JsonResponse({'error': 'Faltan parámetros requeridos'}, status=400)
-    
-    try:
+        # Obtener el producto
         if product_type == 'ofertado':
-            product = ProductoOfertado.objects.get(id=product_id)
-            product_field = 'producto_ofertado'
-        else:  # 'disponible'
-            product = ProductoDisponible.objects.get(id=product_id)
-            product_field = 'producto_disponible'
+            producto = ProductoOfertado.objects.get(pk=product_id)
+            imagenes = producto.imagenes.all().order_by('orden')
+        else:
+            producto = ProductoDisponible.objects.get(pk=product_id)
+            imagenes = producto.imagenes.all().order_by('orden')
+        
+        # Serializar imágenes
+        images_data = []
+        for imagen in imagenes:
+            images_data.append({
+                'id': imagen.id,
+                'titulo': imagen.titulo,
+                'descripcion': imagen.descripcion,
+                'orden': imagen.orden,
+                'is_primary': imagen.is_primary,
+                'urls': {
+                    'original': imagen.original_url,
+                    'thumbnail': imagen.thumbnail_url,
+                    'webp': imagen.webp_url,
+                    'default': imagen.get_absolute_url
+                },
+                'metadata': {
+                    'width': imagen.width,
+                    'height': imagen.height,
+                    'size': imagen.file_size,
+                    'format': imagen.format
+                }
+            })
+        
+        return JsonResponse({'images': images_data})
+        
     except (ProductoOfertado.DoesNotExist, ProductoDisponible.DoesNotExist):
         return JsonResponse({'error': 'Producto no encontrado'}, status=404)
-    
+    except Exception as e:
+        logger.error(f"Error al obtener imágenes: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_product_image(request, image_id, product_type='ofertado'):
+    """
+    Elimina una imagen de producto.
+    """
     try:
-        image = ProductImage.objects.get(id=image_id, **{product_field: product})
-    except ProductImage.DoesNotExist:
+        # Obtener la imagen
+        if product_type == 'ofertado':
+            imagen = ImagenReferenciaProductoOfertado.objects.get(pk=image_id)
+        else:
+            imagen = ImagenProductoDisponible.objects.get(pk=image_id)
+        
+        # Verificar permisos (opcional - agregar lógica de permisos aquí)
+        # if not request.user.has_perm('productos.delete_imagen'):
+        #     return JsonResponse({'error': 'Sin permisos para eliminar'}, status=403)
+        
+        # Eliminar la imagen
+        imagen.delete()
+        
+        return JsonResponse({'success': True, 'message': 'Imagen eliminada correctamente'})
+        
+    except (ImagenReferenciaProductoOfertado.DoesNotExist, ImagenProductoDisponible.DoesNotExist):
         return JsonResponse({'error': 'Imagen no encontrada'}, status=404)
-    
-    # Obtener todas las imágenes ordenadas
-    images = list(ProductImage.objects.filter(**{product_field: product}).order_by('order'))
-    
-    # Remover la imagen a reordenar
-    images.remove(image)
-    
-    # Insertar en la nueva posición
-    new_order = max(0, min(new_order, len(images)))
-    images.insert(new_order, image)
-    
-    # Actualizar el orden de todas las imágenes
-    for i, img in enumerate(images):
-        img.order = i
-        img.save(update_fields=['order'])
-    
-    return JsonResponse({'success': True})
+    except Exception as e:
+        logger.error(f"Error al eliminar imagen: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_image_order(request, product_id, product_type='ofertado'):
+    """
+    Actualiza el orden de las imágenes de un producto.
+    """
+    try:
+        # Obtener el producto
+        if product_type == 'ofertado':
+            producto = ProductoOfertado.objects.get(pk=product_id)
+            ImageModel = ImagenReferenciaProductoOfertado
+        else:
+            producto = ProductoDisponible.objects.get(pk=product_id)
+            ImageModel = ImagenProductoDisponible
+        
+        # Obtener el nuevo orden de las imágenes
+        image_order = request.data.get('image_order', [])
+        
+        # Actualizar el orden
+        for index, image_id in enumerate(image_order):
+            filter_kwargs = {'id': image_id}
+            if product_type == 'ofertado':
+                filter_kwargs['producto_ofertado'] = producto
+            else:
+                filter_kwargs['producto_disponible'] = producto
+            
+            ImageModel.objects.filter(**filter_kwargs).update(orden=index)
+        
+        return JsonResponse({'success': True, 'message': 'Orden actualizado correctamente'})
+        
+    except (ProductoOfertado.DoesNotExist, ProductoDisponible.DoesNotExist):
+        return JsonResponse({'error': 'Producto no encontrado'}, status=404)
+    except Exception as e:
+        logger.error(f"Error al actualizar orden: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

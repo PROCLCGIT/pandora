@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Miniatura - dfdf</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { border: 2px solid #ccc; padding: 20px; margin: 20px 0; }
+        img { max-width: 300px; border: 2px solid #888; }
+        .success { border-color: green; }
+        .error { border-color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test de Miniatura para: dfdf</h1>
+    
+    <div class="test">
+        <h2>Información del Producto</h2>
+        <p><strong>ID:</strong> 29</p>
+        <p><strong>Código:</strong> OFT-A798</p>
+        <p><strong>Nombre:</strong> dfdf</p>
+    </div>
+    
+    <div class="test">
+        <h2>Información de la Imagen</h2>
+        <p><strong>ID:</strong> 19</p>
+        <p><strong>Thumbnail DB:</strong> productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+        <p><strong>Thumbnail URL:</strong> /media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+    </div>
+    
+    <div class="test">
+        <h2>Test 1: URL Relativa</h2>
+        <p><strong>URL:</strong> /media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+        <img src="/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg" alt="Test 1" onload="this.classList.add('success')" onerror="this.classList.add('error')">
+    </div>
+    
+    <div class="test">
+        <h2>Test 2: URL Absoluta Puerto 8000</h2>
+        <p><strong>URL:</strong> http://localhost:8000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+        <img src="http://localhost:8000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg" alt="Test 2" onload="this.classList.add('success')" onerror="this.classList.add('error')">
+    </div>
+    
+    <div class="test">
+        <h2>Test 3: URL Absoluta Puerto 3000 (con proxy)</h2>
+        <p><strong>URL:</strong> http://localhost:3000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg</p>
+        <img src="http://localhost:3000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg" alt="Test 3" onload="this.classList.add('success')" onerror="this.classList.add('error')">
+    </div>
+    
+    <div class="test">
+        <h2>Test 4: Fetch API</h2>
+        <button onclick="testFetch()">Test Fetch</button>
+        <pre id="fetch-result"></pre>
+    </div>
+    
+    <script>
+        async function testFetch() {
+            const url = 'http://localhost:8000/media/productos/productosofertados/imagenes/OFT-A798/miniaturas/miniatura_20250519_074714.jpg';
+            const resultDiv = document.getElementById('fetch-result');
+            
+            try {
+                const response = await fetch(url);
+                resultDiv.textContent = `Status: ${response.status}\nType: ${response.type}\nHeaders:\n${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

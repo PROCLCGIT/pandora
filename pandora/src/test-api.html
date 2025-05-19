@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API y Miniaturas</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .product {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .image-test {
+            border: 2px solid #ccc;
+            padding: 10px;
+            background: white;
+        }
+        img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border: 1px solid #888;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de API y Miniaturas</h1>
+    <div id="loading">Cargando...</div>
+    <div id="error" class="error"></div>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const loading = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // Hacer login primero
+                console.log('Haciendo login...');
+                const loginResponse = await fetch('http://localhost:8000/api/auth/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: 'test',
+                        password: 'test123'
+                    })
+                });
+                
+                console.log('Login response:', loginResponse.status);
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+                
+                // Obtener productos
+                console.log('Obteniendo productos...');
+                const response = await fetch('http://localhost:8000/api/productos/productos-ofertados/', {
+                    credentials: 'include'
+                });
+                
+                console.log('Products response:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('API data:', data);
+                
+                // Buscar productos con imágenes
+                const productos = data.results || [];
+                let html = '';
+                
+                for (const producto of productos) {
+                    if (producto.imagenes && producto.imagenes.length > 0) {
+                        html += `<div class="product">`;
+                        html += `<h2>${producto.nombre} (${producto.code})</h2>`;
+                        html += `<p>ID: ${producto.id}</p>`;
+                        
+                        html += `<div class="image-container">`;
+                        
+                        for (const imagen of producto.imagenes) {
+                            html += `<div class="image-test">`;
+                            html += `<h3>Miniatura</h3>`;
+                            html += `<p><strong>URL:</strong> ${imagen.thumbnail_url || 'N/A'}</p>`;
+                            
+                            if (imagen.thumbnail_url) {
+                                // Probar diferentes variantes de URL
+                                const urls = [
+                                    imagen.thumbnail_url,
+                                    `http://localhost:8000${imagen.thumbnail_url}`,
+                                    `http://localhost:3000${imagen.thumbnail_url}`
+                                ];
+                                
+                                for (const url of urls) {
+                                    html += `<div style="margin: 10px 0;">`;
+                                    html += `<p><strong>Probando:</strong> ${url}</p>`;
+                                    html += `<img src="${url}" alt="Miniatura" onerror="this.style.border='2px solid red'" onload="this.style.border='2px solid green'">`;
+                                    html += `</div>`;
+                                }
+                            }
+                            
+                            html += `<h4>JSON completo:</h4>`;
+                            html += `<pre>${JSON.stringify(imagen, null, 2)}</pre>`;
+                            html += `</div>`;
+                        }
+                        
+                        html += `</div>`;
+                        html += `</div>`;
+                    }
+                }
+                
+                if (html === '') {
+                    html = '<p>No se encontraron productos con imágenes</p>';
+                }
+                
+                resultsDiv.innerHTML = html;
+                loading.style.display = 'none';
+                
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                loading.style.display = 'none';
+                console.error('Error completo:', error);
+            }
+        }
+        
+        // Ejecutar al cargar la página
+        testAPI();
+    </script>
+</body>
+</html>

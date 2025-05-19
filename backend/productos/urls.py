@@ -113,15 +113,11 @@ urlpatterns = [
          image_views.delete_product_image, 
          name='delete-product-image'),
     
-    path('images/<int:image_id>/', 
-         image_views.update_product_image, 
-         name='update-product-image'),
+    path('products/<int:product_id>/images/order/', 
+         image_views.update_image_order, 
+         name='update-image-order-ofertado'),
     
-    path('products/<int:product_id>/images/reorder/', 
-         image_views.reorder_product_images, 
-         name='reorder-product-images-ofertado'),
-    
-    path('products/<int:product_id>/disponible/images/reorder/', 
-         lambda request, product_id: image_views.reorder_product_images(request, product_id, 'disponible'), 
-         name='reorder-product-images-disponible'),
+    path('products/<int:product_id>/disponible/images/order/', 
+         lambda request, product_id: image_views.update_image_order(request, product_id, 'disponible'), 
+         name='update-image-order-disponible'),
 ]

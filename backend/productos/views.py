@@ -94,6 +94,7 @@ class ProductoOfertadoViewSet(ProductsBaseCrudViewSet):
         queryset = ProductoOfertado.objects.all()
         
         # Optimizar consultas incluyendo relaciones necesarias
+        queryset = queryset.select_related('id_categoria', 'especialidad')
         queryset = queryset.prefetch_related('imagenes')
         
         # Si estamos en retrieve o en la acción que necesita el conteo, lo añadimos

@@ -19,48 +19,73 @@ from django.core.exceptions import ValidationError
 # Configurar logging para este módulo
 logger = logging.getLogger(__name__)
 
-# Constantes para configuración
-IMAGE_MAX_SIZE_MB = 5
-DOCUMENT_MAX_SIZE_MB = 10
-ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-ALLOWED_DOCUMENT_TYPES = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'text/plain',
-    'application/rtf',
-    'application/zip'
-]
+# Importar configuración centralizada
+from .media_setup import MediaConfig, MediaPolicy
 
-def _generate_filepath(file_obj, base_path: str) -> str:
+def _generate_filepath(file_obj, base_path: str, product_info: dict = None) -> str:
     """
-    Genera una ruta única para guardar un archivo.
+    Genera una ruta única para guardar un archivo con organización por tipo de producto.
 
     Args:
         file_obj: El archivo a guardar
         base_path: Directorio base para guardar el archivo
+        product_info: Diccionario con información del producto (code, name, type, file_type)
 
     Returns:
         str: Ruta completa donde se guardará el archivo
     """
-    # Crear dirección por fecha para organizar los archivos
-    today = datetime.now()
-    date_path = f"{today.year}/{today.month:02d}/{today.day:02d}"
+    # Si no hay información del producto, usar estructura por defecto
+    if not product_info or not product_info.get('code'):
+        # Fallback a estructura por fecha
+        today = datetime.now()
+        date_path = f"{today.year}/{today.month:02d}/{today.day:02d}"
+        path_parts = [base_path, date_path]
+    else:
+        # Obtener información del producto
+        code = product_info.get('code', 'sin-codigo')
+        product_type = product_info.get('product_type', '')
+        file_type = product_info.get('file_type', '')
+        
+        # Usar solo el código como nombre de carpeta
+        folder_name = code
+        
+        # Construir ruta según tipo de producto y archivo
+        path_parts = [base_path]
+        
+        if product_type == 'ofertado':
+            path_parts.append('productosofertados')
+        elif product_type == 'disponible':
+            path_parts.append('productosdisponibles')
+        
+        if file_type == 'imagen':
+            path_parts.append('imagenes')
+        elif file_type == 'documento':
+            path_parts.append('documentos')
+        
+        path_parts.append(folder_name)
 
     # Obtener extensión original del archivo
     filename = file_obj.name
     extension = os.path.splitext(filename)[1].lower()
 
-    # Generar nombre único para evitar colisiones
-    unique_id = uuid.uuid4().hex[:10]
-    safe_filename = f"{unique_id}{extension}"
+    # Generar nombre de archivo más simple y descriptivo
+    filename_parts = []
+    
+    # Tipo de archivo como prefijo
+    if 'image' in str(file_obj.content_type) if hasattr(file_obj, 'content_type') else False:
+        file_prefix = 'imagen'
+    else:
+        # Para documentos, usar tipo específico si está disponible
+        file_prefix = product_info.get('tipo_documento', 'documento') if product_info else 'documento'
+    
+    # Timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    # Construir nombre del archivo
+    safe_filename = f"{file_prefix}_{timestamp}{extension}"
 
     # Construir ruta completa
-    return os.path.join(base_path, date_path, safe_filename)
+    return os.path.join(*path_parts, safe_filename)
 
 def _validate_file(file_obj, max_size_mb: int, allowed_types: list) -> Tuple[bool, str]:
     """
@@ -110,32 +135,51 @@ def process_image(image_file, metadata: Dict[str, Any] = None) -> Dict[str, Any]
         raise ValidationError("No se proporcionó ningún archivo de imagen")
 
     # Validar archivo
-    is_valid, error_message = _validate_file(image_file, IMAGE_MAX_SIZE_MB, ALLOWED_IMAGE_TYPES)
+    is_valid, error_message = _validate_file(image_file, MediaConfig.IMAGE_MAX_SIZE_MB, MediaConfig.ALLOWED_IMAGE_TYPES)
     if not is_valid:
         raise ValidationError(error_message)
 
     # Generar ruta para guardar
     media_path = getattr(settings, 'MEDIA_ROOT', 'media')
-    image_base_path = os.path.join('productos', 'imagenes')
-    relative_path = _generate_filepath(image_file, image_base_path)
+    base_path = 'productos'
+    
+    # Obtener información del producto para organización
+    product_info = {}
+    if hasattr(image_file, 'product_metadata'):
+        product_info = image_file.product_metadata
+    
+    relative_path = _generate_filepath(image_file, base_path, product_info)
 
     # Asegurar que el directorio exista
     full_dir = os.path.join(media_path, os.path.dirname(relative_path))
     os.makedirs(full_dir, exist_ok=True)
 
-    # Guardar archivo
+    # Procesar imagen con el nuevo procesador
     try:
-        full_path = default_storage.save(relative_path, ContentFile(image_file.read()))
-        logger.info(f"Imagen guardada en: {full_path}")
-
+        from .image_processor import ImageProcessor
+        processor = ImageProcessor()
+        
+        # Modificar la ruta para incluir información del producto
+        if product_info:
+            # Usar el generador de rutas actualizado para obtener la carpeta correcta
+            base_dir = os.path.dirname(relative_path)
+        else:
+            base_dir = os.path.join(media_path, base_path)
+        
+        # Procesar la imagen
+        versions = processor.process_image(image_file, base_dir)
+        
+        logger.info(f"Imagen procesada, versiones creadas: {versions.keys()}")
+        
         # Preparar respuesta
         result = {
-            'path': full_path,
-            'filename': os.path.basename(full_path),
+            'path': versions.get('webp', versions.get('original')),
+            'versions': versions,
+            'filename': os.path.basename(versions.get('webp', '')),
             'content_type': getattr(image_file, 'content_type', ''),
             'size': image_file.size,
         }
-
+        
         # Añadir metadatos si se proporcionaron
         if metadata:
             result.update({
@@ -143,7 +187,7 @@ def process_image(image_file, metadata: Dict[str, Any] = None) -> Dict[str, Any]
                 'is_primary': metadata.get('is_primary', False),
                 'orden': metadata.get('orden', 0),
             })
-
+        
         return result
     except Exception as e:
         logger.error(f"Error al procesar imagen: {str(e)}")
@@ -164,14 +208,20 @@ def process_document(document_file, metadata: Dict[str, Any] = None) -> Dict[str
         raise ValidationError("No se proporcionó ningún archivo de documento")
 
     # Validar archivo
-    is_valid, error_message = _validate_file(document_file, DOCUMENT_MAX_SIZE_MB, ALLOWED_DOCUMENT_TYPES)
+    is_valid, error_message = _validate_file(document_file, MediaConfig.DOCUMENT_MAX_SIZE_MB, MediaConfig.ALLOWED_DOCUMENT_TYPES)
     if not is_valid:
         raise ValidationError(error_message)
 
     # Generar ruta para guardar
     media_path = getattr(settings, 'MEDIA_ROOT', 'media')
-    doc_base_path = os.path.join('productos', 'documentos')
-    relative_path = _generate_filepath(document_file, doc_base_path)
+    base_path = 'productos'
+    
+    # Obtener información del producto para organización
+    product_info = {}
+    if hasattr(document_file, 'product_metadata'):
+        product_info = document_file.product_metadata
+    
+    relative_path = _generate_filepath(document_file, base_path, product_info)
 
     # Asegurar que el directorio exista
     full_dir = os.path.join(media_path, os.path.dirname(relative_path))
@@ -289,19 +339,9 @@ class FileHandler:
         """
         Obtiene las rutas de medios configuradas o utiliza valores por defecto.
         """
-        from django.conf import settings
-
-        # Rutas para imágenes
-        productos_media_path = getattr(settings, 'PRODUCTOS_MEDIA_PATH',
-                                     os.path.join('productos', 'imagenes'))
-
-        # Rutas para documentos
-        productos_docs_path = getattr(settings, 'PRODUCTOS_DOCS_PATH',
-                                    os.path.join('productos', 'documentos'))
-
         return {
-            'images': productos_media_path,
-            'documents': productos_docs_path
+            'images': MediaConfig.get_image_path(),
+            'documents': MediaConfig.get_document_path()
         }
 
     @staticmethod
@@ -331,8 +371,8 @@ class FileHandler:
             # Validar archivo
             is_valid, error_message = _validate_file(
                 image_file,
-                IMAGE_MAX_SIZE_MB,
-                ALLOWED_IMAGE_TYPES
+                MediaConfig.IMAGE_MAX_SIZE_MB,
+                MediaConfig.ALLOWED_IMAGE_TYPES
             )
 
             if not is_valid:
@@ -348,9 +388,23 @@ class FileHandler:
             orden = metadata.get('orden', index)
 
             # Generar ruta y guardar archivo
-            paths = FileHandler.get_media_paths()
-            image_base_path = paths['images']
-            relative_path = _generate_filepath(image_file, image_base_path)
+            base_path = 'productos'
+            
+            # Determinar tipo de producto
+            if hasattr(producto, 'code') and hasattr(producto, 'cudim'):
+                product_type = 'ofertado'
+            else:
+                product_type = 'disponible'
+            
+            # Obtener información del producto para la ruta
+            product_info = {
+                'code': getattr(producto, 'code', 'sin-codigo'),
+                'name': getattr(producto, 'nombre', 'sin-nombre'),
+                'product_type': product_type,
+                'file_type': 'imagen'
+            }
+            
+            relative_path = _generate_filepath(image_file, base_path, product_info)
 
             # Guardar el archivo
             full_path = default_storage.save(relative_path, ContentFile(image_file.read()))
@@ -422,8 +476,8 @@ class FileHandler:
             # Validar archivo
             is_valid, error_message = _validate_file(
                 document_file,
-                DOCUMENT_MAX_SIZE_MB,
-                ALLOWED_DOCUMENT_TYPES
+                MediaConfig.DOCUMENT_MAX_SIZE_MB,
+                MediaConfig.ALLOWED_DOCUMENT_TYPES
             )
 
             if not is_valid:
@@ -440,9 +494,24 @@ class FileHandler:
             is_public = metadata.get('is_public', True)
 
             # Generar ruta y guardar archivo
-            paths = FileHandler.get_media_paths()
-            doc_base_path = paths['documents']
-            relative_path = _generate_filepath(document_file, doc_base_path)
+            base_path = 'productos'
+            
+            # Determinar tipo de producto
+            if hasattr(producto, 'code') and hasattr(producto, 'cudim'):
+                product_type = 'ofertado'
+            else:
+                product_type = 'disponible'
+            
+            # Obtener información del producto para la ruta
+            product_info = {
+                'code': getattr(producto, 'code', 'sin-codigo'),
+                'name': getattr(producto, 'nombre', 'sin-nombre'),
+                'product_type': product_type,
+                'file_type': 'documento',
+                'tipo_documento': tipo_documento
+            }
+            
+            relative_path = _generate_filepath(document_file, base_path, product_info)
 
             # Guardar el archivo
             full_path = default_storage.save(relative_path, ContentFile(document_file.read()))
