@@ -58,6 +58,44 @@ def upload_product_image(request, product_id, product_type='ofertado'):
         # Guardar - el procesamiento se hace automáticamente en el método save()
         imagen.save()
         
+        # Verificar que se hayan guardado correctamente las rutas de imagen
+        if not imagen.imagen_webp or not imagen.imagen_original or not imagen.imagen_thumbnail:
+            logger.error(f"Imagen guardada pero faltan rutas: webp={imagen.imagen_webp}, original={imagen.imagen_original}, thumbnail={imagen.imagen_thumbnail}")
+            # Si falta alguna ruta, intentar procesarla de nuevo
+            from productos.image_processor import ImageProcessor
+            from django.core.files.storage import default_storage
+            import os
+            
+            # Verificar si la imagen original todavía está disponible
+            if not hasattr(imagen.imagen, 'file') or not imagen.imagen:
+                return JsonResponse({
+                    'error': 'No se pudo procesar la imagen correctamente. La imagen original no está disponible.'
+                }, status=500)
+            
+            # Obtener la ruta base para las imágenes
+            codigo = producto.code
+            base_path = f'productos/{"productosofertados" if product_type == "ofertado" else "productosdisponibles"}/imagenes/{codigo}'
+            media_root = settings.MEDIA_ROOT
+            full_base_path = os.path.join(media_root, base_path)
+            
+            # Volver a procesar la imagen
+            processor = ImageProcessor()
+            versions = processor.process_image(imagen.imagen, full_base_path)
+            
+            # Actualizar las rutas
+            if 'original' in versions:
+                imagen.imagen_original = os.path.relpath(versions['original'], media_root)
+            if 'thumbnail' in versions:
+                imagen.imagen_thumbnail = os.path.relpath(versions['thumbnail'], media_root)
+            if 'webp' in versions:
+                imagen.imagen_webp = os.path.relpath(versions['webp'], media_root)
+            
+            # Guardar el modelo actualizado
+            imagen.save(update_fields=['imagen_original', 'imagen_thumbnail', 'imagen_webp'])
+        
+        # Extraer el timestamp para la consistencia entre versiones
+        timestamp = imagen.extract_timestamp()
+        
         # Preparar respuesta
         response_data = {
             'id': imagen.id,
@@ -65,12 +103,11 @@ def upload_product_image(request, product_id, product_type='ofertado'):
             'descripcion': imagen.descripcion,
             'orden': imagen.orden,
             'is_primary': imagen.is_primary,
-            'urls': {
-                'original': imagen.original_url,
-                'thumbnail': imagen.thumbnail_url,
-                'webp': imagen.webp_url,
-                'default': imagen.get_absolute_url
-            },
+            'urls': imagen.get_version_urls(),
+            'imagen_original': imagen.imagen_original,
+            'imagen_thumbnail': imagen.imagen_thumbnail,
+            'imagen_webp': imagen.imagen_webp,
+            'timestamp': timestamp,
             'metadata': {
                 'width': imagen.width,
                 'height': imagen.height,
@@ -85,6 +122,8 @@ def upload_product_image(request, product_id, product_type='ofertado'):
         return JsonResponse({'error': 'Producto no encontrado'}, status=404)
     except Exception as e:
         logger.error(f"Error al subir imagen: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -111,12 +150,7 @@ def get_product_images(request, product_id, product_type='ofertado'):
                 'descripcion': imagen.descripcion,
                 'orden': imagen.orden,
                 'is_primary': imagen.is_primary,
-                'urls': {
-                    'original': imagen.original_url,
-                    'thumbnail': imagen.thumbnail_url,
-                    'webp': imagen.webp_url,
-                    'default': imagen.get_absolute_url
-                },
+                'urls': imagen.get_version_urls(),
                 'metadata': {
                     'width': imagen.width,
                     'height': imagen.height,

@@ -13,7 +13,7 @@ const DetalleProductoOfertado = lazy(() => import('../pages/productosOfertados/D
 // Lazy loading de páginas de productos disponibles
 const ProductosDisponiblesPage = lazy(() => import('../pages/productosDisponibles/ProductosDisponiblesPage'));
 const AddProductoDisponiblePage = lazy(() => import('../pages/productosDisponibles/AddProductoDisponiblePage'));
-//const DetalleProductoDisponible = lazy(() => import('../pages/productosDisponibles/DetalleProductoDisponible'));
+const DetalleProductoDisponible = lazy(() => import('../pages/productosDisponibles/DetalleProductoDisponible'));
 //const ProductosDisponiblesInfinitePage = lazy(() => import('../pages/productosDisponibles/ProductosDisponiblesInfinitePage'));
 
 // Componente Loader para Suspense
@@ -57,7 +57,7 @@ const productosRoutes = [
       //{ path: 'productos-disponibles/infinite', element: <ProductosDisponiblesInfinitePage /> },
       { path: 'productos-disponibles/add', element: <AddProductoDisponiblePage /> },
       { path: 'productos-disponibles/edit/:id', element: <AddProductoDisponiblePage /> },
-      //{ path: 'productos-disponibles/:id', element: <DetalleProductoDisponible /> },
+      { path: 'productos-disponibles/:id', element: <DetalleProductoDisponible /> },
       
       // Ruta de fallback
       { path: '*', element: <Navigate to="productos-ofertados" replace /> }

@@ -55,7 +55,8 @@ class ImageProcessor:
             dict: Diccionario con las rutas de las imágenes generadas
         """
         results = {}
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Usar microsegundos para evitar colisiones entre nombres
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         
         try:
             # Abrir la imagen original
@@ -160,12 +161,14 @@ class ImageProcessor:
         return filepath
     
     @staticmethod
-    def get_image_versions(base_path):
+    def get_image_versions(base_path, timestamp=None):
         """
         Obtiene todas las versiones de imagen disponibles en una carpeta.
+        Si se proporciona un timestamp, busca las imágenes específicas con ese timestamp.
         
         Args:
             base_path: Ruta base de la carpeta del producto
+            timestamp: Opcional - Timestamp específico de la imagen a buscar
             
         Returns:
             dict: Diccionario con las rutas de cada versión
@@ -175,22 +178,45 @@ class ImageProcessor:
         # Buscar imagen original
         original_folder = os.path.join(base_path, 'originales')
         if os.path.exists(original_folder):
-            originals = [f for f in os.listdir(original_folder) if f.startswith('original_')]
-            if originals:
-                versions['original'] = os.path.join(original_folder, originals[-1])
+            if timestamp:
+                # Buscar por timestamp específico
+                originals = [f for f in os.listdir(original_folder) 
+                            if f.startswith('original_') and timestamp in f]
+                # Si encontramos archivos específicos con el timestamp, usar el primero
+                if originals:
+                    versions['original'] = os.path.join(original_folder, originals[0])
+            else:
+                # Comportamiento anterior - tomar el último cuando no hay timestamp
+                originals = [f for f in os.listdir(original_folder) if f.startswith('original_')]
+                if originals:
+                    versions['original'] = os.path.join(original_folder, originals[-1])
         
         # Buscar miniatura
         thumbnail_folder = os.path.join(base_path, 'miniaturas')
         if os.path.exists(thumbnail_folder):
-            thumbnails = [f for f in os.listdir(thumbnail_folder) if f.startswith('miniatura_')]
-            if thumbnails:
-                versions['thumbnail'] = os.path.join(thumbnail_folder, thumbnails[-1])
+            if timestamp:
+                thumbnails = [f for f in os.listdir(thumbnail_folder) 
+                              if f.startswith('miniatura_') and timestamp in f]
+                # Si encontramos archivos específicos con el timestamp, usar el primero
+                if thumbnails:
+                    versions['thumbnail'] = os.path.join(thumbnail_folder, thumbnails[0])
+            else:
+                thumbnails = [f for f in os.listdir(thumbnail_folder) if f.startswith('miniatura_')]
+                if thumbnails:
+                    versions['thumbnail'] = os.path.join(thumbnail_folder, thumbnails[-1])
         
         # Buscar WebP
         webp_folder = os.path.join(base_path, 'webp')
         if os.path.exists(webp_folder):
-            webps = [f for f in os.listdir(webp_folder) if f.startswith('webp_')]
-            if webps:
-                versions['webp'] = os.path.join(webp_folder, webps[-1])
+            if timestamp:
+                webps = [f for f in os.listdir(webp_folder) 
+                         if f.startswith('webp_') and timestamp in f]
+                # Si encontramos archivos específicos con el timestamp, usar el primero
+                if webps:
+                    versions['webp'] = os.path.join(webp_folder, webps[0])
+            else:
+                webps = [f for f in os.listdir(webp_folder) if f.startswith('webp_')]
+                if webps:
+                    versions['webp'] = os.path.join(webp_folder, webps[-1])
         
         return versions

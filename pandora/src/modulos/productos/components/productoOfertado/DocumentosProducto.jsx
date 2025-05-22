@@ -59,18 +59,25 @@ const DocumentosProducto = ({
   docInputRef 
 }) => {
   return (
-    <Card className="border-0 shadow-sm mb-8 bg-white overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b">
-        <CardTitle className="text-lg font-medium text-blue-800">Documentos del Producto</CardTitle>
-        <CardDescription className="text-blue-700/70">
-          Añade documentos técnicos, manuales u otros archivos relacionados
-        </CardDescription>
+    <Card className="border border-gray-200 shadow-md rounded-xl h-full mb-8 bg-white overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-50 to-white px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center">
+          <div className="bg-amber-500 p-2 rounded-lg mr-3 shadow-sm">
+            <FileText className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-gray-800">Documentos del Producto</CardTitle>
+            <CardDescription className="text-gray-500">
+              Añade documentos técnicos, manuales u otros archivos relacionados
+            </CardDescription>
+          </div>
+        </div>
       </div>
       <CardHeader className="flex flex-row items-center justify-between pt-6 pb-2">
         <div></div>
         <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 rounded-full px-4 ml-auto shadow-sm">
+            <Button className="bg-amber-600 hover:bg-amber-700 rounded-full px-4 ml-auto shadow-sm">
               <FilePlus className="h-4 w-4 mr-2" />
               Añadir Documento
             </Button>
@@ -147,7 +154,7 @@ const DocumentosProducto = ({
               >
                 Cancelar
               </Button>
-              <Button type="button" onClick={addDocument} className="bg-blue-600 hover:bg-blue-700 rounded-full">
+              <Button type="button" onClick={addDocument} className="bg-amber-600 hover:bg-amber-700 rounded-full">
                 Añadir
               </Button>
             </DialogFooter>
@@ -156,58 +163,74 @@ const DocumentosProducto = ({
       </CardHeader>
       <CardContent className="px-6 pt-2">
         {documentos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-lg">
-            <FileText size={48} className="text-slate-300 mb-4" />
-            <p className="text-slate-600 font-medium">Aún no hay documentos para este producto</p>
-            <p className="text-sm text-slate-500 mt-1">
-              Haz clic en "Añadir Documento" para subir documentos
+          <div className="relative flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-amber-100 rounded-lg bg-gray-50">
+            <div className="h-24 w-24 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+              <FileText size={32} className="text-amber-400" />
+            </div>
+            <p className="text-gray-700 font-medium text-lg">Aún no hay documentos</p>
+            <p className="text-sm text-gray-500 mt-2 max-w-md">
+              Las fichas técnicas, manuales o certificados proporcionan información completa sobre el producto
             </p>
+            <Button
+              className="mt-6 bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={() => setDocDialogOpen(true)}
+            >
+              <FilePlus className="h-4 w-4 mr-2" />
+              Añadir primer documento
+            </Button>
           </div>
         ) : (
-          <Table className="border rounded-lg">
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documentos.map((doc, index) => (
-                <TableRow key={doc.id || doc.generatedId || `doc-${index}`}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center">
-                      <File className="h-4 w-4 mr-2 text-gray-500" />
-                      {doc.titulo}
-                    </div>
-                  </TableCell>
-                  <TableCell>{doc.tipo_documento}</TableCell>
-                  <TableCell>
-                    <span 
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        doc.is_public 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-slate-100 text-slate-800'
-                      }`}
-                    >
-                      {doc.is_public ? 'Público' : 'Privado'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
-                      onClick={() => removeDocument(index)}
-                    >
-                      <Trash size={16} />
-                    </Button>
-                  </TableCell>
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Visibilidad</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {documentos.map((doc, index) => (
+                  <TableRow key={doc.id || doc.generatedId || `doc-${index}`} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <File className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
+                        <span className="truncate max-w-[200px]">{doc.titulo}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-gray-50">
+                        {doc.tipo_documento}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        className={doc.is_public 
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-200" 
+                          : "bg-amber-100 text-amber-800 border-amber-200"}
+                      >
+                        {doc.is_public ? 'Público' : 'Privado'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => removeDocument(index)}
+                          title="Eliminar documento"
+                        >
+                          <Trash size={16} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

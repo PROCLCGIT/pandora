@@ -168,7 +168,19 @@ class ProductoOfertadoViewSet(ProductsBaseCrudViewSet):
         producto = self.get_object()
         imagenes = ImagenReferenciaProductoOfertado.objects.filter(producto_ofertado=producto)
         serializer = ImagenReferenciaProductoOfertadoSerializer(imagenes, many=True)
-        return Response(serializer.data)
+        
+        # Asegurarnos de que cada imagen tenga sus propias URLs correctas con su timestamp único
+        data = serializer.data
+        for i, imagen_data in enumerate(data):
+            if 'urls' in imagen_data:
+                imagen = imagenes[i]
+                # Extraer el timestamp de la imagen para obtener versiones específicas
+                timestamp = imagen.extract_timestamp()
+                imagen_data['urls'] = imagen.get_version_urls()
+                # Añadir el timestamp para depuración
+                imagen_data['timestamp'] = timestamp
+        
+        return Response(data)
     
     @swagger_auto_schema(
         operation_description="Obtiene los documentos asociados a un producto ofertado",
@@ -331,11 +343,11 @@ class ProductoOfertadoViewSet(ProductsBaseCrudViewSet):
                 orden = metadata.get('orden', index)
 
                 try:
-                    # Crear registro de imagen - Django manejará el guardado del archivo
+                    # Crear registro de imagen - El modelo manejará el procesamiento
                     from .models import ImagenReferenciaProductoOfertado
                     imagen = ImagenReferenciaProductoOfertado(
                         producto_ofertado=producto,
-                        imagen=image_file,  # Django manejará el guardado automáticamente
+                        imagen=image_file,  # El método save() del modelo procesará la imagen
                         descripcion=descripcion,
                         is_primary=is_primary,
                         orden=orden
@@ -344,8 +356,12 @@ class ProductoOfertadoViewSet(ProductsBaseCrudViewSet):
                     if user:
                         imagen.created_by = user
 
+                    # El método save() del modelo utilizará ImageProcessor para crear las versiones
                     imagen.save()
-                    print(f"✅ Imagen guardada en base de datos con ID: {imagen.id}")
+                    print(f"✅ Imagen guardada con ID: {imagen.id}")
+                    print(f"   - Original: {imagen.imagen_original}")
+                    print(f"   - Miniatura: {imagen.imagen_thumbnail}")
+                    print(f"   - WebP: {imagen.imagen_webp}")
 
                     return True, "", imagen
                 except Exception as e:
@@ -774,6 +790,18 @@ class ImagenReferenciaProductoOfertadoViewSet(ProductsBaseCrudViewSet):
     filterset_fields = ['producto_ofertado', 'is_primary']
     search_fields = ['descripcion']
     ordering_fields = ['orden', 'created_at']
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Sobreescribir retrieve para asegurar que se use get_version_urls"""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        # Asegurar que las URLs de las imágenes incluyan el timestamp
+        if 'urls' in data:
+            data['urls'] = instance.get_version_urls()
+            
+        return Response(data)
 
 
 class DocumentoProductoOfertadoViewSet(ProductsBaseCrudViewSet):
@@ -801,6 +829,14 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
     ]
     search_fields = ['nombre', 'code', 'modelo', 'referencia']
     ordering_fields = ['nombre', 'code', 'created_at', 'updated_at']
+    
+    def get_serializer_context(self):
+        """Añadir request al contexto para generar URLs absolutas"""
+        context = super().get_serializer_context()
+        # Asegurar que request siempre esté en el contexto
+        if 'request' not in context and hasattr(self, 'request'):
+            context['request'] = self.request
+        return context
     
     def get_serializer_class(self):
         """Retorna el serializer apropiado según la acción"""
@@ -866,8 +902,20 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
         """
         producto = self.get_object()
         imagenes = ImagenProductoDisponible.objects.filter(producto_disponible=producto)
-        serializer = ImagenProductoDisponibleSerializer(imagenes, many=True)
-        return Response(serializer.data)
+        serializer = ImagenProductoDisponibleSerializer(imagenes, many=True, context={'request': request})
+        
+        # Asegurarnos de que cada imagen tenga sus propias URLs correctas con su timestamp único
+        data = serializer.data
+        for i, imagen_data in enumerate(data):
+            if 'urls' in imagen_data:
+                imagen = imagenes[i]
+                # Extraer el timestamp de la imagen para obtener versiones específicas
+                timestamp = imagen.extract_timestamp()
+                imagen_data['urls'] = imagen.get_version_urls()
+                # Añadir el timestamp para depuración
+                imagen_data['timestamp'] = timestamp
+        
+        return Response(data)
     
     @swagger_auto_schema(
         operation_description="Obtiene los documentos asociados a un producto disponible",
@@ -955,6 +1003,35 @@ class ImagenProductoDisponibleViewSet(ProductsBaseCrudViewSet):
     filterset_fields = ['producto_disponible', 'is_primary']
     search_fields = ['descripcion']
     ordering_fields = ['orden', 'created_at']
+    
+    def get_serializer_context(self):
+        """Añadir request al contexto para generar URLs absolutas"""
+        context = super().get_serializer_context()
+        # Asegurar que request siempre esté en el contexto
+        if 'request' not in context and hasattr(self, 'request'):
+            context['request'] = self.request
+        return context
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Sobreescribir retrieve para asegurar que se use get_version_urls"""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={'request': request})
+        data = serializer.data
+        
+        # Asegurar que las URLs de las imágenes incluyan el timestamp
+        if 'urls' in data:
+            version_urls = instance.get_version_urls()
+            
+            # Convertir las URLs relativas a absolutas
+            for key in ['original', 'thumbnail', 'webp', 'default']:
+                if key in version_urls and version_urls[key]:
+                    # Solo convertir si no es una URL absoluta
+                    if not version_urls[key].startswith('http'):
+                        version_urls[key] = request.build_absolute_uri(version_urls[key])
+            
+            data['urls'] = version_urls
+            
+        return Response(data)
 
 
 class DocumentoProductoDisponibleViewSet(ProductsBaseCrudViewSet):

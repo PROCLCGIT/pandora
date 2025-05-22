@@ -47,6 +47,7 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors, isSubmitting },
     getValues,
   } = useForm({
@@ -111,6 +112,26 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
 
       // Cargar imágenes y documentos si existen
       if (setImagenes && productoData.imagenes && Array.isArray(productoData.imagenes)) {
+        // Depuración para productos específicos
+        if (productoData.code === 'OFT-A182' || productoData.code === 'OFT-A250') {
+          debug(`[Debug useProductoOfertadoForm][${productoData.code}] Cargando imágenes:`, productoData.imagenes);
+          
+          // Verificar las propiedades de cada imagen
+          productoData.imagenes.forEach((img, idx) => {
+            debug(`[Debug useProductoOfertadoForm][${productoData.code}] Imagen ${idx+1}:`, {
+              id: img.id,
+              imagen: img.imagen,
+              webp_url: img.webp_url,
+              thumbnail_url: img.thumbnail_url,
+              original_url: img.original_url,
+              imagen_url: img.imagen_url,
+              get_absolute_url: img.get_absolute_url,
+              imagen_original: img.imagen_original,
+              imagen_thumbnail: img.imagen_thumbnail,
+              imagen_webp: img.imagen_webp
+            });
+          });
+        }
         setImagenes(productoData.imagenes);
       } else if (setImagenes) {
         setImagenes([]);
@@ -240,6 +261,7 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
     handleSubmit,
     prepareFormData,
     getValues,
+    watch,
   };
 };
 

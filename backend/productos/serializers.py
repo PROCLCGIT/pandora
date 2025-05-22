@@ -84,6 +84,7 @@ class ProductoOfertadoSerializer(serializers.ModelSerializer):
     """Serializer para el modelo ProductoOfertado"""
     categoria_nombre = serializers.CharField(source='id_categoria.nombre', read_only=True)
     especialidad_nombre = serializers.SerializerMethodField()
+    especialidad_data = serializers.SerializerMethodField()
     imagenes = ImagenReferenciaProductoOfertadoSerializer(many=True, read_only=True)
 
     class Meta:
@@ -99,6 +100,20 @@ class ProductoOfertadoSerializer(serializers.ModelSerializer):
             return ""
         except:
             return ""
+            
+    def get_especialidad_data(self, obj):
+        """Obtiene los datos de especialidad como objeto para el frontend"""
+        try:
+            if obj.especialidad:
+                return {
+                    'id': obj.especialidad.id,
+                    'nombre': obj.especialidad.nombre,
+                    'code': getattr(obj.especialidad, 'code', '')
+                }
+            return None
+        except Exception as e:
+            print(f"Error al obtener datos de especialidad: {e}")
+            return None
             
     def validate_especialidad(self, value):
         """Valida que la especialidad exista en la base de datos"""
@@ -157,6 +172,7 @@ class ImagenProductoDisponibleSerializer(serializers.ModelSerializer):
     thumbnail_url = serializers.SerializerMethodField()
     webp_url = serializers.SerializerMethodField()
     original_url = serializers.SerializerMethodField()
+    urls = serializers.SerializerMethodField()
     
     class Meta:
         model = ImagenProductoDisponible
@@ -198,6 +214,21 @@ class ImagenProductoDisponibleSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.original_url)
             return obj.original_url  # Usar la propiedad que agrega /media/
         return None
+    
+    def get_urls(self, obj):
+        """Devuelve un diccionario con las URLs de todas las versiones de la imagen"""
+        version_urls = obj.get_version_urls()
+        request = self.context.get('request')
+        
+        # Si tenemos un request, convertir las URLs relativas a absolutas
+        if request:
+            for key in ['original', 'thumbnail', 'webp', 'default']:
+                if key in version_urls and version_urls[key]:
+                    # Solo convertir si no es una URL absoluta
+                    if not version_urls[key].startswith('http'):
+                        version_urls[key] = request.build_absolute_uri(version_urls[key])
+        
+        return version_urls
 
 
 class DocumentoProductoDisponibleSerializer(serializers.ModelSerializer):

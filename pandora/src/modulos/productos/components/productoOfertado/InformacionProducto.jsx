@@ -1,6 +1,7 @@
 // InformacionProducto.jsx
 import { useState } from 'react'
 import { Controller } from 'react-hook-form'
+import { Package, CheckCircle } from 'lucide-react'
 
 // Importaciones de componentes UI
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ function InformacionProducto ({
   errors,
   categoriasData,
   especialidadesData,
+  formValues, // Valores del formulario en tiempo real
 }) {
   const { toast } = useToast()
 
@@ -108,12 +110,24 @@ function InformacionProducto ({
   }
 
   return (
-    <Card className="border-0 shadow-sm mb-8 bg-white overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b">
-        <CardTitle className="text-lg font-medium text-indigo-800">Información del Producto</CardTitle>
-        <CardDescription className="text-indigo-700/70">
-          Ingresa los datos básicos del producto que se ofrecerá en el catálogo
-        </CardDescription>
+    <Card className="border border-gray-200 shadow-md rounded-xl mb-8 bg-white overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="bg-indigo-600 p-2 rounded-lg mr-3 shadow-sm">
+              <Package className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-gray-800">Información del Producto</CardTitle>
+              <CardDescription className="text-gray-500">
+                Ingresa los datos básicos del producto que se ofrecerá en el catálogo
+              </CardDescription>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center text-sm text-gray-500">
+            <span className="text-red-500 mr-1">*</span> Campos obligatorios
+          </div>
+        </div>
       </div>
       <CardHeader className="pt-6 pb-2">
       </CardHeader>
@@ -121,7 +135,10 @@ function InformacionProducto ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {/* Código */}
           <div className="space-y-2">
-            <Label htmlFor="code" className="text-gray-700 font-medium">Código <span className="text-red-500">*</span></Label>
+            <Label htmlFor="code" className="text-gray-700 font-medium flex items-center justify-between">
+              <span>Código <span className="text-red-500">*</span></span>
+              {formValues?.code && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
             <Controller
               name="code"
               control={control}
@@ -143,7 +160,10 @@ function InformacionProducto ({
 
           {/* CUDIM */}
           <div className="space-y-2">
-            <Label htmlFor="cudim" className="text-gray-700 font-medium">CUDIM <span className="text-red-500">*</span></Label>
+            <Label htmlFor="cudim" className="text-gray-700 font-medium flex items-center justify-between">
+              <span>CUDIM <span className="text-red-500">*</span></span>
+              {formValues?.cudim && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
             <Controller
               name="cudim"
               control={control}
@@ -165,7 +185,10 @@ function InformacionProducto ({
 
           {/* Nombre */}
           <div className="space-y-2">
-            <Label htmlFor="nombre" className="text-gray-700 font-medium">Nombre <span className="text-red-500">*</span></Label>
+            <Label htmlFor="nombre" className="text-gray-700 font-medium flex items-center justify-between">
+              <span>Nombre <span className="text-red-500">*</span></span>
+              {formValues?.nombre && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
             <Controller
               name="nombre"
               control={control}
@@ -187,7 +210,10 @@ function InformacionProducto ({
 
           {/* Categoría */}
           <div className="space-y-2">
-            <Label htmlFor="id_categoria" className="text-gray-700 font-medium">Categoría <span className="text-red-500">*</span></Label>
+            <Label htmlFor="id_categoria" className="text-gray-700 font-medium flex items-center justify-between">
+              <span>Categoría <span className="text-red-500">*</span></span>
+              {formValues?.id_categoria && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
             <Controller
               name="id_categoria"
               control={control}

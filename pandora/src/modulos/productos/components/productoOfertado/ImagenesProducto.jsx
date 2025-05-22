@@ -52,18 +52,25 @@ const ImagenesProducto = ({
   imageInputRef 
 }) => {
   return (
-    <Card className="border-0 shadow-sm mb-8 bg-white overflow-hidden">
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 py-4 border-b">
-        <CardTitle className="text-lg font-medium text-purple-800">Imágenes del Producto</CardTitle>
-        <CardDescription className="text-purple-700/70">
-          Añade imágenes de referencia para el producto ofertado
-        </CardDescription>
+    <Card className="border border-gray-200 shadow-md rounded-xl h-full mb-8 bg-white overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center">
+          <div className="bg-indigo-500 p-2 rounded-lg mr-3 shadow-sm">
+            <ImagePlus className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-gray-800">Imágenes del Producto</CardTitle>
+            <CardDescription className="text-gray-500">
+              Añade imágenes de referencia para el producto ofertado
+            </CardDescription>
+          </div>
+        </div>
       </div>
       <CardHeader className="flex flex-row items-center justify-between pt-6 pb-2">
         <div></div>
         <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700 rounded-full px-4 ml-auto shadow-sm">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-4 ml-auto shadow-sm">
               <ImagePlus className="h-4 w-4 mr-2" />
               Añadir Imagen
             </Button>
@@ -113,7 +120,7 @@ const ImagenesProducto = ({
               >
                 Cancelar
               </Button>
-              <Button type="button" onClick={addImage} className="bg-purple-600 hover:bg-purple-700 rounded-full">
+              <Button type="button" onClick={addImage} className="bg-indigo-600 hover:bg-indigo-700 rounded-full">
                 Añadir
               </Button>
             </DialogFooter>
@@ -122,22 +129,31 @@ const ImagenesProducto = ({
       </CardHeader>
       <CardContent className="px-6 pt-2">
         {imagenes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-lg">
-            <ImagePlus size={48} className="text-slate-300 mb-4" />
-            <p className="text-slate-600 font-medium">Aún no hay imágenes para este producto</p>
-            <p className="text-sm text-slate-500 mt-1">
-              Haz clic en "Añadir Imagen" para subir imágenes
+          <div className="relative flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-indigo-100 rounded-lg bg-gray-50">
+            <div className="h-24 w-24 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+              <ImagePlus size={32} className="text-indigo-400" />
+            </div>
+            <p className="text-gray-700 font-medium text-lg">Aún no hay imágenes</p>
+            <p className="text-sm text-gray-500 mt-2 max-w-md">
+              Las imágenes de alta calidad mejoran la presentación y facilitan la identificación del producto
             </p>
+            <Button
+              className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={() => setImageDialogOpen(true)}
+            >
+              <ImagePlus className="h-4 w-4 mr-2" />
+              Añadir primera imagen
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {imagenes.map((imagen, index) => (
               <div
                 key={imagen.id || imagen.generatedId || `image-${index}`}
-                className={`relative rounded-lg border shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 ${imagen.is_primary ? 'ring-2 ring-indigo-500' : ''}`}
+                className={`relative rounded-lg overflow-hidden border ${imagen.is_primary ? 'ring-2 ring-indigo-500 border-indigo-300' : 'border-gray-200'} transition-all hover:shadow-md bg-white`}
               >
                 <div className="aspect-video bg-slate-50 relative flex items-center justify-center">
-                  {imagen.imagen && (
+                  {(imagen.imagen || imagen.webp_url || imagen.thumbnail_url || imagen.original_url || imagen.imagen_url) && (
                     <img
                       src={(() => {
                         // Si es un archivo nuevo (no guardado)
@@ -145,24 +161,76 @@ const ImagenesProducto = ({
                           return imagen.preview || '';
                         }
                         
-                        // Si viene del backend, usar imagen_url si está disponible
+                        // Verificar si tenemos las nuevas URLs basadas en timestamp
+                        if (imagen.urls && typeof imagen.urls === 'object') {
+                          // Usar las URLs específicas con timestamp que tienen identidad única
+                          if (imagen.urls.webp) {
+                            debug(`[Imagen ${index}][ID:${imagen.id}] Usando URL webp con timestamp: ${imagen.urls.timestamp || 'N/A'}`); 
+                            return imagen.urls.webp;
+                          }
+                          if (imagen.urls.thumbnail) {
+                            debug(`[Imagen ${index}][ID:${imagen.id}] Usando URL thumbnail con timestamp: ${imagen.urls.timestamp || 'N/A'}`);
+                            return imagen.urls.thumbnail;
+                          }
+                          if (imagen.urls.original) {
+                            debug(`[Imagen ${index}][ID:${imagen.id}] Usando URL original con timestamp: ${imagen.urls.timestamp || 'N/A'}`);
+                            return imagen.urls.original;
+                          }
+                          if (imagen.urls.default) {
+                            debug(`[Imagen ${index}][ID:${imagen.id}] Usando URL default con timestamp: ${imagen.urls.timestamp || 'N/A'}`);
+                            return imagen.urls.default;
+                          }
+                        }
+                        
+                        // Prioridad de URLs para imágenes ya guardadas
+                        // 1. Versión WebP (mejor calidad/tamaño)
+                        if (imagen.webp_url) {
+                          // Añadir parámetro de timestamp si está disponible para evitar caché
+                          const timestamp = imagen.timestamp || '';
+                          const separator = imagen.webp_url.includes('?') ? '&' : '?';
+                          return timestamp ? `${imagen.webp_url}${separator}t=${timestamp}` : imagen.webp_url;
+                        }
+                        
+                        // 2. Thumbnail (para carga rápida)
+                        if (imagen.thumbnail_url) {
+                          const timestamp = imagen.timestamp || '';
+                          const separator = imagen.thumbnail_url.includes('?') ? '&' : '?';
+                          return timestamp ? `${imagen.thumbnail_url}${separator}t=${timestamp}` : imagen.thumbnail_url;
+                        }
+                        
+                        // 3. URL genérica de la imagen si está disponible
                         if (imagen.imagen_url) {
-                          return imagen.imagen_url;
+                          const timestamp = imagen.timestamp || '';
+                          const separator = imagen.imagen_url.includes('?') ? '&' : '?';
+                          return timestamp ? `${imagen.imagen_url}${separator}t=${timestamp}` : imagen.imagen_url;
                         }
                         
-                        // Fallback para casos antiguos
+                        // 4. Original (mayor tamaño)
+                        if (imagen.original_url) {
+                          const timestamp = imagen.timestamp || '';
+                          const separator = imagen.original_url.includes('?') ? '&' : '?';
+                          return timestamp ? `${imagen.original_url}${separator}t=${timestamp}` : imagen.original_url;
+                        }
+                        
+                        // 5. Fallback para casos antiguos - Campo imagen directo
                         if (typeof imagen.imagen === 'string') {
+                          let url = imagen.imagen;
                           // Si ya es una URL completa
-                          if (imagen.imagen.startsWith('http')) {
-                            return imagen.imagen;
+                          if (!url.startsWith('http') && !url.startsWith('/media/')) {
+                            url = `/media/${url}`;
                           }
-                          // Si necesita prefijo /media/
-                          if (!imagen.imagen.startsWith('/media/')) {
-                            return `/media/${imagen.imagen}`;
-                          }
-                          return imagen.imagen;
+                          const timestamp = imagen.timestamp || '';
+                          const separator = url.includes('?') ? '&' : '?';
+                          return timestamp ? `${url}${separator}t=${timestamp}` : url;
                         }
                         
+                        // 6. Si tenemos una propiedad 'get_absolute_url'
+                        if (imagen.get_absolute_url) {
+                          return imagen.get_absolute_url;
+                        }
+                        
+                        // No tenemos una imagen válida
+                        debug('Imagen sin URL válida:', imagen);
                         return '';
                       })()}
                       alt={imagen.descripcion || `Imagen ${index + 1}`}

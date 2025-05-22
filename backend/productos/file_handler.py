@@ -78,8 +78,8 @@ def _generate_filepath(file_obj, base_path: str, product_info: dict = None) -> s
         # Para documentos, usar tipo específico si está disponible
         file_prefix = product_info.get('tipo_documento', 'documento') if product_info else 'documento'
     
-    # Timestamp
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    # Timestamp with microseconds to ensure uniqueness
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     
     # Construir nombre del archivo
     safe_filename = f"{file_prefix}_{timestamp}{extension}"

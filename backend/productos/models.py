@@ -16,17 +16,16 @@ def upload_imagen_producto_ofertado(instance, filename):
     Función personalizada para definir la ruta de subida de imágenes de productos ofertados.
     La imagen se procesará para crear múltiples versiones.
     """
-    codigo = instance.producto_ofertado.code
-    
-    # Solo retornar la carpeta base, el procesador manejará las subcarpetas
-    return f'productos/productosofertados/imagenes/{codigo}/temp_{filename}'
+    # Solo almacenar temporalmente, el save() del modelo manejará el procesamiento
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    return f'temp/uploads/{timestamp}_{filename}'
 
 def upload_documento_producto_ofertado(instance, filename):
     """
     Función personalizada para definir la ruta de subida de documentos de productos ofertados.
     Formato: productos/productosofertados/documentos/{codigo}/{tipo_documento}_{timestamp}.{ext}
     """
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     codigo = instance.producto_ofertado.code
     tipo_doc = instance.tipo_documento.replace(' ', '_').replace('/', '-')
     ext = filename.split('.')[-1]
@@ -42,17 +41,16 @@ def upload_imagen_producto_disponible(instance, filename):
     Función personalizada para definir la ruta de subida de imágenes de productos disponibles.
     La imagen se procesará para crear múltiples versiones.
     """
-    codigo = instance.producto_disponible.code
-    
-    # Solo retornar la carpeta base, el procesador manejará las subcarpetas
-    return f'productos/productosdisponibles/imagenes/{codigo}/temp_{filename}'
+    # Solo almacenar temporalmente, el save() del modelo manejará el procesamiento
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    return f'temp/uploads/{timestamp}_{filename}'
 
 def upload_documento_producto_disponible(instance, filename):
     """
     Función personalizada para definir la ruta de subida de documentos de productos disponibles.
     Formato: productos/productosdisponibles/documentos/{codigo}/{tipo_documento}_{timestamp}.{ext}
     """
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     codigo = instance.producto_disponible.code
     tipo_doc = instance.tipo_documento.replace(' ', '_').replace('/', '-')
     ext = filename.split('.')[-1]
@@ -139,7 +137,7 @@ class ImagenReferenciaProductoOfertado(models.Model):
         related_name='imagenes',
         verbose_name='Producto Ofertado'
     )
-    imagen = models.FileField(upload_to=upload_imagen_producto_ofertado, verbose_name='Imagen')
+    imagen = models.FileField(upload_to=upload_imagen_producto_ofertado, verbose_name='Imagen', null=True, blank=True)
     descripcion = models.CharField(max_length=255, blank=True, verbose_name='Descripción')
     orden = models.IntegerField(default=0, verbose_name='Orden')
     is_primary = models.BooleanField(default=False, verbose_name='Imagen principal')
@@ -199,14 +197,23 @@ class ImagenReferenciaProductoOfertado(models.Model):
     @property
     def get_absolute_url(self):
         """Retorna la URL principal de la imagen (WebP preferida)"""
-        return self.webp_url or self.thumbnail_url or self.original_url or self.imagen.url
+        if self.webp_url:
+            return self.webp_url
+        elif self.thumbnail_url:
+            return self.thumbnail_url
+        elif self.original_url:
+            return self.original_url
+        elif self.imagen:
+            return self.imagen.url
+        return None
     
     def save(self, *args, **kwargs):
         # Si es una imagen nueva y no ha sido procesada
-        if self.imagen and not self.pk:
+        if self.imagen and hasattr(self.imagen, 'file') and not self.pk:
             from productos.image_processor import ImageProcessor
             from django.core.files.storage import default_storage
             import os
+            import re
             
             processor = ImageProcessor()
             
@@ -220,6 +227,20 @@ class ImagenReferenciaProductoOfertado(models.Model):
                 # Procesar la imagen y obtener las rutas de las versiones
                 versions = processor.process_image(self.imagen, full_base_path)
                 
+                # Extraer el timestamp de la ruta de la imagen para asegurar consistencia
+                # El formato es: webp_YYYYMMDD_HHMMSS_microseconds.webp o similar
+                timestamp = None
+                if 'webp' in versions:
+                    webp_filename = os.path.basename(versions['webp'])
+                    match = re.search(r'webp_(\d{8}_\d{6}_\d+)', webp_filename)
+                    if match:
+                        timestamp = match.group(1)
+                    else:
+                        # Intentar extraer timestamp sin microsegundos como fallback
+                        match = re.search(r'webp_(\d{8}_\d{6})', webp_filename)
+                        if match:
+                            timestamp = match.group(1)
+                
                 # Guardar las rutas relativas
                 if 'original' in versions:
                     self.imagen_original = os.path.relpath(versions['original'], media_root)
@@ -227,8 +248,26 @@ class ImagenReferenciaProductoOfertado(models.Model):
                     self.imagen_thumbnail = os.path.relpath(versions['thumbnail'], media_root)
                 if 'webp' in versions:
                     self.imagen_webp = os.path.relpath(versions['webp'], media_root)
-                    # Usar la versión WebP como imagen principal
-                    self.imagen.name = self.imagen_webp
+                
+                # Ya procesamos la imagen, pero debemos establecer el campo imagen
+                # para que las relaciones funcionen correctamente en el frontend
+                # IMPORTANTE: El campo `imagen` debe tener siempre un valor
+                # Usamos preferiblemente la versión WebP como la imagen principal
+                if 'webp' in versions and self.imagen_webp:
+                    self.imagen = self.imagen_webp  # Asignar la ruta webp al campo imagen
+                elif 'thumbnail' in versions and self.imagen_thumbnail:
+                    self.imagen = self.imagen_thumbnail  # O la miniatura si no hay webp
+                elif 'original' in versions and self.imagen_original:
+                    self.imagen = self.imagen_original  # O el original como último recurso
+                
+                # Asegurarnos de que imagen se guarde correctamente
+                if not self.imagen and (self.imagen_webp or self.imagen_thumbnail or self.imagen_original):
+                    if self.imagen_webp:
+                        self.imagen = self.imagen_webp
+                    elif self.imagen_thumbnail:
+                        self.imagen = self.imagen_thumbnail
+                    elif self.imagen_original:
+                        self.imagen = self.imagen_original
                 
                 # Obtener metadatos de la imagen original
                 if versions.get('original'):
@@ -257,38 +296,92 @@ class ImagenReferenciaProductoOfertado(models.Model):
         
         super().save(*args, **kwargs)
     
-    @property
-    def get_absolute_url(self):
-        return self.imagen.url if self.imagen else None
-    
-    @property
-    def original_url(self):
-        """URL de la imagen original"""
-        if self.imagen_original:
-            return os.path.join(settings.MEDIA_URL, self.imagen_original)
-        return None
-    
-    @property
-    def thumbnail_url(self):
-        """URL de la miniatura"""
-        if self.imagen_thumbnail:
-            return os.path.join(settings.MEDIA_URL, self.imagen_thumbnail)
-        return None
-    
-    @property
-    def webp_url(self):
-        """URL de la versión WebP"""
+    def extract_timestamp(self):
+        """Extrae el timestamp de la imagen para uso en búsqueda de versiones"""
+        import re
+        # Primero intentamos extraer el timestamp con microsegundos
         if self.imagen_webp:
-            return os.path.join(settings.MEDIA_URL, self.imagen_webp)
+            match = re.search(r'webp_(\d{8}_\d{6}_\d+)', self.imagen_webp)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'webp_(\d{8}_\d{6})', self.imagen_webp)
+            if match:
+                return match.group(1)
+        elif self.imagen_thumbnail:
+            match = re.search(r'miniatura_(\d{8}_\d{6}_\d+)', self.imagen_thumbnail)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'miniatura_(\d{8}_\d{6})', self.imagen_thumbnail)
+            if match:
+                return match.group(1)
+        elif self.imagen_original:
+            match = re.search(r'original_(\d{8}_\d{6}_\d+)', self.imagen_original)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'original_(\d{8}_\d{6})', self.imagen_original)
+            if match:
+                return match.group(1)
+        # Logging para depuración
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"No se pudo extraer timestamp para imagen ID {self.id}, rutas: webp={self.imagen_webp}, thumbnail={self.imagen_thumbnail}, original={self.imagen_original}")
         return None
-    
+        
     def get_version_urls(self):
         """Retorna un diccionario con todas las URLs disponibles"""
+        # Extraer timestamp para obtener versiones específicas
+        timestamp = self.extract_timestamp()
+        
+        # Si tenemos un timestamp, usar ImageProcessor para obtener versiones específicas
+        if timestamp and any([self.imagen_original, self.imagen_thumbnail, self.imagen_webp]):
+            from productos.image_processor import ImageProcessor
+            from django.conf import settings
+            import os
+            
+            # Obtener la ruta base
+            codigo = self.producto_ofertado.code
+            base_path = f'productos/productosofertados/imagenes/{codigo}'
+                
+            media_root = settings.MEDIA_ROOT
+            full_base_path = os.path.join(media_root, base_path)
+            
+            # Obtener versiones específicas para esta imagen usando el timestamp
+            versions = ImageProcessor.get_image_versions(full_base_path, timestamp)
+            
+            # Generar URLs para cada versión
+            urls = {'timestamp': timestamp}
+            
+            # Convertir rutas de sistema a URLs relativas a MEDIA_URL
+            if 'original' in versions:
+                urls['original'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['original'], media_root)}"
+            else:
+                urls['original'] = self.original_url
+                
+            if 'thumbnail' in versions:
+                urls['thumbnail'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['thumbnail'], media_root)}"
+            else:
+                urls['thumbnail'] = self.thumbnail_url
+                
+            if 'webp' in versions:
+                urls['webp'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['webp'], media_root)}"
+            else:
+                urls['webp'] = self.webp_url
+                
+            # URL por defecto, priorizando webp
+            urls['default'] = urls['webp'] or urls['thumbnail'] or urls['original'] or self.get_absolute_url
+            
+            return urls
+        
+        # Fallback al comportamiento anterior
         return {
             'original': self.original_url,
             'thumbnail': self.thumbnail_url,
             'webp': self.webp_url,
-            'default': self.get_absolute_url
+            'default': self.get_absolute_url,
+            'timestamp': timestamp
         }
 
 class DocumentoProductoOfertado(models.Model):
@@ -492,7 +585,15 @@ class ImagenProductoDisponible(models.Model):
     @property
     def get_absolute_url(self):
         """Retorna la URL principal de la imagen (WebP preferida)"""
-        return self.webp_url or self.thumbnail_url or self.original_url or self.imagen.url
+        if self.webp_url:
+            return self.webp_url
+        elif self.thumbnail_url:
+            return self.thumbnail_url
+        elif self.original_url:
+            return self.original_url
+        elif self.imagen:
+            return self.imagen.url
+        return None
     
     def save(self, *args, **kwargs):
         # Si es una imagen nueva y no ha sido procesada
@@ -521,7 +622,7 @@ class ImagenProductoDisponible(models.Model):
                 if 'webp' in versions:
                     self.imagen_webp = os.path.relpath(versions['webp'], media_root)
                     # Usar la versión WebP como imagen principal
-                    self.imagen.name = self.imagen_webp
+                    self.imagen = self.imagen_webp
                 
                 # Obtener metadatos de la imagen original
                 if versions.get('original'):
@@ -550,38 +651,92 @@ class ImagenProductoDisponible(models.Model):
         
         super().save(*args, **kwargs)
     
-    @property
-    def get_absolute_url(self):
-        return self.imagen.url if self.imagen else None
-    
-    @property
-    def original_url(self):
-        """URL de la imagen original"""
-        if self.imagen_original:
-            return os.path.join(settings.MEDIA_URL, self.imagen_original)
-        return None
-    
-    @property
-    def thumbnail_url(self):
-        """URL de la miniatura"""
-        if self.imagen_thumbnail:
-            return os.path.join(settings.MEDIA_URL, self.imagen_thumbnail)
-        return None
-    
-    @property
-    def webp_url(self):
-        """URL de la versión WebP"""
+    def extract_timestamp(self):
+        """Extrae el timestamp de la imagen para uso en búsqueda de versiones"""
+        import re
+        # Primero intentamos extraer el timestamp con microsegundos
         if self.imagen_webp:
-            return os.path.join(settings.MEDIA_URL, self.imagen_webp)
+            match = re.search(r'webp_(\d{8}_\d{6}_\d+)', self.imagen_webp)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'webp_(\d{8}_\d{6})', self.imagen_webp)
+            if match:
+                return match.group(1)
+        elif self.imagen_thumbnail:
+            match = re.search(r'miniatura_(\d{8}_\d{6}_\d+)', self.imagen_thumbnail)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'miniatura_(\d{8}_\d{6})', self.imagen_thumbnail)
+            if match:
+                return match.group(1)
+        elif self.imagen_original:
+            match = re.search(r'original_(\d{8}_\d{6}_\d+)', self.imagen_original)
+            if match:
+                return match.group(1)
+            # Si no hay microsegundos, intentamos con solo fecha y hora
+            match = re.search(r'original_(\d{8}_\d{6})', self.imagen_original)
+            if match:
+                return match.group(1)
+        # Logging para depuración
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"No se pudo extraer timestamp para imagen ID {self.id}, rutas: webp={self.imagen_webp}, thumbnail={self.imagen_thumbnail}, original={self.imagen_original}")
         return None
-    
+        
     def get_version_urls(self):
         """Retorna un diccionario con todas las URLs disponibles"""
+        # Extraer timestamp para obtener versiones específicas
+        timestamp = self.extract_timestamp()
+        
+        # Si tenemos un timestamp, usar ImageProcessor para obtener versiones específicas
+        if timestamp and any([self.imagen_original, self.imagen_thumbnail, self.imagen_webp]):
+            from productos.image_processor import ImageProcessor
+            from django.conf import settings
+            import os
+            
+            # Obtener la ruta base
+            codigo = self.producto_disponible.code
+            base_path = f'productos/productosdisponibles/imagenes/{codigo}'
+                
+            media_root = settings.MEDIA_ROOT
+            full_base_path = os.path.join(media_root, base_path)
+            
+            # Obtener versiones específicas para esta imagen usando el timestamp
+            versions = ImageProcessor.get_image_versions(full_base_path, timestamp)
+            
+            # Generar URLs para cada versión
+            urls = {'timestamp': timestamp}
+            
+            # Convertir rutas de sistema a URLs relativas a MEDIA_URL
+            if 'original' in versions:
+                urls['original'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['original'], media_root)}"
+            else:
+                urls['original'] = self.original_url
+                
+            if 'thumbnail' in versions:
+                urls['thumbnail'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['thumbnail'], media_root)}"
+            else:
+                urls['thumbnail'] = self.thumbnail_url
+                
+            if 'webp' in versions:
+                urls['webp'] = f"{settings.MEDIA_URL}{os.path.relpath(versions['webp'], media_root)}"
+            else:
+                urls['webp'] = self.webp_url
+                
+            # URL por defecto, priorizando webp
+            urls['default'] = urls['webp'] or urls['thumbnail'] or urls['original'] or self.get_absolute_url
+            
+            return urls
+        
+        # Fallback al comportamiento anterior
         return {
             'original': self.original_url,
             'thumbnail': self.thumbnail_url,
             'webp': self.webp_url,
-            'default': self.get_absolute_url
+            'default': self.get_absolute_url,
+            'timestamp': timestamp
         }
 
 class DocumentoProductoDisponible(models.Model):

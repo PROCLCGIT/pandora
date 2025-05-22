@@ -11,6 +11,7 @@ import { useProductosDisponibles, useDeleteProductoDisponible } from '../../api/
 import { useCategories } from '@/modulos/basic/api/categoriaService';
 import { useMarcas } from '@/modulos/basic/api/marcaService';
 import { useProcedencias } from '@/modulos/basic/api/procedenciaService';
+import { useUnidades } from '@/modulos/basic/api/unidadService';
 
 // Importar hook de búsqueda personalizado para debounce
 import { useSearch } from '@/hooks/custom/useSearch';
@@ -68,6 +69,7 @@ export default function ProductosDisponiblesPage() {
   const { data: categoriasData } = useCategories({ page_size: 100 });
   const { data: marcasData } = useMarcas({ page_size: 100 });
   const { data: procedenciasData } = useProcedencias({ page_size: 100 });
+  const { data: unidadesData } = useUnidades({ page_size: 100 });
 
   // Consulta de datos con useProductosDisponibles
   const { data, isLoading, isError, error, refetch } = useProductosDisponibles({
@@ -245,6 +247,7 @@ export default function ProductosDisponiblesPage() {
         </div>
       </FilterCard>
       
+      {/* Botón de paginación infinita - Comentado hasta que se implemente completamente 
       <div className="mb-4">
         <Button 
           variant="outline" 
@@ -255,6 +258,7 @@ export default function ProductosDisponiblesPage() {
           Ver con paginación infinita
         </Button>
       </div>
+      */}
 
       {/* Tabla de datos */}
       <ProductosDisponiblesList 
@@ -264,6 +268,10 @@ export default function ProductosDisponiblesPage() {
         error={error}
         refetch={refetch}
         onDeleteClick={handleDeleteClick}
+        categoriasList={categoriasData?.results}
+        marcasList={marcasData?.results}
+        procedenciasList={procedenciasData?.results}
+        unidadesList={unidadesData?.results}
         pagination={{
           currentPage,
           totalPages: Math.ceil((data?.count || 0) / pageSize),
