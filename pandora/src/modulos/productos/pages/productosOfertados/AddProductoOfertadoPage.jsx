@@ -7,8 +7,8 @@ import { Card } from '@/components/ui/card';
 
 // Custom hooks
 import useProductoOfertadoForm from '../../hooks/useProductoOfertadoForm';
-import useImagenes from '../../hooks/useImagenes';
-import useDocumentos from '../../hooks/useDocumentos';
+import { useImagenes } from '../../hooks/useImagenes';
+import { useDocumentos } from '../../hooks/useDocumentos';
 import useProductoMutations from '../../hooks/useProductoMutations';
 
 // Data services
@@ -44,6 +44,9 @@ export default function AddProductoOfertadoPage() {
   
   // Valores del formulario para mostrar en tiempo real
   const formValues = formHook.watch();
+  
+  // Estado de validación del formulario
+  const { isValid, isDirty } = formHook.formState;
   
   // Inicializar hook de mutaciones
   const mutationHook = useProductoMutations(id);
@@ -141,36 +144,18 @@ export default function AddProductoOfertadoPage() {
             </div>
             
             <div className="hidden md:flex items-center">
-              {/* Progreso de completado */}
-              <div className="relative w-32 h-32">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <span className="block text-2xl font-bold text-indigo-600">{formProgress}%</span>
-                    <span className="text-xs text-gray-500">Completado</span>
-                  </div>
+              {/* Progress indicator with accessibility */}
+              <div className="flex items-center space-x-4" role="progressbar" aria-valuenow={formProgress} aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del formulario">
+                <div className="text-center">
+                  <span className="block text-2xl font-bold text-indigo-600">{formProgress}%</span>
+                  <span className="text-xs text-gray-500">Completado</span>
                 </div>
-                <svg className="w-full h-full" viewBox="0 0 100 100">
-                  <circle 
-                    className="text-gray-200" 
-                    strokeWidth="8" 
-                    stroke="currentColor" 
-                    fill="transparent" 
-                    r="40" 
-                    cx="50" 
-                    cy="50" 
-                  />
-                  <circle 
-                    className="text-indigo-600 transition-all duration-1000 ease-in-out" 
-                    strokeWidth="8" 
-                    strokeDasharray={`${formProgress * 2.51} 251`}
-                    strokeLinecap="round" 
-                    stroke="currentColor" 
-                    fill="transparent" 
-                    r="40" 
-                    cx="50" 
-                    cy="50" 
-                  />
-                </svg>
+                <div className="w-32 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-1000 ease-in-out" 
+                    style={{ width: `${formProgress}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
@@ -262,7 +247,7 @@ export default function AddProductoOfertadoPage() {
                 <Button
                   type="submit"
                   className="rounded-lg px-8 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto shadow-md transition-all duration-300 hover:shadow-lg"
-                  disabled={mutationHook.isSubmitting}
+                  disabled={mutationHook.isSubmitting || !isValid || (!formHook.isEditing && !isDirty)}
                 >
                   {mutationHook.isSubmitting ? (
                     <div className="flex items-center">

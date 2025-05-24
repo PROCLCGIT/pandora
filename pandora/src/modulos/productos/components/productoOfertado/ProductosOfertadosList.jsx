@@ -40,27 +40,30 @@ export default function ProductosOfertadosList({
         // Obtener la primera imagen o la imagen principal
         const imagen = producto.imagenes?.find(img => img.is_primary) || producto.imagenes?.[0];
 
-        // Debugging de imagen para ver qué datos tenemos disponibles
-        if (producto.code === 'OFT-A182' || producto.code === 'OFT-A250') {
-          console.log(`[Debug Imagen][${producto.code}] imagen:`, imagen);
-        }
+        // Enhanced debugging to see all available data
+        console.log(`[Debug Imagen][${producto.code}] Full imagen object:`, imagen);
         
-        // Intentar obtener la URL de la imagen en este orden de prioridad:
-        // 1. thumbnail_url
-        // 2. webp_url
-        // 3. imagen_url
-        // 4. original_url
-        // 5. imagen (campo directo)
-        // Usar las URLs enviadas desde el backend, que ahora incluyen el timestamp
-        // Priorizar la URL que incluye el timestamp específico de esta imagen
-        const imageUrl = imagen?.urls?.thumbnail || 
-                      imagen?.urls?.webp || 
-                      imagen?.urls?.original || 
-                      imagen?.thumbnail_url || 
-                      imagen?.webp_url || 
-                      imagen?.imagen_url || 
-                      imagen?.original_url || 
-                      (imagen?.imagen ? `/media/${imagen.imagen}` : null);
+        // Try multiple URL sources in order of preference
+        let imageUrl = null;
+        
+        if (imagen) {
+          // Check for urls object first (preferred)
+          if (imagen.urls) {
+            imageUrl = imagen.urls.thumbnail || imagen.urls.webp || imagen.urls.original || imagen.urls.default;
+          }
+          
+          // Fallback to direct URL properties
+          if (!imageUrl) {
+            imageUrl = imagen.thumbnail_url || imagen.webp_url || imagen.imagen_url || imagen.original_url;
+          }
+          
+          // Fallback to imagen field
+          if (!imageUrl && imagen.imagen) {
+            imageUrl = imagen.imagen.startsWith('/media/') ? imagen.imagen : `/media/${imagen.imagen}`;
+          }
+          
+          console.log(`[Debug Imagen][${producto.code}] Selected imageUrl:`, imageUrl);
+        }
         
         if (imageUrl) {
           return (
@@ -194,7 +197,12 @@ export default function ProductosOfertadosList({
       style: { textAlign: 'center', width: '7rem' },
       cell: (producto) => (
         <ActionButtons 
-          onView={() => navigate(`/productos/productos-ofertados/${producto.id}`)}
+          onView={() => {
+            console.log(`[DEBUG] Navigating to detail view for producto ID: ${producto.id}`);
+            console.log(`[DEBUG] Full producto object:`, producto);
+            console.log(`[DEBUG] Target URL: /productos/productos-ofertados/${producto.id}`);
+            navigate(`/productos/productos-ofertados/${producto.id}`);
+          }}
           onEdit={() => navigate(`/productos/productos-ofertados/edit/${producto.id}`)}
           onDelete={() => onDeleteClick(producto)}
         />
@@ -203,15 +211,18 @@ export default function ProductosOfertadosList({
   ];
 
   return (
-    <DataTable 
-      columns={columns}
-      data={data?.results}
-      isLoading={isLoading}
-      isError={isError}
-      errorMessage={error?.message}
-      onRetry={refetch}
-      emptyMessage="No se encontraron productos ofertados que coincidan con la búsqueda."
-      pagination={pagination}
-    />
+    <>
+      <DataTable 
+        columns={columns}
+        data={data?.results}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={error?.message}
+        onRetry={refetch}
+        emptyMessage="No se encontraron productos ofertados que coincidan con la búsqueda."
+        pagination={pagination}
+      />
+      
+    </>
   );
 }

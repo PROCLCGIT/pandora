@@ -62,9 +62,14 @@ const fetchProductosOfertados = async (params = {}) => {
  */
 const fetchProductoOfertadoById = async (id) => {
   try {
+    console.log(`[API DEBUG] Fetching producto ofertado by ID: ${id}`);
+    console.log(`[API DEBUG] Request URL: ${RESOURCE_URL}${id}/`);
     const response = await api.get(`${RESOURCE_URL}${id}/`);
+    console.log(`[API DEBUG] Response received:`, response.data);
     return response.data;
   } catch (error) {
+    console.error(`[API DEBUG] Error fetching producto ofertado id ${id}:`, error);
+    console.error(`[API DEBUG] Error details:`, error.response?.data);
     debug(`Error fetching producto ofertado id ${id}:`, error);
     throw error;
   }

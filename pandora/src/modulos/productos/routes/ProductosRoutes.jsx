@@ -2,6 +2,7 @@
 
 import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, useRoutes } from 'react-router-dom';
+import { ProductosPrefetchWrapper } from '../components/prefetch/ProductosPrefetchWrapper.jsx';
 
 // Lazy loading de páginas de productos ofertados
 const ProductosOfertadosPage = lazy(() => import('../pages/productosOfertados/ProductosOfertadosPage'));
@@ -9,29 +10,31 @@ const AddProductoOfertadoPage = lazy(() => import('../pages/productosOfertados/A
 const DetalleProductoOfertado = lazy(() => import('../pages/productosOfertados/DetalleProductoOfertado'));
 //const ProductosOfertadosInfinitePage = lazy(() => import('../pages/productosOfertados/ProductosOfertadosInfinitePage'));
 
-
 // Lazy loading de páginas de productos disponibles
 const ProductosDisponiblesPage = lazy(() => import('../pages/productosDisponibles/ProductosDisponiblesPage'));
 const AddProductoDisponiblePage = lazy(() => import('../pages/productosDisponibles/AddProductoDisponiblePage'));
 const DetalleProductoDisponible = lazy(() => import('../pages/productosDisponibles/DetalleProductoDisponible'));
 //const ProductosDisponiblesInfinitePage = lazy(() => import('../pages/productosDisponibles/ProductosDisponiblesInfinitePage'));
 
-// Componente Loader para Suspense
+// Lazy loading de página de configuración
+const ConfiguracionPage = lazy(() => import('../pages/ConfiguracionPage'));
+
+// Componente Loader básico de fallback
 const ProductsModuleLoader = () => (
   <div className="flex justify-center items-center h-full w-full min-h-[200px]">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
   </div>
 );
 
-// Layout del módulo de Productos
+// Layout del módulo de Productos con prefetch
 const ProductosLayout = () => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Gestión de Productos</h1>
       <div className="mt-4">
-        <Suspense fallback={<ProductsModuleLoader />}>
+        <ProductosPrefetchWrapper enablePrefetch={true}>
           <Outlet />
-        </Suspense>
+        </ProductosPrefetchWrapper>
       </div>
     </div>
   );
@@ -58,6 +61,9 @@ const productosRoutes = [
       { path: 'productos-disponibles/add', element: <AddProductoDisponiblePage /> },
       { path: 'productos-disponibles/edit/:id', element: <AddProductoDisponiblePage /> },
       { path: 'productos-disponibles/:id', element: <DetalleProductoDisponible /> },
+      
+      // Ruta de Configuración
+      { path: 'configuracion', element: <ConfiguracionPage /> },
       
       // Ruta de fallback
       { path: '*', element: <Navigate to="productos-ofertados" replace /> }

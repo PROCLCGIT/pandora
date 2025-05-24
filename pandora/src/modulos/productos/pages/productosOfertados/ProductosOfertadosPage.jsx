@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter, Package } from 'lucide-react';
+import { Plus, Filter, Package, Settings } from 'lucide-react';
 
 // Importaciones del servicio de productos ofertados
 import { useProductosOfertados, useDeleteProductoOfertado } from '../../api/productoOfertadoService';
@@ -141,11 +141,19 @@ export default function ProductosOfertadosPage() {
         icon={<Package size={40} strokeWidth={1.5} />}
         title="Productos Ofertados"
         description="Gestiona el catálogo de productos que la empresa ofrece a sus clientes."
-        action={{
-          label: "Nuevo Producto",
-          icon: <Plus className="h-4 w-4" />,
-          onClick: () => navigate('/productos/productos-ofertados/add')
-        }}
+        actions={[
+          {
+            label: "Configuración",
+            icon: <Settings className="h-4 w-4" />,
+            variant: "outline",
+            onClick: () => navigate('/productos/configuracion')
+          },
+          {
+            label: "Nuevo Producto",
+            icon: <Plus className="h-4 w-4" />,
+            onClick: () => navigate('/productos/productos-ofertados/add')
+          }
+        ]}
       />
 
       {/* Tarjeta de filtros */}

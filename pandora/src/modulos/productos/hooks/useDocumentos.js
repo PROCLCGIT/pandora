@@ -25,7 +25,7 @@ export const useDocumentos = () => {
     tipo_documento: '',
     titulo: '',
     descripcion: '',
-    isPublic: false
+    is_public: false
   });
 
   // Validar tamaño y formato de documento
@@ -134,7 +134,7 @@ export const useDocumentos = () => {
       tipo_documento: nuevoDocumento.tipo_documento,
       titulo: nuevoDocumento.titulo,
       descripcion: nuevoDocumento.descripcion,
-      is_public: nuevoDocumento.isPublic
+      is_public: nuevoDocumento.is_public
     };
 
     setDocumentos([...documentos, newDocument]);
@@ -145,7 +145,7 @@ export const useDocumentos = () => {
       tipo_documento: '',
       titulo: '',
       descripcion: '',
-      isPublic: false
+      is_public: false
     });
 
     // Cerrar el diálogo
@@ -171,7 +171,7 @@ export const useDocumentos = () => {
       tipo_documento: '',
       titulo: '',
       descripcion: '',
-      isPublic: false
+      is_public: false
     });
     if (docInputRef.current) {
       docInputRef.current.value = '';

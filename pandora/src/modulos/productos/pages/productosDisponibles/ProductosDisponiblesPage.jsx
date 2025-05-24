@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter, ShoppingBag } from 'lucide-react';
+import { Plus, Filter, ShoppingBag, Settings } from 'lucide-react';
 
 // Importaciones del servicio de productos disponibles
 import { useProductosDisponibles, useDeleteProductoDisponible } from '../../api/productoDisponibleService';
@@ -151,11 +151,19 @@ export default function ProductosDisponiblesPage() {
         icon={<ShoppingBag size={40} strokeWidth={1.5} />}
         title="Productos Disponibles"
         description="Gestiona los productos específicos que la empresa tiene disponibles para la venta."
-        action={{
-          label: "Nuevo Producto",
-          icon: <Plus className="h-4 w-4" />,
-          onClick: () => navigate('/productos/productos-disponibles/add')
-        }}
+        actions={[
+          {
+            label: "Configuración",
+            icon: <Settings className="h-4 w-4" />,
+            variant: "outline",
+            onClick: () => navigate('/productos/configuracion')
+          },
+          {
+            label: "Nuevo Producto",
+            icon: <Plus className="h-4 w-4" />,
+            onClick: () => navigate('/productos/productos-disponibles/add')
+          }
+        ]}
       />
 
       {/* Tarjeta de filtros */}

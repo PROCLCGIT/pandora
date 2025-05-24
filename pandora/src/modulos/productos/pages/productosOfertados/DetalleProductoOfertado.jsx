@@ -5,11 +5,13 @@ import { useProductoOfertadoById } from '../../api/productoOfertadoService'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
-function DetailField({ label, children }) {
+function DetailField({ label, children, id }) {
+  const fieldId = id || `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  
   return (
-    <div className="bg-white rounded-lg p-5 shadow-sm border">
-      <p className="text-sm font-medium text-gray-500 uppercase mb-1">{label}</p>
-      <div className="font-medium text-gray-900">
+    <div className="bg-white rounded-lg p-5 shadow-sm border" role="region" aria-labelledby={`${fieldId}-label`}>
+      <p id={`${fieldId}-label`} className="text-sm font-medium text-gray-500 uppercase mb-1">{label}</p>
+      <div className="font-medium text-gray-900" id={fieldId}>
         {children}
       </div>
     </div>
@@ -287,7 +289,12 @@ export default function DetalleProductoOfertado() {
   const navigate = useNavigate()
   const { data: producto, isLoading, isError, error } = useProductoOfertadoById(id)
   
-  // Depuración para entender la estructura de los datos
+  // Enhanced debugging
+  console.log("=== DETALLE PRODUCTO OFERTADO DEBUG ===")
+  console.log("URL Params ID:", id)
+  console.log("isLoading:", isLoading)
+  console.log("isError:", isError)  
+  console.log("error:", error)
   console.log("Producto data:", producto)
   console.log("Categoria:", producto?.id_categoria, producto?.categoria)
 
@@ -303,7 +310,12 @@ export default function DetalleProductoOfertado() {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-600 font-medium">Error al cargar el producto: {error.message}</p>
+          <p className="text-red-600 font-medium">Error al cargar el producto: {error?.message || 'Error desconocido'}</p>
+          <div className="mt-2 text-sm text-gray-600">
+            <p>ID solicitado: {id}</p>
+            <p>Status: {error?.response?.status}</p>
+            <p>Detalles: {JSON.stringify(error?.response?.data)}</p>
+          </div>
           <Button variant="outline" className="mt-4" onClick={() => navigate('/productos/productos-ofertados')}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Volver
           </Button>
@@ -315,47 +327,53 @@ export default function DetalleProductoOfertado() {
   return (
     <div className="bg-slate-100 min-h-screen">
       {/* Header */}
-      <div className="border-b bg-white">
+      <header className="border-b bg-white" role="banner">
         <div className="container mx-auto p-4 max-w-5xl">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900" id="product-title">
                 {producto.nombre}
               </h1>
-              <p className="text-gray-600">Código: {producto.code}</p>
+              <p className="text-gray-600" aria-describedby="product-title">Código: {producto.code}</p>
             </div>
-            <div className="flex gap-3">
+            <nav className="flex gap-3" role="navigation" aria-label="Acciones del producto">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/productos/productos-ofertados')}
                 className="flex items-center gap-1"
+                aria-label="Volver a la lista de productos ofertados"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Volver
               </Button>
               <Button 
                 size="sm" 
                 onClick={() => navigate(`/productos/productos-ofertados/edit/${id}`)} 
                 className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1"
+                aria-label={`Editar producto ${producto.nombre}`}
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-4 w-4" aria-hidden="true" />
                 Editar
               </Button>
-            </div>
+            </nav>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Gradient divider */}
       <div className="h-1 bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-400"></div>
 
       {/* Content */}
-      <div className="container mx-auto p-4 max-w-5xl">
-        <div className="bg-white border rounded-lg p-6 shadow-sm mb-6">
-          <div className="flex items-center mb-4">
+      <main className="container mx-auto p-4 max-w-5xl" role="main">
+        <section className="bg-white border rounded-lg p-6 shadow-sm mb-6" aria-labelledby="product-info-heading">
+          <div className="flex items-center mb-4" role="region" aria-label="Estado y categoría del producto">
             <div className="mr-2">
-              <Badge variant={producto.is_active ? "success" : "secondary"} className={producto.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+              <Badge 
+                variant={producto.is_active ? "success" : "secondary"} 
+                className={producto.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                aria-label={`Estado del producto: ${producto.is_active ? "Activo" : "Inactivo"}`}
+              >
                 {producto.is_active ? "Activo" : "Inactivo"}
               </Badge>
             </div>
@@ -364,22 +382,22 @@ export default function DetalleProductoOfertado() {
             </div>
           </div>
 
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Información del Producto</h2>
+          <h2 id="product-info-heading" className="text-lg font-semibold text-gray-800 mb-4">Información del Producto</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <DetailField label="CÓDIGO">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" role="group" aria-label="Información básica del producto">
+          <DetailField label="CÓDIGO" id="product-code">
             {producto.code}
           </DetailField>
           
-          <DetailField label="CUDIM">
+          <DetailField label="CUDIM" id="product-cudim">
             {producto.cudim}
           </DetailField>
           
-          <DetailField label="CATEGORÍA">
+          <DetailField label="CATEGORÍA" id="product-category">
             {producto.categoria?.nombre || producto.id_categoria?.nombre || 'No especificada'}
           </DetailField>
           
-          <DetailField label="ESPECIALIDAD">
+          <DetailField label="ESPECIALIDAD" id="product-specialty">
             {(producto.especialidad_data && producto.especialidad_data.nombre) || 
              (typeof producto.especialidad === 'object' && producto.especialidad?.nombre) || 
              'No especificada'}
@@ -389,7 +407,7 @@ export default function DetalleProductoOfertado() {
         {/* Descripción */}
         {producto.descripcion && (
           <div className="mb-6">
-            <DetailField label="DESCRIPCIÓN">
+            <DetailField label="DESCRIPCIÓN" id="product-description">
               {producto.descripcion}
             </DetailField>
           </div>
@@ -403,7 +421,7 @@ export default function DetalleProductoOfertado() {
             </DetailField>
           </div>
         )}
-        </div>
+        </section>
 
         {/* Imágenes */}
         <ImageGallery 
@@ -413,7 +431,7 @@ export default function DetalleProductoOfertado() {
 
         {/* Documentos */}
         <DocumentList documents={producto.documentos || []} />
-      </div>
+      </main>
     </div>
   )
 }

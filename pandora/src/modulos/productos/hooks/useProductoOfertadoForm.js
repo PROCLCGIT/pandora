@@ -48,7 +48,7 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
     control,
     reset,
     watch,
-    formState: { errors, isSubmitting },
+    formState,
     getValues,
   } = useForm({
     resolver: zodResolver(productoOfertadoSchema),
@@ -63,6 +63,9 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
       is_active: true,
     },
   });
+
+  // Extraer valores específicos de formState
+  const { errors, isSubmitting } = formState;
 
   // Hook para cargar datos del producto si es edición
   const { data: productoData, isLoading: isLoadingProducto } = useProductoOfertadoById(
@@ -255,6 +258,7 @@ export const useProductoOfertadoForm = (id, setImagenes, setDocumentos) => {
     control,
     errors,
     isSubmitting,
+    formState,
     isLoadingProducto,
     isEditing,
     productoData,

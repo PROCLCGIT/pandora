@@ -844,6 +844,267 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
             return ProductoDisponibleDetalladoSerializer
         return ProductoDisponibleSerializer
     
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve to handle errors gracefully"""
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except Exception as e:
+            import traceback
+            print(f"ERROR EN RETRIEVE PRODUCTO DISPONIBLE: {str(e)}")
+            print(f"TRACEBACK: {traceback.format_exc()}")
+            # Intentar con serializer simple si falla el detallado
+            try:
+                instance = self.get_object()
+                serializer = ProductoDisponibleSerializer(instance, context={'request': request})
+                return Response(serializer.data)
+            except Exception as e2:
+                print(f"ERROR TAMBIÉN CON SERIALIZER SIMPLE: {str(e2)}")
+                return Response(
+                    {"error": "Error al obtener el producto", "detail": str(e)}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Crea un producto disponible y procesa las imágenes y documentos adjuntos.
+        """
+        try:
+            print(f"🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED")
+            print(f"🔄 REQUEST CONTENT TYPE: {request.content_type}")
+            print(f"🔄 REQUEST DATA KEYS: {request.data.keys()}")
+            print(f"🔄 REQUEST FILES KEYS: {request.FILES.keys()}")
+            
+            # Obtener archivos subidos
+            uploaded_images = request.FILES.getlist('uploaded_images', [])
+            uploaded_documents = request.FILES.getlist('uploaded_documents', [])
+            
+            # Obtener metadatos de imágenes
+            image_descriptions = request.POST.getlist('image_descriptions', [])
+            image_is_primary = request.POST.getlist('image_is_primary', [])
+            image_orden = request.POST.getlist('image_orden', [])
+            
+            # Obtener metadatos de documentos
+            document_titles = request.POST.getlist('document_titles', [])
+            document_types = request.POST.getlist('document_types', [])
+            document_descriptions = request.POST.getlist('document_descriptions', [])
+            
+            print(f"🖼️ Received {len(uploaded_images)} images and {len(uploaded_documents)} documents")
+            
+            # Crear el producto primero
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            producto = serializer.instance
+            
+            print(f"✅ Producto disponible creado con ID: {producto.id}")
+            
+            # Procesar imágenes
+            for i, img_file in enumerate(uploaded_images):
+                try:
+                    print(f"🖼️ Procesando imagen {i+1}/{len(uploaded_images)}: {img_file.name}")
+                    
+                    descripcion = image_descriptions[i] if i < len(image_descriptions) else f"Imagen {i+1}"
+                    is_primary = image_is_primary[i].lower() == 'true' if i < len(image_is_primary) else i == 0
+                    orden = int(image_orden[i]) if i < len(image_orden) and image_orden[i].isdigit() else i
+                    
+                    # Crear la imagen
+                    imagen = ImagenProductoDisponible(
+                        producto_disponible=producto,
+                        imagen=img_file,
+                        descripcion=descripcion,
+                        is_primary=is_primary,
+                        orden=orden
+                    )
+                    
+                    if request.user.is_authenticated:
+                        imagen.created_by = request.user
+                    
+                    imagen.save()
+                    print(f"✅ Imagen guardada con ID: {imagen.id}")
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"❌ Error al procesar imagen {i+1}: {str(e)}")
+                    print(traceback.format_exc())
+            
+            # Procesar documentos
+            for i, doc_file in enumerate(uploaded_documents):
+                try:
+                    print(f"📄 Procesando documento {i+1}/{len(uploaded_documents)}: {doc_file.name}")
+                    
+                    titulo = document_titles[i] if i < len(document_titles) else f"Documento {i+1}"
+                    tipo_documento = document_types[i] if i < len(document_types) else "otros"
+                    descripcion = document_descriptions[i] if i < len(document_descriptions) else ""
+                    
+                    # Crear el documento
+                    documento = DocumentoProductoDisponible(
+                        producto_disponible=producto,
+                        documento=doc_file,
+                        titulo=titulo,
+                        tipo_documento=tipo_documento,
+                        descripcion=descripcion,
+                        is_public=True
+                    )
+                    
+                    if request.user.is_authenticated:
+                        documento.created_by = request.user
+                    
+                    documento.save()
+                    print(f"✅ Documento guardado con ID: {documento.id}")
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"❌ Error al procesar documento {i+1}: {str(e)}")
+                    print(traceback.format_exc())
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except Exception as e:
+            import traceback
+            print(f"❌ ERROR EN CREATE PRODUCTO DISPONIBLE: {str(e)}")
+            print(traceback.format_exc())
+            return Response(
+                {"error": f"Error al crear el producto: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Actualiza un producto disponible y procesa las imágenes y documentos adjuntos.
+        """
+        try:
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            
+            print(f"⚡ UPDATE PRODUCTO DISPONIBLE REQUEST para ID {instance.id}")
+            print(f"⚡ REQUEST FILES KEYS: {request.FILES.keys()}")
+            
+            # Obtener archivos subidos
+            uploaded_images = request.FILES.getlist('uploaded_images', [])
+            uploaded_documents = request.FILES.getlist('uploaded_documents', [])
+            
+            # Manejar imágenes existentes
+            existing_images = request.data.get('existing_images', None)
+            if existing_images:
+                try:
+                    if isinstance(existing_images, str):
+                        import json
+                        existing_images = json.loads(existing_images)
+                    
+                    print(f"Manteniendo imágenes existentes con IDs: {existing_images}")
+                    # Eliminar imágenes no incluidas en la lista
+                    ImagenProductoDisponible.objects.filter(
+                        producto_disponible=instance
+                    ).exclude(id__in=existing_images).delete()
+                except Exception as e:
+                    print(f"Error procesando existing_images: {e}")
+            
+            # Manejar documentos existentes
+            existing_documents = request.data.get('existing_documents', None)
+            if existing_documents:
+                try:
+                    if isinstance(existing_documents, str):
+                        import json
+                        existing_documents = json.loads(existing_documents)
+                    
+                    print(f"Manteniendo documentos existentes con IDs: {existing_documents}")
+                    # Eliminar documentos no incluidos en la lista
+                    DocumentoProductoDisponible.objects.filter(
+                        producto_disponible=instance
+                    ).exclude(id__in=existing_documents).delete()
+                except Exception as e:
+                    print(f"Error procesando existing_documents: {e}")
+            
+            # Obtener metadatos
+            image_descriptions = request.POST.getlist('image_descriptions', [])
+            image_is_primary = request.POST.getlist('image_is_primary', [])
+            image_orden = request.POST.getlist('image_orden', [])
+            
+            document_titles = request.POST.getlist('document_titles', [])
+            document_types = request.POST.getlist('document_types', [])
+            document_descriptions = request.POST.getlist('document_descriptions', [])
+            
+            # Procesar nuevas imágenes
+            for i, img_file in enumerate(uploaded_images):
+                try:
+                    print(f"⚡ Procesando imagen {i+1}/{len(uploaded_images)}: {img_file.name}")
+                    
+                    descripcion = image_descriptions[i] if i < len(image_descriptions) else f"Imagen {i+1}"
+                    is_primary = image_is_primary[i].lower() == 'true' if i < len(image_is_primary) else False
+                    orden = int(image_orden[i]) if i < len(image_orden) and image_orden[i].isdigit() else i
+                    
+                    # Crear la imagen
+                    imagen = ImagenProductoDisponible(
+                        producto_disponible=instance,
+                        imagen=img_file,
+                        descripcion=descripcion,
+                        is_primary=is_primary,
+                        orden=orden
+                    )
+                    
+                    if request.user.is_authenticated:
+                        imagen.created_by = request.user
+                    
+                    imagen.save()
+                    print(f"✅ Imagen guardada con ID: {imagen.id}")
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"❌ Error al procesar imagen {i+1}: {str(e)}")
+                    print(traceback.format_exc())
+            
+            # Procesar nuevos documentos
+            for i, doc_file in enumerate(uploaded_documents):
+                try:
+                    print(f"⚡ Procesando documento {i+1}/{len(uploaded_documents)}: {doc_file.name}")
+                    
+                    titulo = document_titles[i] if i < len(document_titles) else f"Documento {i+1}"
+                    tipo_documento = document_types[i] if i < len(document_types) else "otros"
+                    descripcion = document_descriptions[i] if i < len(document_descriptions) else ""
+                    
+                    # Crear el documento
+                    documento = DocumentoProductoDisponible(
+                        producto_disponible=instance,
+                        documento=doc_file,
+                        titulo=titulo,
+                        tipo_documento=tipo_documento,
+                        descripcion=descripcion,
+                        is_public=True
+                    )
+                    
+                    if request.user.is_authenticated:
+                        documento.created_by = request.user
+                    
+                    documento.save()
+                    print(f"✅ Documento guardado con ID: {documento.id}")
+                    
+                except Exception as e:
+                    import traceback
+                    print(f"❌ Error al procesar documento {i+1}: {str(e)}")
+                    print(traceback.format_exc())
+            
+            # Actualizar el producto
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+            
+            return Response(serializer.data)
+            
+        except Exception as e:
+            import traceback
+            print(f"❌ ERROR EN UPDATE PRODUCTO DISPONIBLE: {str(e)}")
+            print(traceback.format_exc())
+            return Response(
+                {"error": f"Error al actualizar el producto: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     @swagger_auto_schema(
         operation_description="Obtiene la lista de productos disponibles activos",
         responses={

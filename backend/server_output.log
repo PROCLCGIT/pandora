@@ -1,0 +1,608 @@
+Watching for file changes with StatReloader
+[23/May/2025 04:40:06] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:40:07] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:40:07] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:40:07] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 04:40:07] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:40:07] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:40:07] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:40:07] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 1454
+[23/May/2025 04:40:07] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 1454
+[23/May/2025 04:40:08] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 04:40:08] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:40:11] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:40:34] "POST /api/productos/productos-disponibles/ HTTP/1.1" 201 714
+[23/May/2025 04:40:37] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:40:37] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:40:37] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:40:37] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:40:37] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 04:40:37] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:40:37] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:40:37] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2169
+[23/May/2025 04:40:37] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2169
+[23/May/2025 04:40:38] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:40:38] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 04:40:39] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:41:05] "POST /api/productos/productos-disponibles/ HTTP/1.1" 201 2592
+[23/May/2025 04:41:37] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:41:37] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 04:41:37] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:41:37] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:41:37] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:41:46] "GET /api/productos/productos-disponibles/14/ HTTP/1.1" 200 4416
+[23/May/2025 04:41:46] "GET /api/productos/productos-disponibles/14/ HTTP/1.1" 200 4416
+[23/May/2025 04:41:49] "GET /api/productos/productos-disponibles/15/ HTTP/1.1" 200 3130
+[23/May/2025 04:41:49] "GET /api/productos/productos-disponibles/15/ HTTP/1.1" 200 3130
+Unauthorized: /api/users/me/
+[23/May/2025 04:44:05] "GET /api/users/me/ HTTP/1.1" 401 58
+[23/May/2025 04:44:05] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 04:44:05] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:44:05] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:44:05] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:44:05] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:44:05] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:44:05] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 04:44:05] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:44:05] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:44:05] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 4762
+[23/May/2025 04:44:06] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:44:06] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 04:44:07] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 4762
+[23/May/2025 04:44:07] "GET /media/productos/productosdisponibles/imagenes/INS-E-753/miniaturas/miniatura_20250523_044105_272221.jpg HTTP/1.1" 200 2310
+[23/May/2025 04:44:10] "OPTIONS /api/productos/productos-disponibles/14/ HTTP/1.1" 200 0
+[23/May/2025 04:44:10] "DELETE /api/productos/productos-disponibles/14/ HTTP/1.1" 204 0
+[23/May/2025 04:44:11] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 4061
+[23/May/2025 04:44:12] "OPTIONS /api/productos/productos-disponibles/13/ HTTP/1.1" 200 0
+[23/May/2025 04:44:12] "DELETE /api/productos/productos-disponibles/13/ HTTP/1.1" 204 0
+[23/May/2025 04:44:13] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 3359
+[23/May/2025 04:44:15] "OPTIONS /api/productos/productos-disponibles/16/ HTTP/1.1" 200 0
+[23/May/2025 04:44:15] "DELETE /api/productos/productos-disponibles/16/ HTTP/1.1" 204 0
+[23/May/2025 04:44:15] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 766
+[23/May/2025 04:44:17] "OPTIONS /api/productos/productos-disponibles/15/ HTTP/1.1" 200 0
+[23/May/2025 04:44:17] "DELETE /api/productos/productos-disponibles/15/ HTTP/1.1" 204 0
+[23/May/2025 04:44:17] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 52
+[23/May/2025 04:45:05] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:45:05] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 04:45:05] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:45:05] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:45:05] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+Unauthorized: /api/productos/productos-ofertados/
+Unauthorized: /api/basic/categorias/
+Unauthorized: /api/basic/marcas/
+[23/May/2025 04:50:26] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 401 172
+Unauthorized: /api/basic/unidades/
+[23/May/2025 04:50:26] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 401 58
+Unauthorized: /api/basic/procedencias/
+[23/May/2025 04:50:26] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 401 58
+Unauthorized: /api/productos/productos-disponibles/
+[23/May/2025 04:50:26] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 04:50:26] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 04:50:26] "GET /api/productos/productos-disponibles/ HTTP/1.1" 401 58
+[23/May/2025 04:50:26] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 04:50:26] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 04:50:26] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:50:26] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:50:26] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:50:26] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 52
+[23/May/2025 04:50:26] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:50:27] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 04:50:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:50:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:50:30] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:50:30] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:50:30] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:50:30] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:50:30] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 04:50:30] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:50:30] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 52
+[23/May/2025 04:50:31] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 04:50:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:50:33] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 52
+[23/May/2025 04:50:34] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 04:50:34] "GET /api/productos/productos-ofertados/?search=&page=1&page_size=10 HTTP/1.1" 200 12842
+[23/May/2025 04:51:30] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 04:51:30] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 04:51:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:51:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 04:51:30] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+Unauthorized: /api/productos/productos-ofertados/
+Unauthorized: /api/basic/categorias/
+Unauthorized: /api/basic/marcas/
+[23/May/2025 04:58:04] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 04:58:04] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 401 172
+Unauthorized: /api/basic/unidades/
+[23/May/2025 04:58:04] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 401 58
+Unauthorized: /api/basic/procedencias/
+[23/May/2025 04:58:04] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 04:58:04] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 04:58:04] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 04:58:04] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 04:58:04] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 04:58:04] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 04:58:04] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 04:58:04] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:01:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:01:31] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:01:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:01:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:01:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:01:32] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 52
+[23/May/2025 05:01:34] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+Unauthorized: /api/productos/productos-disponibles/
+[23/May/2025 05:04:31] "POST /api/productos/productos-disponibles/ HTTP/1.1" 401 58
+[23/May/2025 05:04:31] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:04:32] "POST /api/productos/productos-disponibles/ HTTP/1.1" 201 2600
+[23/May/2025 05:04:32] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:04:32] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:04:32] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:04:32] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:04:32] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:04:32] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:04:32] "GET /media/productos/productosdisponibles/imagenes/INS-S-638/miniaturas/miniatura_20250523_050432_014192.jpg HTTP/1.1" 200 6295
+[23/May/2025 05:04:33] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 05:11:30] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 05:11:30] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 05:11:30] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:11:30] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:11:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:11:30] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:11:30] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:11:30] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:11:30] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:11:30] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:11:30] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:11:30] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:11:30] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:11:31] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 05:21:31] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 05:21:31] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 05:21:31] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:21:31] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:21:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:21:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:21:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:21:31] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:21:31] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:21:31] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:21:31] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:21:31] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:21:32] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:21:34] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 05:31:31] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 05:31:31] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 05:31:31] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:31:31] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:31:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:31:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:31:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:31:31] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:31:31] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:31:31] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:31:31] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:31:31] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:31:32] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:31:34] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 05:41:31] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 05:41:31] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 05:41:31] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:41:31] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:41:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:41:31] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:41:31] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:41:31] "OPTIONS /api/basic/categorias/?page_size=100 HTTP/1.1" 200 0
+[23/May/2025 05:41:31] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:41:31] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:41:31] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:41:31] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:41:31] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:41:32] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:41:34] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+Unauthorized: /api/users/me/
+[23/May/2025 05:49:15] "GET /api/users/me/ HTTP/1.1" 401 58
+[23/May/2025 05:49:15] "OPTIONS /api/auth/refresh/ HTTP/1.1" 200 0
+[23/May/2025 05:49:15] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:49:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:49:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:49:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:49:16] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:49:16] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:49:16] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:49:16] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:49:16] "GET /api/productos/productos-disponibles/?search=&page=1&page_size=10 HTTP/1.1" 200 2652
+[23/May/2025 05:49:16] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 2652
+[23/May/2025 05:49:16] "GET /media/productos/productosdisponibles/imagenes/INS-S-638/miniaturas/miniatura_20250523_050432_014192.jpg HTTP/1.1" 304 0
+[23/May/2025 05:49:17] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:49:17] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 05:49:19] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 05:49:42] "POST /api/productos/productos-disponibles/ HTTP/1.1" 201 2574
+[23/May/2025 05:50:15] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 05:50:15] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 05:50:15] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:50:15] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 05:50:15] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+Unauthorized: /api/productos/productos-ofertados/
+Unauthorized: /api/basic/categorias/
+Unauthorized: /api/basic/marcas/
+Unauthorized: /api/basic/unidades/
+[23/May/2025 05:56:51] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 401 58
+Unauthorized: /api/basic/procedencias/
+[23/May/2025 05:56:51] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 401 172
+Unauthorized: /api/productos/productos-disponibles/
+[23/May/2025 05:56:51] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 05:56:51] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 05:56:51] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 05:56:51] "GET /api/productos/productos-disponibles/ HTTP/1.1" 401 58
+[23/May/2025 05:56:51] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 05:56:51] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 05:56:51] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 05:56:51] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 05:56:51] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 05:56:51] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 05:56:51] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 05:56:52] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 06:00:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:00:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:00:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:00:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:00:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:00:17] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:00:19] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 06:10:16] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+[23/May/2025 06:10:16] "OPTIONS /api/auth/verify/ HTTP/1.1" 200 0
+Unauthorized: /api/auth/verify/
+[23/May/2025 06:10:16] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 06:10:16] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 06:10:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:10:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:10:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:10:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:10:16] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 06:10:16] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 06:10:16] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 06:10:16] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 06:10:16] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 06:10:17] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:10:19] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 06:20:16] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 06:20:16] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 06:20:16] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 06:20:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:20:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:20:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:20:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:20:16] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 06:20:16] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 06:20:16] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 06:20:16] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 06:20:16] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 06:20:17] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:20:19] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+Unauthorized: /api/basic/categorias/
+Unauthorized: /api/productos/productos-ofertados/
+Unauthorized: /api/basic/marcas/
+Unauthorized: /api/basic/procedencias/
+[23/May/2025 06:28:43] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 401 58
+Unauthorized: /api/basic/unidades/
+[23/May/2025 06:28:43] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 06:28:43] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 401 172
+[23/May/2025 06:28:43] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 06:28:43] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 401 58
+[23/May/2025 06:28:43] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 06:28:43] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 06:28:43] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 06:28:43] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 06:28:43] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 06:28:43] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 06:30:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:30:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:30:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:30:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:30:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:30:17] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:30:19] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 06:40:16] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 06:40:16] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 06:40:16] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 06:40:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:40:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:40:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:40:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:40:16] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 06:40:16] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 06:40:16] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 06:40:16] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 06:40:16] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 06:40:17] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:40:19] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 06:50:35] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 06:50:35] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 06:50:35] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 06:50:35] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 06:50:35] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:50:35] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 06:50:35] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 06:50:35] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 06:50:35] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 06:50:35] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 06:50:35] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 06:50:35] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 06:50:36] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 06:50:38] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:00:35] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:00:35] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:00:35] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:00:35] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:00:35] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:00:35] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:00:35] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:00:35] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:00:35] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:00:35] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:00:35] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:00:35] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:00:36] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:00:38] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:10:15] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:10:16] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:10:16] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:10:16] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:10:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:10:16] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:10:16] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:10:16] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:10:16] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:10:16] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:10:16] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:10:16] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:10:16] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:10:17] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+Unauthorized: /api/users/me/
+[23/May/2025 07:15:57] "GET /api/users/me/ HTTP/1.1" 401 58
+[23/May/2025 07:15:57] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:15:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:15:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:15:57] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:15:57] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:15:57] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:15:57] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:15:57] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:15:57] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:15:57] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:15:58] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:15:58] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:16:57] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:16:57] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:16:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:16:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:16:57] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:26:58] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:26:58] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:26:58] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:26:58] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:26:58] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:26:58] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:26:58] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:26:58] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:26:58] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:26:58] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:26:58] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:26:58] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:26:59] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:27:01] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:31:06] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:36:57] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:36:57] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:36:57] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:36:57] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:36:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:36:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:36:57] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:36:57] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:36:57] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:36:57] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:36:57] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:36:57] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:36:57] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:36:57] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:36:58] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:46:57] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:46:57] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:46:57] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:46:57] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:46:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:46:57] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:46:57] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:46:57] "OPTIONS /api/basic/categorias/?page_size=100 HTTP/1.1" 200 0
+[23/May/2025 07:46:57] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:46:57] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:46:57] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:46:57] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:46:57] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:46:57] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:46:57] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:46:58] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:51:23] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:51:23] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:51:23] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:51:24] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:51:24] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:51:24] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:51:24] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:51:24] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:51:24] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:51:24] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:51:25] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:51:25] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:52:23] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 07:52:23] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 07:52:23] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 07:52:23] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:52:24] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:52:24] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:52:24] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:53:54] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:53:54] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:53:54] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:53:55] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:53:55] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:53:55] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:53:55] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:53:55] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:53:55] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:53:55] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:53:56] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:53:56] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:54:54] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:54:54] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:54:54] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:54:54] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:54:54] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:56:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:56:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:56:14] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:56:14] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 07:56:14] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 07:56:14] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 07:56:14] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 07:56:14] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 07:56:14] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 07:56:14] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 07:56:15] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:56:15] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 07:57:14] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 07:57:14] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 07:57:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:57:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 07:57:14] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 08:07:14] "GET /api/auth/debug/ HTTP/1.1" 200 1620
+Unauthorized: /api/auth/verify/
+[23/May/2025 08:07:14] "POST /api/auth/verify/ HTTP/1.1" 401 47
+[23/May/2025 08:07:14] "POST /api/auth/refresh/ HTTP/1.1" 200 122
+[23/May/2025 08:07:14] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 08:07:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:07:14] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:07:14] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 08:07:14] "GET /api/productos/productos-ofertados/?page_size=100 HTTP/1.1" 200 12842
+[23/May/2025 08:07:14] "GET /api/basic/unidades/?page_size=100 HTTP/1.1" 200 432
+[23/May/2025 08:07:14] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 08:07:14] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 08:07:14] "GET /api/basic/procedencias/?page_size=100 HTTP/1.1" 200 429
+[23/May/2025 08:07:14] "GET /api/basic/marcas/?page_size=100 HTTP/1.1" 200 303
+[23/May/2025 08:07:14] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 08:07:15] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 08:08:16] "GET /api/productos/productos-ofertados/?search=&page=1&page_size=10 HTTP/1.1" 200 12842
+[23/May/2025 08:08:22] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:08:22] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:08:22] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 08:08:23] "GET /api/basic/categorias/?page_size=100 HTTP/1.1" 200 796
+[23/May/2025 08:08:23] "GET /api/productos/productos-ofertados/ HTTP/1.1" 200 12842
+[23/May/2025 08:08:23] "GET /api/basic/especialidades/?page_size=100 HTTP/1.1" 200 438
+[23/May/2025 08:08:23] "GET /api/productos/productos-ofertados/?search=&page=1&page_size=10 HTTP/1.1" 200 12842
+[23/May/2025 08:08:24] "GET /api/productos/productos-disponibles/ HTTP/1.1" 200 5227
+[23/May/2025 08:08:24] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 08:09:22] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+[23/May/2025 08:09:22] "POST /api/auth/verify/ HTTP/1.1" 200 63
+[23/May/2025 08:09:22] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:09:22] "GET /api/users/me/ HTTP/1.1" 200 231
+[23/May/2025 08:09:22] "GET /api/auth/debug/ HTTP/1.1" 200 1969
+Performing system checks...
+
+System check identified no issues (0 silenced).
+May 23, 2025 - 04:39:38
+Django version 5.2, using settings 'pandora.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED
+🔄 REQUEST CONTENT TYPE: multipart/form-data; boundary=----WebKitFormBoundaryejpAVVOwOzD5jgh6
+🔄 REQUEST DATA KEYS: dict_keys(['code', 'nombre', 'modelo', 'id_categoria', 'id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia', 'referencia', 'tz_oferta', 'tz_demanda', 'tz_inflacion', 'tz_calidad', 'tz_eficiencia', 'tz_referencial', 'costo_referencial', 'precio_sie_referencial', 'precio_sie_tipob', 'precio_venta_privado', 'is_active'])
+🔄 REQUEST FILES KEYS: dict_keys([])
+🖼️ Received 0 images and 0 documents
+✅ Setting created_by to user: clc
+✅ Producto disponible creado con ID: 15
+🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED
+🔄 REQUEST CONTENT TYPE: multipart/form-data; boundary=----WebKitFormBoundaryq2LJi0d96JEdAvAD
+🔄 REQUEST DATA KEYS: dict_keys(['code', 'nombre', 'modelo', 'id_categoria', 'id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia', 'referencia', 'tz_oferta', 'tz_demanda', 'tz_inflacion', 'tz_calidad', 'tz_eficiencia', 'tz_referencial', 'costo_referencial', 'precio_sie_referencial', 'precio_sie_tipob', 'precio_venta_privado', 'is_active', 'image_descriptions', 'image_is_primary', 'image_orden', 'uploaded_images'])
+🔄 REQUEST FILES KEYS: dict_keys(['uploaded_images'])
+🖼️ Received 1 images and 0 documents
+✅ Setting created_by to user: clc
+✅ Producto disponible creado con ID: 16
+🖼️ Procesando imagen 1/1: img guantes01.jpg
+✅ Imagen guardada con ID: 1
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED
+🔄 REQUEST CONTENT TYPE: multipart/form-data; boundary=----WebKitFormBoundaryhBTYb2DFS0gnX0yE
+🔄 REQUEST DATA KEYS: dict_keys(['code', 'nombre', 'modelo', 'id_categoria', 'id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia', 'referencia', 'tz_oferta', 'tz_demanda', 'tz_inflacion', 'tz_calidad', 'tz_eficiencia', 'tz_referencial', 'costo_referencial', 'precio_sie_referencial', 'precio_sie_tipob', 'precio_venta_privado', 'is_active', 'image_descriptions', 'image_is_primary', 'image_orden', 'document_titles', 'document_types', 'document_descriptions', 'uploaded_images', 'uploaded_documents'])
+🔄 REQUEST FILES KEYS: dict_keys(['uploaded_images', 'uploaded_documents'])
+🖼️ Received 1 images and 1 documents
+✅ Setting created_by to user: clc
+✅ Producto disponible creado con ID: 17
+🖼️ Procesando imagen 1/1: imageninsumos03.jpg
+✅ Imagen guardada con ID: 2
+📄 Procesando documento 1/1: 22-4032-$8pPWwW7cQVPUgp!.pdf
+✅ Documento guardado con ID: 1
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED
+🔄 REQUEST CONTENT TYPE: multipart/form-data; boundary=----WebKitFormBoundaryWJF3BNMzrXa8pmCe
+🔄 REQUEST DATA KEYS: dict_keys(['code', 'nombre', 'modelo', 'id_categoria', 'id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia', 'referencia', 'tz_oferta', 'tz_demanda', 'tz_inflacion', 'tz_calidad', 'tz_eficiencia', 'tz_referencial', 'costo_referencial', 'precio_sie_referencial', 'precio_sie_tipob', 'precio_venta_privado', 'is_active', 'image_descriptions', 'image_is_primary', 'image_orden', 'uploaded_images'])
+🔄 REQUEST FILES KEYS: dict_keys(['uploaded_images'])
+🖼️ Received 1 images and 0 documents
+✅ Setting created_by to user: clc
+✅ Producto disponible creado con ID: 18
+🖼️ Procesando imagen 1/1: imageninsumos03.jpg
+✅ Imagen guardada con ID: 3
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 1/1000
+Rate limit para 127.0.0.1: 2/1000
+Rate limit para 127.0.0.1: 1/1000

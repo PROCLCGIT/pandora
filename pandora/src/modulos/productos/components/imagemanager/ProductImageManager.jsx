@@ -91,7 +91,7 @@ const ProductImageManager = ({
               productId={productId} 
               productType={productType}
               images={images} 
-              onImagesUpdated={handleImagesUpdated} 
+              onImagesUpdated={handleImagesUpdated}
             />
           )}
         </TabsContent>

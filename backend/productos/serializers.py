@@ -152,20 +152,6 @@ class ProductoOfertadoSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data_copy)
 
 
-class ProductoDisponibleSerializer(serializers.ModelSerializer):
-    """Serializer para el modelo ProductoDisponible"""
-    categoria_nombre = serializers.CharField(source='id_categoria.nombre', read_only=True)
-    producto_ofertado_nombre = serializers.CharField(source='id_producto_ofertado.nombre', read_only=True)
-    marca_nombre = serializers.CharField(source='id_marca.nombre', read_only=True)
-    unidad_nombre = serializers.CharField(source='unidad_presentacion.nombre', read_only=True)
-    procedencia_nombre = serializers.CharField(source='procedencia.nombre', read_only=True)
-    
-    class Meta:
-        model = ProductoDisponible
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
-
-
 class ImagenProductoDisponibleSerializer(serializers.ModelSerializer):
     """Serializer para el modelo ImagenProductoDisponible"""
     imagen_url = serializers.SerializerMethodField()
@@ -229,6 +215,21 @@ class ImagenProductoDisponibleSerializer(serializers.ModelSerializer):
                         version_urls[key] = request.build_absolute_uri(version_urls[key])
         
         return version_urls
+
+
+class ProductoDisponibleSerializer(serializers.ModelSerializer):
+    """Serializer para el modelo ProductoDisponible"""
+    categoria_nombre = serializers.CharField(source='id_categoria.nombre', read_only=True)
+    producto_ofertado_nombre = serializers.CharField(source='id_producto_ofertado.nombre', read_only=True)
+    marca_nombre = serializers.CharField(source='id_marca.nombre', read_only=True)
+    unidad_nombre = serializers.CharField(source='unidad_presentacion.nombre', read_only=True)
+    procedencia_nombre = serializers.CharField(source='procedencia.nombre', read_only=True)
+    imagenes = ImagenProductoDisponibleSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = ProductoDisponible
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
 
 
 class DocumentoProductoDisponibleSerializer(serializers.ModelSerializer):
@@ -310,7 +311,7 @@ class ProductoDisponibleDetalladoSerializer(serializers.ModelSerializer):
     producto_ofertado = ProductoOfertadoSerializer(source='id_producto_ofertado', read_only=True)
     marca = MarcaSerializer(source='id_marca', read_only=True)
     unidad = UnidadSerializer(source='unidad_presentacion', read_only=True)
-    procedencia = ProcedenciaSerializer(source='procedencia', read_only=True)
+    procedencia = ProcedenciaSerializer(read_only=True)  # Removido source='procedencia' porque el campo ya se llama procedencia
     imagenes = ImagenProductoDisponibleSerializer(many=True, read_only=True)
     documentos = DocumentoProductoDisponibleSerializer(many=True, read_only=True)
     precios = ProductsPriceSerializer(many=True, read_only=True)

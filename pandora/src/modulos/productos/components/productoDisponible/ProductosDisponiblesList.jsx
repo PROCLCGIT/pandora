@@ -196,7 +196,12 @@ export default function ProductosDisponiblesList({
       style: { textAlign: 'center', width: '7rem' },
       cell: (producto) => (
         <ActionButtons 
-          onView={() => navigate(`/productos/productos-disponibles/${producto.id}`)}
+          onView={() => {
+            console.log(`[DEBUG] Navigating to detail view for producto disponible ID: ${producto.id}`);
+            console.log(`[DEBUG] Full producto object:`, producto);
+            console.log(`[DEBUG] Target URL: /productos/productos-disponibles/${producto.id}`);
+            navigate(`/productos/productos-disponibles/${producto.id}`);
+          }}
           onEdit={() => navigate(`/productos/productos-disponibles/edit/${producto.id}`)}
           onDelete={() => onDeleteClick(producto)}
         />

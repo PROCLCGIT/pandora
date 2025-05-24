@@ -6,6 +6,58 @@ import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tansta
 // Constantes
 const RESOURCE_URL = '/productos/productos-disponibles/';
 
+// Setup debugging interceptors safely
+let requestInterceptor = null;
+let responseInterceptor = null;
+
+// Initialize interceptors only if api is available and has interceptors
+if (api && api.interceptors) {
+  try {
+    requestInterceptor = api.interceptors.request.use(
+      (config) => {
+        if (config.url === RESOURCE_URL && config.method === 'post') {
+          console.log('=== INTERCEPTED REQUEST ===');
+          console.log('URL:', config.baseURL + config.url);
+          console.log('Method:', config.method);
+          console.log('Headers:', config.headers);
+          console.log('Data:', config.data);
+          console.log('Data type:', typeof config.data);
+        }
+        return config;
+      },
+      (error) => {
+        console.error('Request interceptor error:', error);
+        return Promise.reject(error);
+      }
+    );
+
+    responseInterceptor = api.interceptors.response.use(
+      (response) => {
+        if (response.config.url === RESOURCE_URL && response.config.method === 'post') {
+          console.log('=== INTERCEPTED RESPONSE SUCCESS ===');
+          console.log('Status:', response.status);
+          console.log('Data:', response.data);
+        }
+        return response;
+      },
+      (error) => {
+        if (error.config?.url === RESOURCE_URL && error.config?.method === 'post') {
+          console.error('=== INTERCEPTED RESPONSE ERROR ===');
+          console.error('Status:', error.response?.status);
+          console.error('Status Text:', error.response?.statusText);
+          console.error('Response Data:', error.response?.data);
+          console.error('Response Headers:', error.response?.headers);
+        }
+        return Promise.reject(error);
+      }
+    );
+  } catch (interceptorError) {
+    console.error('Failed to setup interceptors:', interceptorError);
+  }
+} else {
+  console.warn('API interceptors not available, debugging will be limited');
+}
+
 // Estructura de claves para una invalidación consistente (similar a productos ofertados)
 export const QUERY_KEYS = {
   all: ['productos', 'disponibles'],
@@ -57,9 +109,14 @@ const fetchProductosDisponibles = async (params = {}) => {
  */
 const fetchProductoDisponibleById = async (id) => {
   try {
+    console.log(`[API DEBUG] Fetching producto disponible by ID: ${id}`);
+    console.log(`[API DEBUG] Request URL: ${RESOURCE_URL}${id}/`);
     const response = await api.get(`${RESOURCE_URL}${id}/`);
+    console.log(`[API DEBUG] Response received:`, response.data);
     return response.data;
   } catch (error) {
+    console.error(`[API DEBUG] Error fetching producto disponible id ${id}:`, error);
+    console.error(`[API DEBUG] Error details:`, error.response?.data);
     console.error(`Error fetching producto disponible id ${id}:`, error);
     throw error;
   }
@@ -72,10 +129,24 @@ const fetchProductoDisponibleById = async (id) => {
  */
 const createProductoDisponible = async (data) => {
   try {
+    console.log('=== API SERVICE DEBUG ===');
+    console.log('RESOURCE_URL:', RESOURCE_URL);
+    console.log('Data being sent to API:', data);
+    console.log('Data type:', typeof data);
+    console.log('Data constructor:', data.constructor.name);
+    console.log('JSON.stringify data:', JSON.stringify(data, null, 2));
+    
     const response = await api.post(RESOURCE_URL, data);
+    console.log('API Response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('=== API ERROR DETAILS ===');
     console.error('Error creating producto disponible:', error);
+    console.error('Error status:', error.response?.status);
+    console.error('Error status text:', error.response?.statusText);
+    console.error('Error data:', error.response?.data);
+    console.error('Error headers:', error.response?.headers);
+    console.error('Request config:', error.config);
     throw error;
   }
 };
