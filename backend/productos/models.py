@@ -434,7 +434,9 @@ class ProductoDisponible(models.Model):
         ProductoOfertado, 
         on_delete=models.CASCADE, 
         related_name='productos_disponibles',
-        verbose_name='Producto Ofertado'
+        verbose_name='Producto Ofertado',
+        null=True,
+        blank=True
     )
     code = models.CharField(max_length=100, unique=True, verbose_name='Código')
     nombre = models.CharField(max_length=255, verbose_name='Nombre')
@@ -442,22 +444,36 @@ class ProductoDisponible(models.Model):
         'basic.Marca', 
         on_delete=models.CASCADE, 
         related_name='productos',
-        verbose_name='Marca'
+        verbose_name='Marca',
+        null=True,
+        blank=True
     )
     modelo = models.CharField(max_length=255, verbose_name='Modelo')
     unidad_presentacion = models.ForeignKey(
         'basic.Unidad', 
         on_delete=models.CASCADE, 
         related_name='productos',
-        verbose_name='Unidad de Presentación'
+        verbose_name='Unidad de Presentación',
+        null=True,
+        blank=True
     )
     procedencia = models.ForeignKey(
         'basic.Procedencia', 
         on_delete=models.CASCADE, 
         related_name='productos',
-        verbose_name='Procedencia'
+        verbose_name='Procedencia',
+        null=True,
+        blank=True
     )
     referencia = models.CharField(max_length=255, blank=True, verbose_name='Referencia')
+    id_especialidad = models.ForeignKey(
+        'basic.Especialidad',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='productos_disponibles',
+        verbose_name='Especialidad'
+    )
     tz_oferta = models.IntegerField(default=0, verbose_name='TZ Oferta')
     tz_demanda = models.IntegerField(default=0, verbose_name='TZ Demanda')
     tz_inflacion = models.IntegerField(default=0, verbose_name='TZ Inflación')

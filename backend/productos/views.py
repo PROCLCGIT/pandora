@@ -892,6 +892,86 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
             
             print(f"🖼️ Received {len(uploaded_images)} images and {len(uploaded_documents)} documents")
             
+            # Manejar procedencia vacía o null
+            if 'procedencia' not in request.data or not request.data.get('procedencia'):
+                from basic.models import Procedencia
+                try:
+                    # Buscar o crear la procedencia por defecto
+                    procedencia_default, created = Procedencia.objects.get_or_create(
+                        nombre='Procedencia no definida',
+                        defaults={'code': 'PND'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['procedencia'] = procedencia_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['procedencia'] = procedencia_default.id
+                    print(f"📍 Asignando procedencia por defecto: {procedencia_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar procedencia por defecto: {str(e)}")
+            
+            # Manejar unidad_presentacion vacía o null
+            if 'unidad_presentacion' not in request.data or not request.data.get('unidad_presentacion'):
+                from basic.models import Unidad
+                try:
+                    # Buscar o crear la unidad por defecto
+                    unidad_default, created = Unidad.objects.get_or_create(
+                        nombre='Unidad no definida',
+                        defaults={'code': 'NDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['unidad_presentacion'] = unidad_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['unidad_presentacion'] = unidad_default.id
+                    print(f"📦 Asignando unidad por defecto: {unidad_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar unidad por defecto: {str(e)}")
+            
+            # Manejar marca vacía o null
+            if 'id_marca' not in request.data or not request.data.get('id_marca'):
+                from basic.models import Marca
+                try:
+                    # Buscar o crear la marca por defecto
+                    marca_default, created = Marca.objects.get_or_create(
+                        nombre='Marca no definida',
+                        defaults={'code': 'MNDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['id_marca'] = marca_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['id_marca'] = marca_default.id
+                    print(f"🏷️ Asignando marca por defecto: {marca_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar marca por defecto: {str(e)}")
+            
+            # Manejar especialidad vacía o null
+            if 'id_especialidad' not in request.data or not request.data.get('id_especialidad'):
+                from basic.models import Especialidad
+                try:
+                    # Buscar o crear la especialidad por defecto
+                    especialidad_default, created = Especialidad.objects.get_or_create(
+                        nombre='Especialidad no definida',
+                        defaults={'code': 'ENDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['id_especialidad'] = especialidad_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['id_especialidad'] = especialidad_default.id
+                    print(f"🔬 Asignando especialidad por defecto: {especialidad_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar especialidad por defecto: {str(e)}")
+            
             # Crear el producto primero
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -1085,6 +1165,86 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
                     import traceback
                     print(f"❌ Error al procesar documento {i+1}: {str(e)}")
                     print(traceback.format_exc())
+            
+            # Manejar procedencia vacía o null antes de actualizar
+            if 'procedencia' in request.data and not request.data.get('procedencia'):
+                from basic.models import Procedencia
+                try:
+                    # Buscar o crear la procedencia por defecto
+                    procedencia_default, created = Procedencia.objects.get_or_create(
+                        nombre='Procedencia no definida',
+                        defaults={'code': 'PND'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['procedencia'] = procedencia_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['procedencia'] = procedencia_default.id
+                    print(f"📍 Asignando procedencia por defecto: {procedencia_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar procedencia por defecto: {str(e)}")
+            
+            # Manejar unidad_presentacion vacía o null antes de actualizar
+            if 'unidad_presentacion' in request.data and not request.data.get('unidad_presentacion'):
+                from basic.models import Unidad
+                try:
+                    # Buscar o crear la unidad por defecto
+                    unidad_default, created = Unidad.objects.get_or_create(
+                        nombre='Unidad no definida',
+                        defaults={'code': 'NDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['unidad_presentacion'] = unidad_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['unidad_presentacion'] = unidad_default.id
+                    print(f"📦 Asignando unidad por defecto: {unidad_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar unidad por defecto: {str(e)}")
+            
+            # Manejar marca vacía o null antes de actualizar
+            if 'id_marca' in request.data and not request.data.get('id_marca'):
+                from basic.models import Marca
+                try:
+                    # Buscar o crear la marca por defecto
+                    marca_default, created = Marca.objects.get_or_create(
+                        nombre='Marca no definida',
+                        defaults={'code': 'MNDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['id_marca'] = marca_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['id_marca'] = marca_default.id
+                    print(f"🏷️ Asignando marca por defecto: {marca_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar marca por defecto: {str(e)}")
+            
+            # Manejar especialidad vacía o null antes de actualizar
+            if 'id_especialidad' in request.data and not request.data.get('id_especialidad'):
+                from basic.models import Especialidad
+                try:
+                    # Buscar o crear la especialidad por defecto
+                    especialidad_default, created = Especialidad.objects.get_or_create(
+                        nombre='Especialidad no definida',
+                        defaults={'code': 'ENDEF'}
+                    )
+                    # Hacer el request.data mutable si es necesario
+                    if hasattr(request.data, '_mutable'):
+                        request.data._mutable = True
+                        request.data['id_especialidad'] = especialidad_default.id
+                        request.data._mutable = False
+                    else:
+                        request.data['id_especialidad'] = especialidad_default.id
+                    print(f"🔬 Asignando especialidad por defecto: {especialidad_default.nombre}")
+                except Exception as e:
+                    print(f"⚠️ Error al asignar especialidad por defecto: {str(e)}")
             
             # Actualizar el producto
             serializer = self.get_serializer(instance, data=request.data, partial=partial)

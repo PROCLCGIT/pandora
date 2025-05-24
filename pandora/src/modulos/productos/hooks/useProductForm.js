@@ -12,10 +12,11 @@ const productoDisponibleSchema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio'),
   modelo: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es obligatoria'),
-  id_producto_ofertado: z.string().min(1, 'El producto ofertado es obligatorio'),
-  id_marca: z.string().min(1, 'La marca es obligatoria'),
-  unidad_presentacion: z.string().min(1, 'La unidad de presentación es obligatoria'),
-  procedencia: z.string().min(1, 'La procedencia es obligatoria'),
+  id_producto_ofertado: z.string().optional().nullable(),
+  id_marca: z.string().optional().nullable(),
+  unidad_presentacion: z.string().optional().nullable(),
+  procedencia: z.string().optional().nullable(),
+  id_especialidad: z.string().optional().nullable(),
   referencia: z.string().optional(),
   tz_oferta: z.coerce.number().optional().default(0),
   tz_demanda: z.coerce.number().optional().default(0),
@@ -51,10 +52,11 @@ export function useProductForm(isEditing, productoData) {
       nombre: '',
       modelo: '',
       id_categoria: '',
-      id_producto_ofertado: '',
-      id_marca: '',
-      unidad_presentacion: '',
-      procedencia: '',
+      id_producto_ofertado: null,
+      id_marca: null,
+      unidad_presentacion: null,
+      procedencia: null,
+      id_especialidad: null,
       referencia: '',
       tz_oferta: 0,
       tz_demanda: 0,
@@ -78,7 +80,7 @@ export function useProductForm(isEditing, productoData) {
   const formValues = watch();
 
   // Calcular el progreso del formulario
-  const requiredFields = ['code', 'nombre', 'id_categoria', 'id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia'];
+  const requiredFields = ['code', 'nombre', 'id_categoria'];
   const completedRequiredFields = requiredFields.filter(field => formValues[field] && formValues[field].toString().trim() !== '').length;
   const formProgress = Math.round((completedRequiredFields / requiredFields.length) * 100);
 
@@ -96,6 +98,7 @@ export function useProductForm(isEditing, productoData) {
         id_marca: productoData.id_marca?.toString() || '',
         unidad_presentacion: productoData.unidad_presentacion?.toString() || '',
         procedencia: productoData.procedencia?.toString() || '',
+        id_especialidad: productoData.id_especialidad?.toString() || '',
       };
       reset(formData);
     }

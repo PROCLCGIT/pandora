@@ -140,21 +140,15 @@ export const productoDisponibleSchema = z.object({
     required_error: 'Debe seleccionar una categoría'
   }).min(1, 'La categoría es obligatoria'),
   
-  id_producto_ofertado: z.string({
-    required_error: 'Debe seleccionar un producto ofertado'
-  }).min(1, 'El producto ofertado es obligatorio'),
+  id_producto_ofertado: z.string().optional().nullable(),
   
-  id_marca: z.string({
-    required_error: 'Debe seleccionar una marca'
-  }).min(1, 'La marca es obligatoria'),
+  id_marca: z.string().optional().nullable(),
   
-  unidad_presentacion: z.string({
-    required_error: 'Debe especificar la unidad de presentación'
-  }).min(1, 'La unidad de presentación es obligatoria'),
+  unidad_presentacion: z.string().optional().nullable(),
   
-  procedencia: z.string({
-    required_error: 'Debe especificar la procedencia'
-  }).min(1, 'La procedencia es obligatoria'),
+  procedencia: z.string().optional().nullable(),
+  
+  id_especialidad: z.string().optional().nullable(),
 
   // Campos opcionales
   modelo: z.string().max(100, 'El modelo no puede tener más de 100 caracteres').optional(),

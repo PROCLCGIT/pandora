@@ -1,11 +1,13 @@
 // /pandora/src/modulos/productos/components/form/GeneralInfoSection.jsx
 
+import { useState } from 'react';
 import { Controller } from 'react-hook-form';
-import { CheckCircle, AlertCircle, Edit3, Lock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Edit3, Lock, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -14,6 +16,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { AddUnidadModal } from '../modals/AddUnidadModal';
+import { AddMarcaModal } from '../modals/AddMarcaModal';
+import { AddProcedenciaModal } from '../modals/AddProcedenciaModal';
+import { AddEspecialidadModal } from '../modals/AddEspecialidadModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * Componente para la sección de información general del producto
@@ -32,8 +39,54 @@ export function GeneralInfoSection({
   marcasData,
   unidadesData,
   procedenciasData,
-  especialidadesData
+  especialidadesData,
+  setValue
 }) {
+  const [showAddUnidadModal, setShowAddUnidadModal] = useState(false);
+  const [showAddMarcaModal, setShowAddMarcaModal] = useState(false);
+  const [showAddProcedenciaModal, setShowAddProcedenciaModal] = useState(false);
+  const [showAddEspecialidadModal, setShowAddEspecialidadModal] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleUnidadCreated = (newUnidad) => {
+    // Invalidar la cache de unidades para forzar recarga
+    queryClient.invalidateQueries(['unidades']);
+    
+    // Seleccionar automáticamente la nueva unidad
+    if (setValue) {
+      setValue('unidad_presentacion', newUnidad.id.toString());
+    }
+  };
+
+  const handleMarcaCreated = (newMarca) => {
+    // Invalidar la cache de marcas para forzar recarga
+    queryClient.invalidateQueries(['marcas']);
+    
+    // Seleccionar automáticamente la nueva marca
+    if (setValue) {
+      setValue('id_marca', newMarca.id.toString());
+    }
+  };
+
+  const handleProcedenciaCreated = (newProcedencia) => {
+    // Invalidar la cache de procedencias para forzar recarga
+    queryClient.invalidateQueries(['procedencias']);
+    
+    // Seleccionar automáticamente la nueva procedencia
+    if (setValue) {
+      setValue('procedencia', newProcedencia.id.toString());
+    }
+  };
+
+  const handleEspecialidadCreated = (newEspecialidad) => {
+    // Invalidar la cache de especialidades para forzar recarga
+    queryClient.invalidateQueries(['especialidades']);
+    
+    // Seleccionar automáticamente la nueva especialidad
+    if (setValue) {
+      setValue('id_especialidad', newEspecialidad.id.toString());
+    }
+  };
   return (
     <>
       {/* Title */}
@@ -47,7 +100,7 @@ export function GeneralInfoSection({
       {/* Producto Ofertado - Full width */}
       <div className="col-span-full space-y-2">
         <Label htmlFor="id_producto_ofertado" className="text-sm font-medium flex items-center justify-between">
-          <span>Producto Ofertado <span className="text-red-500">*</span></span>
+          <span>Relación con Producto Ofertado</span>
           {formValues.id_producto_ofertado && <CheckCircle className="h-4 w-4 text-green-500" />}
         </Label>
         <Controller
@@ -55,9 +108,12 @@ export function GeneralInfoSection({
           control={control}
           render={({ field }) => (
             <Select 
-              onValueChange={field.onChange} 
-              defaultValue={field.value}
-              value={field.value}
+              onValueChange={(value) => {
+                // Si el valor es vacío, establecer null
+                field.onChange(value === '' ? null : value);
+              }} 
+              defaultValue={field.value || ''}
+              value={field.value || ''}
             >
               <SelectTrigger 
                 id="id_producto_ofertado"
@@ -66,6 +122,9 @@ export function GeneralInfoSection({
                 <SelectValue placeholder="Selecciona un producto ofertado" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
+                <SelectItem value="">
+                  <span className="text-gray-500">Sin relación</span>
+                </SelectItem>
                 {productosOfertadosData?.results?.map(producto => (
                   <SelectItem key={producto.id} value={producto.id.toString()}>
                     <div className="flex items-center">
@@ -239,12 +298,70 @@ export function GeneralInfoSection({
 
       {/* Especificaciones - Debajo del nombre */}
       <div className="col-span-full mt-6">
-        {/* Primera fila: Marca, Especialidad, Modelo */}
+        {/* Primera fila: Unidad de Presentación, Marca, Modelo */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Unidad de Presentación */}
+          <div className="space-y-2">
+            <Label htmlFor="unidad_presentacion" className="text-sm font-medium flex items-center justify-between">
+              <span>Unidad de Presentación</span>
+              {formValues.unidad_presentacion && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
+            <Controller
+              name="unidad_presentacion"
+              control={control}
+              render={({ field }) => (
+                <Select 
+                  onValueChange={(value) => {
+                    if (value === 'add-new') {
+                      // Abrir el modal para agregar nueva unidad
+                      setShowAddUnidadModal(true);
+                    } else {
+                      // Si el valor es vacío, establecer null
+                      field.onChange(value === '' ? null : value);
+                    }
+                  }} 
+                  defaultValue={field.value || ''}
+                  value={field.value || ''}
+                >
+                  <SelectTrigger 
+                    id="unidad_presentacion"
+                    className={errors.unidad_presentacion ? "border-red-300 focus:ring-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Selecciona una unidad" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="">
+                      <span className="text-gray-500">Unidad no definida</span>
+                    </SelectItem>
+                    {unidadesData?.results?.map(unidad => (
+                      <SelectItem key={unidad.id} value={unidad.id.toString()}>
+                        {unidad.nombre} ({unidad.code})
+                      </SelectItem>
+                    ))}
+                    <div className="border-t mt-1 pt-1">
+                      <SelectItem value="add-new" className="text-blue-600 font-medium">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar unidad
+                        </div>
+                      </SelectItem>
+                    </div>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.unidad_presentacion && (
+              <p className="text-sm text-red-500 flex items-center mt-1">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {errors.unidad_presentacion.message}
+              </p>
+            )}
+          </div>
+
           {/* Marca */}
           <div className="space-y-2">
             <Label htmlFor="id_marca" className="text-sm font-medium flex items-center justify-between">
-              <span>Marca <span className="text-red-500">*</span></span>
+              <span>Marca</span>
               {formValues.id_marca && <CheckCircle className="h-4 w-4 text-green-500" />}
             </Label>
             <Controller
@@ -252,9 +369,17 @@ export function GeneralInfoSection({
               control={control}
               render={({ field }) => (
                 <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value}
+                  onValueChange={(value) => {
+                    if (value === 'add-new') {
+                      // Abrir el modal para agregar nueva marca
+                      setShowAddMarcaModal(true);
+                    } else {
+                      // Si el valor es vacío, establecer null
+                      field.onChange(value === '' ? null : value);
+                    }
+                  }} 
+                  defaultValue={field.value || ''}
+                  value={field.value || ''}
                 >
                   <SelectTrigger 
                     id="id_marca"
@@ -263,11 +388,22 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona una marca" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
+                    <SelectItem value="">
+                      <span className="text-gray-500">Marca no definida</span>
+                    </SelectItem>
                     {marcasData?.results?.map(marca => (
                       <SelectItem key={marca.id} value={marca.id.toString()}>
                         {marca.nombre}
                       </SelectItem>
                     ))}
+                    <div className="border-t mt-1 pt-1">
+                      <SelectItem value="add-new" className="text-blue-600 font-medium">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar marca
+                        </div>
+                      </SelectItem>
+                    </div>
                   </SelectContent>
                 </Select>
               )}
@@ -276,45 +412,6 @@ export function GeneralInfoSection({
               <p className="text-sm text-red-500 flex items-center mt-1">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.id_marca.message}
-              </p>
-            )}
-          </div>
-
-          {/* Especialidad */}
-          <div className="space-y-2">
-            <Label htmlFor="id_especialidad" className="text-sm font-medium flex items-center justify-between">
-              <span>Especialidad</span>
-              {formValues.id_especialidad && <CheckCircle className="h-4 w-4 text-green-500" />}
-            </Label>
-            <Controller
-              name="id_especialidad"
-              control={control}
-              render={({ field }) => (
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value}
-                >
-                  <SelectTrigger 
-                    id="id_especialidad"
-                    className={errors.id_especialidad ? "border-red-300 focus:ring-red-500" : ""}
-                  >
-                    <SelectValue placeholder="Selecciona una especialidad" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {especialidadesData?.results?.map(especialidad => (
-                      <SelectItem key={especialidad.id} value={especialidad.id.toString()}>
-                        {especialidad.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.id_especialidad && (
-              <p className="text-sm text-red-500 flex items-center mt-1">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {errors.id_especialidad.message}
               </p>
             )}
           </div>
@@ -336,51 +433,12 @@ export function GeneralInfoSection({
           </div>
         </div>
 
-        {/* Segunda fila: Unidad de Presentación, Procedencia, Referencia */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-          {/* Unidad de Presentación */}
-          <div className="space-y-2">
-            <Label htmlFor="unidad_presentacion" className="text-sm font-medium flex items-center justify-between">
-              <span>Unidad de Presentación <span className="text-red-500">*</span></span>
-              {formValues.unidad_presentacion && <CheckCircle className="h-4 w-4 text-green-500" />}
-            </Label>
-            <Controller
-              name="unidad_presentacion"
-              control={control}
-              render={({ field }) => (
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value}
-                >
-                  <SelectTrigger 
-                    id="unidad_presentacion"
-                    className={errors.unidad_presentacion ? "border-red-300 focus:ring-red-500" : ""}
-                  >
-                    <SelectValue placeholder="Selecciona una unidad" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {unidadesData?.results?.map(unidad => (
-                      <SelectItem key={unidad.id} value={unidad.id.toString()}>
-                        {unidad.nombre} ({unidad.abreviatura})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.unidad_presentacion && (
-              <p className="text-sm text-red-500 flex items-center mt-1">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {errors.unidad_presentacion.message}
-              </p>
-            )}
-          </div>
-          
+        {/* Segunda fila: Procedencia, Especialidad */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
           {/* Procedencia */}
           <div className="space-y-2">
             <Label htmlFor="procedencia" className="text-sm font-medium flex items-center justify-between">
-              <span>Procedencia <span className="text-red-500">*</span></span>
+              <span>Procedencia</span>
               {formValues.procedencia && <CheckCircle className="h-4 w-4 text-green-500" />}
             </Label>
             <Controller
@@ -388,9 +446,17 @@ export function GeneralInfoSection({
               control={control}
               render={({ field }) => (
                 <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  value={field.value}
+                  onValueChange={(value) => {
+                    if (value === 'add-new') {
+                      // Abrir el modal para agregar nueva procedencia
+                      setShowAddProcedenciaModal(true);
+                    } else {
+                      // Si el valor es vacío, establecer null
+                      field.onChange(value === '' ? null : value);
+                    }
+                  }} 
+                  defaultValue={field.value || ''}
+                  value={field.value || ''}
                 >
                   <SelectTrigger 
                     id="procedencia"
@@ -399,11 +465,22 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona la procedencia" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
+                    <SelectItem value="">
+                      <span className="text-gray-500">Procedencia no definida</span>
+                    </SelectItem>
                     {procedenciasData?.results?.map(procedencia => (
                       <SelectItem key={procedencia.id} value={procedencia.id.toString()}>
                         {procedencia.nombre}
                       </SelectItem>
                     ))}
+                    <div className="border-t mt-1 pt-1">
+                      <SelectItem value="add-new" className="text-blue-600 font-medium">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar procedencia
+                        </div>
+                      </SelectItem>
+                    </div>
                   </SelectContent>
                 </Select>
               )}
@@ -415,24 +492,114 @@ export function GeneralInfoSection({
               </p>
             )}
           </div>
-          
-          {/* Referencia */}
+
+          {/* Especialidad */}
           <div className="space-y-2">
-            <Label htmlFor="referencia" className="text-sm font-medium">Referencia</Label>
+            <Label htmlFor="id_especialidad" className="text-sm font-medium flex items-center justify-between">
+              <span>Especialidad</span>
+              {formValues.id_especialidad && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </Label>
             <Controller
-              name="referencia"
+              name="id_especialidad"
               control={control}
               render={({ field }) => (
-                <Input 
-                  id="referencia" 
-                  placeholder="Referencia del producto" 
-                  {...field} 
-                />
+                <Select 
+                  onValueChange={(value) => {
+                    if (value === 'add-new') {
+                      // Abrir el modal para agregar nueva especialidad
+                      setShowAddEspecialidadModal(true);
+                    } else {
+                      // Si el valor es vacío, establecer null
+                      field.onChange(value === '' ? null : value);
+                    }
+                  }} 
+                  defaultValue={field.value || ''}
+                  value={field.value || ''}
+                >
+                  <SelectTrigger 
+                    id="id_especialidad"
+                    className={errors.id_especialidad ? "border-red-300 focus:ring-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Selecciona una especialidad" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="">
+                      <span className="text-gray-500">Especialidad no definida</span>
+                    </SelectItem>
+                    {especialidadesData?.results?.map(especialidad => (
+                      <SelectItem key={especialidad.id} value={especialidad.id.toString()}>
+                        {especialidad.nombre}
+                      </SelectItem>
+                    ))}
+                    <div className="border-t mt-1 pt-1">
+                      <SelectItem value="add-new" className="text-blue-600 font-medium">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar especialidad
+                        </div>
+                      </SelectItem>
+                    </div>
+                  </SelectContent>
+                </Select>
               )}
             />
+            {errors.id_especialidad && (
+              <p className="text-sm text-red-500 flex items-center mt-1">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {errors.id_especialidad.message}
+              </p>
+            )}
           </div>
         </div>
+        
+        {/* Referencia - Full width con textarea multiline */}
+        <div className="col-span-full mt-6 space-y-2">
+          <Label htmlFor="referencia" className="text-sm font-medium flex items-center justify-between">
+            <span>Referencia</span>
+            {formValues.referencia && <CheckCircle className="h-4 w-4 text-green-500" />}
+          </Label>
+          <Controller
+            name="referencia"
+            control={control}
+            render={({ field }) => (
+              <Textarea 
+                id="referencia" 
+                placeholder="Ingrese referencias adicionales del producto (opcional)" 
+                className="min-h-[100px] resize-y"
+                {...field} 
+              />
+            )}
+          />
+        </div>
       </div>
+
+      {/* Modal para agregar nueva unidad */}
+      <AddUnidadModal 
+        open={showAddUnidadModal}
+        onOpenChange={setShowAddUnidadModal}
+        onUnidadCreated={handleUnidadCreated}
+      />
+      
+      {/* Modal para agregar nueva marca */}
+      <AddMarcaModal 
+        open={showAddMarcaModal}
+        onOpenChange={setShowAddMarcaModal}
+        onMarcaCreated={handleMarcaCreated}
+      />
+      
+      {/* Modal para agregar nueva procedencia */}
+      <AddProcedenciaModal 
+        open={showAddProcedenciaModal}
+        onOpenChange={setShowAddProcedenciaModal}
+        onProcedenciaCreated={handleProcedenciaCreated}
+      />
+      
+      {/* Modal para agregar nueva especialidad */}
+      <AddEspecialidadModal 
+        open={showAddEspecialidadModal}
+        onOpenChange={setShowAddEspecialidadModal}
+        onEspecialidadCreated={handleEspecialidadCreated}
+      />
     </>
   );
 }

@@ -177,9 +177,17 @@ export default function AddProductoDisponiblePage() {
       
       // Añadir campos básicos
       Object.keys(data).forEach(key => {
-        if (data[key] !== null && data[key] !== undefined) {
-          formData.append(key, data[key]);
+        // No enviar campos null, undefined o vacíos
+        if (data[key] === null || data[key] === undefined || data[key] === '') {
+          return;
         }
+        
+        // Caso especial para id_producto_ofertado: no enviar si está vacío
+        if (key === 'id_producto_ofertado' && (data[key] === '' || data[key] === null)) {
+          return;
+        }
+        
+        formData.append(key, data[key]);
       });
       
       // Añadir imágenes en el formato esperado por el backend
@@ -361,6 +369,7 @@ export default function AddProductoDisponiblePage() {
                   unidadesData={unidadesData}
                   procedenciasData={procedenciasData}
                   especialidadesData={especialidadesData}
+                  setValue={setValue}
                 />
               </div>
             </CardContent>
