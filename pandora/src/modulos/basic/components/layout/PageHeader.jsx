@@ -1,6 +1,12 @@
 // /pandora/src/modulos/basic/components/layout/PageHeader.jsx
 
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 /**
  * Componente reutilizable para cabeceras de página
@@ -39,25 +45,47 @@ export const PageHeader = ({
         {(action || actions) && (
           <div className="flex flex-col items-end gap-2 md:items-stretch">
             {actions ? (
-              <div className="flex gap-2">
-                {actions.map((actionItem, index) => (
-                  <Button 
-                    key={index}
-                    onClick={actionItem.onClick} 
-                    variant={actionItem.variant || "default"}
-                    className={
-                      actionItem.variant === "outline" 
-                        ? "border-blue-600 text-blue-600 hover:bg-blue-50"
-                        : actionItem.variant === "secondary"
-                        ? "bg-gray-600 hover:bg-gray-700 text-white"
-                        : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+              <TooltipProvider>
+                <div className="flex gap-2">
+                  {actions.map((actionItem, index) => {
+                    const button = (
+                      <Button 
+                        key={index}
+                        onClick={actionItem.onClick} 
+                        variant={actionItem.variant || "default"}
+                        size={!actionItem.label && actionItem.icon ? "icon" : "default"}
+                        className={
+                          actionItem.variant === "outline" 
+                            ? "border-blue-600 text-blue-600 hover:bg-blue-50"
+                            : actionItem.variant === "secondary"
+                            ? "bg-gray-600 hover:bg-gray-700 text-white"
+                            : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                        }
+                      >
+                        {actionItem.icon && actionItem.label && <span className="mr-2">{actionItem.icon}</span>}
+                        {actionItem.icon && !actionItem.label && actionItem.icon}
+                        {actionItem.label}
+                      </Button>
+                    );
+
+                    // If it's an icon-only button and has a title, wrap it in a tooltip
+                    if (!actionItem.label && actionItem.icon && actionItem.title) {
+                      return (
+                        <Tooltip key={index}>
+                          <TooltipTrigger asChild>
+                            {button}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{actionItem.title}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
                     }
-                  >
-                    {actionItem.icon && <span className="mr-2">{actionItem.icon}</span>}
-                    {actionItem.label}
-                  </Button>
-                ))}
-              </div>
+                    
+                    return button;
+                  })}
+                </div>
+              </TooltipProvider>
             ) : (
               <Button 
                 onClick={action.onClick} 

@@ -38,6 +38,7 @@ import {
 // Componentes personalizados
 import { PageHeader } from '@/modulos/basic/components/layout/PageHeader';
 import { FormCard } from '@/modulos/basic/components/form/FormCard';
+import TagInput from '../../components/TagInput';
 
 // Radix UI Dialog
 import {
@@ -101,7 +102,8 @@ export default function AddClientePage() {
       activo: true,
       zona: '',
       ciudad: '',
-      tipo_cliente: ''
+      tipo_cliente: '',
+      tags: []
     }
   });
   
@@ -130,7 +132,8 @@ export default function AddClientePage() {
       activo: cliente.activo !== undefined ? cliente.activo : true,
       zona: cliente.zona?.id?.toString() || '',
       ciudad: cliente.ciudad?.id?.toString() || '',
-      tipo_cliente: cliente.tipo_cliente?.id?.toString() || ''
+      tipo_cliente: cliente.tipo_cliente?.id?.toString() || '',
+      tags: cliente.tags?.map(tag => tag.id) || []
     })
   }, [isEditMode, cliente, loadingZonas, loadingCiudades, loadingTipos, form])
   
@@ -327,7 +330,9 @@ export default function AddClientePage() {
       // Estos ya se manejan correctamente
       zona: data.zona ? parseInt(data.zona) : null,
       ciudad: data.ciudad ? parseInt(data.ciudad) : null,
-      tipo_cliente: data.tipo_cliente ? parseInt(data.tipo_cliente) : null
+      tipo_cliente: data.tipo_cliente ? parseInt(data.tipo_cliente) : null,
+      // Tags como array de IDs
+      tags: data.tags || []
     };
 
     // Si el campo telefono es null (porque estaba vacío), se elimina del payload
@@ -713,6 +718,27 @@ export default function AddClientePage() {
                         </SelectContent>
                       </Select>
                       <FormDescription>Categoría del cliente</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="mt-4">
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Etiquetas</FormLabel>
+                      <TagInput 
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Selecciona etiquetas para identificar este cliente"
+                      />
+                      <FormDescription>
+                        Las etiquetas te ayudan a categorizar y filtrar clientes fácilmente
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

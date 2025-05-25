@@ -20,7 +20,9 @@ import {
   Phone, 
   Mail,
   BadgeCheck,
-  BadgeX
+  BadgeX,
+  SlidersHorizontal,
+  Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,9 +43,16 @@ import {
 } from '@/components/ui/select';
 
 import { PageHeader } from '@/modulos/basic/components/layout/PageHeader';
-import { FilterCard } from '@/modulos/basic/components/layout/FilterCard';
+import { CollapsibleFilterCard } from '@/modulos/basic/components/layout/CollapsibleFilterCard';
 import { SearchInput } from '@/modulos/basic/components/ui/SearchInput';
 import { ActionButtons } from '@/modulos/basic/components/ui/ActionButtons';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Import tag service and filter components
+import { useTags } from '../../api/tagService';
+import TagsFilter from '../../components/filters/TagsFilter';
+import ActiveFilters from '../../components/filters/ActiveFilters';
+import QuickFilters from '../../components/filters/QuickFilters';
 
 export default function ClientesInfinitePage() {
   const navigate = useNavigate();
@@ -51,6 +60,8 @@ export default function ClientesInfinitePage() {
   const [filters, setFilters] = useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [activeQuickFilter, setActiveQuickFilter] = useState(null);
   
   // Utilizar hook personalizado para la búsqueda con debounce
   const { 
@@ -72,6 +83,7 @@ export default function ClientesInfinitePage() {
   const { data: zonasData } = useZonas({ page_size: 100 });
   const { data: tiposClienteData } = useTiposCliente({ page_size: 100 });
   const { data: ciudadesData } = useCiudades({ page_size: 100 });
+  const { data: tagsData } = useTags({ page_size: 100 });
   
   // Consulta de datos con paginación infinita
   const { 
@@ -108,6 +120,14 @@ export default function ClientesInfinitePage() {
   useEffect(() => {
     setFilters(prevFilters => ({ ...prevFilters, search: debouncedSearch }));
   }, [debouncedSearch]);
+
+  // Efecto para actualizar los filtros cuando cambian las tags seleccionadas
+  useEffect(() => {
+    setFilters(prevFilters => ({ 
+      ...prevFilters, 
+      tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined 
+    }));
+  }, [selectedTags]);
   
   // Mutación para eliminar
   const deleteClienteMutation = useDeleteCliente({
@@ -149,6 +169,56 @@ export default function ClientesInfinitePage() {
   const handleActivoChange = (value) => {
     setFilters({ ...filters, activo: value === 'all' ? undefined : value === 'true' });
   };
+
+  const handleTagsChange = (tags) => {
+    setSelectedTags(tags);
+  };
+
+  const handleQuickFilter = (quickFilters) => {
+    // Aplicar filtros rápidos
+    const newFilters = { ...filters };
+    
+    Object.entries(quickFilters).forEach(([key, value]) => {
+      if (key === 'tag_name') {
+        // Buscar tag por nombre y seleccionarla
+        const tag = tagsData?.results?.find(t => t.name.toLowerCase() === value.toLowerCase());
+        if (tag) {
+          setSelectedTags([tag.id]);
+        }
+      } else if (key === 'tipo_cliente_name') {
+        // Buscar tipo de cliente por nombre
+        const tipo = tiposClienteData?.results?.find(t => t.nombre.toLowerCase() === value.toLowerCase());
+        if (tipo) {
+          newFilters.tipo_cliente = tipo.id.toString();
+        }
+      } else {
+        newFilters[key] = value;
+      }
+    });
+    
+    setFilters(newFilters);
+    setActiveQuickFilter(Object.keys(quickFilters)[0]);
+  };
+
+  const handleRemoveFilter = (filterKey, tagId) => {
+    if (filterKey === 'search') {
+      setSearchValue('');
+    } else if (filterKey === 'tag' && tagId) {
+      setSelectedTags(selectedTags.filter(id => id !== tagId));
+    } else {
+      const newFilters = { ...filters };
+      delete newFilters[filterKey];
+      setFilters(newFilters);
+    }
+    setActiveQuickFilter(null);
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchValue('');
+    setFilters({});
+    setSelectedTags([]);
+    setActiveQuickFilter(null);
+  };
   
   const handleDeleteClick = (cliente) => {
     setClienteToDelete(cliente);
@@ -175,113 +245,165 @@ export default function ClientesInfinitePage() {
         icon={<Building2 size={40} strokeWidth={1.5} />}
         title="Clientes - Vista Infinita"
         description="Visualiza todos los clientes con paginación infinita."
-        action={{
-          label: "Nuevo Cliente",
-          icon: <Plus className="h-4 w-4" />,
-          onClick: () => navigate('/directorio/clientes/add')
-        }}
+        actions={[
+          {
+            label: "Nuevo Cliente",
+            icon: <Plus className="h-4 w-4" />,
+            onClick: () => navigate('/directorio/clientes/add')
+          },
+          {
+            label: "",
+            icon: <ChevronLeft className="h-4 w-4" />,
+            onClick: () => navigate('/directorio/clientes'),
+            variant: "outline",
+            title: "Volver a vista normal"
+          }
+        ]}
+      />
+
+      {/* Filtros rápidos */}
+      <QuickFilters
+        onQuickFilter={handleQuickFilter}
+        activeQuickFilter={activeQuickFilter}
+      />
+
+      {/* Filtros activos */}
+      <ActiveFilters
+        filters={{ ...filters, search: searchValue, tags: selectedTags }}
+        tiposCliente={tiposClienteData?.results || []}
+        ciudades={ciudadesData?.results || []}
+        zonas={zonasData?.results || []}
+        tags={tagsData?.results || []}
+        onRemoveFilter={handleRemoveFilter}
+        onClearAll={handleClearAllFilters}
       />
       
-      <div className="mb-6">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate('/directorio/clientes')}
-          className="border-blue-200 text-blue-700 hover:bg-blue-50"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Volver a vista normal
-        </Button>
-      </div>
-      
-      {/* Tarjeta de filtros */}
-      <FilterCard
+      {/* Tarjeta de filtros mejorada */}
+      <CollapsibleFilterCard
         title="Filtros de Búsqueda"
-        description="Busca clientes por nombre, alias, RUC o ubicación."
-        icon={<Filter className="mr-2 h-5 w-5 text-blue-600" />}
-        onClear={() => {
-          setSearchValue('');
-          setFilters({});
-        }}
+        description="Busca y filtra clientes por múltiples criterios"
+        icon={<SlidersHorizontal className="mr-2 h-4 w-4 text-blue-600" />}
+        onClear={handleClearAllFilters}
+        defaultExpanded={false}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="flex flex-col space-y-1.5">
-            <label htmlFor="search" className="text-sm font-medium">Buscar</label>
-            <SearchInput 
-              value={searchValue}
-              onChange={handleSearchChange}
-              placeholder="Buscar por nombre, RUC o alias..."
-              debouncedValue={debouncedSearch}
-              inputProps={{ id: "search" }}
-            />
-          </div>
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="basic">Filtros Básicos</TabsTrigger>
+            <TabsTrigger value="advanced">Filtros Avanzados</TabsTrigger>
+          </TabsList>
           
-          <div className="flex flex-col space-y-1.5">
-            <label htmlFor="tipoCliente" className="text-sm font-medium">Tipo de Cliente</label>
-            <Select onValueChange={handleTipoClienteChange} defaultValue="all">
-              <SelectTrigger id="tipoCliente" className="h-9 border-blue-200 focus:border-blue-400">
-                <SelectValue placeholder="Todos los tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {tiposClienteData?.results?.map(tipo => (
-                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                    {tipo.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TabsContent value="basic" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Búsqueda principal */}
+              <div className="md:col-span-2">
+                <div className="flex flex-col space-y-1.5">
+                  <label htmlFor="search" className="text-sm font-medium">Búsqueda General</label>
+                  <SearchInput 
+                    value={searchValue}
+                    onChange={handleSearchChange}
+                    placeholder="Buscar por nombre, RUC, alias, dirección..."
+                    debouncedValue={debouncedSearch}
+                    inputProps={{ 
+                      id: "search",
+                      className: "h-10" 
+                    }}
+                  />
+                </div>
+              </div>
+              
+              {/* Tipo de Cliente y Estado en la misma fila */}
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="tipoCliente" className="text-sm font-medium">Tipo de Cliente</label>
+                <Select onValueChange={handleTipoClienteChange} defaultValue="all">
+                  <SelectTrigger id="tipoCliente" className="h-9 border-blue-200 focus:border-blue-400">
+                    <SelectValue placeholder="Todos los tipos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
+                    {tiposClienteData?.results?.map(tipo => (
+                      <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                        {tipo.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="activo" className="text-sm font-medium">Estado</label>
+                <Select onValueChange={handleActivoChange} defaultValue="all">
+                  <SelectTrigger id="activo" className="h-9 border-blue-200 focus:border-blue-400">
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="true">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        Activos
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="false">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        Inactivos
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </TabsContent>
           
-          <div className="flex flex-col space-y-1.5">
-            <label htmlFor="ciudad" className="text-sm font-medium">Ciudad</label>
-            <Select onValueChange={handleCiudadChange} defaultValue="all">
-              <SelectTrigger id="ciudad" className="h-9 border-blue-200 focus:border-blue-400">
-                <SelectValue placeholder="Todas las ciudades" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {ciudadesData?.results?.map(ciudad => (
-                  <SelectItem key={ciudad.id} value={ciudad.id.toString()}>
-                    {ciudad.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex flex-col space-y-1.5">
-            <label htmlFor="zona" className="text-sm font-medium">Zona</label>
-            <Select onValueChange={handleZonaChange} defaultValue="all">
-              <SelectTrigger id="zona" className="h-9 border-blue-200 focus:border-blue-400">
-                <SelectValue placeholder="Todas las zonas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {zonasData?.results?.map(zona => (
-                  <SelectItem key={zona.id} value={zona.id.toString()}>
-                    {zona.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex flex-col space-y-1.5">
-            <label htmlFor="activo" className="text-sm font-medium">Estado</label>
-            <Select onValueChange={handleActivoChange} defaultValue="all">
-              <SelectTrigger id="activo" className="h-9 border-blue-200 focus:border-blue-400">
-                <SelectValue placeholder="Todos los estados" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="true">Activos</SelectItem>
-                <SelectItem value="false">Inactivos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </FilterCard>
+          <TabsContent value="advanced" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Ubicación */}
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="ciudad" className="text-sm font-medium flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  Ciudad
+                </label>
+                <Select onValueChange={handleCiudadChange} defaultValue="all">
+                  <SelectTrigger id="ciudad" className="h-9 border-blue-200 focus:border-blue-400">
+                    <SelectValue placeholder="Todas las ciudades" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las ciudades</SelectItem>
+                    {ciudadesData?.results?.map(ciudad => (
+                      <SelectItem key={ciudad.id} value={ciudad.id.toString()}>
+                        {ciudad.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="zona" className="text-sm font-medium">Zona</label>
+                <Select onValueChange={handleZonaChange} defaultValue="all">
+                  <SelectTrigger id="zona" className="h-9 border-blue-200 focus:border-blue-400">
+                    <SelectValue placeholder="Todas las zonas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las zonas</SelectItem>
+                    {zonasData?.results?.map(zona => (
+                      <SelectItem key={zona.id} value={zona.id.toString()}>
+                        {zona.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tags Filter */}
+              <TagsFilter
+                value={selectedTags}
+                onChange={handleTagsChange}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CollapsibleFilterCard>
 
       {/* Grid de tarjetas de clientes */}
       <div className="mt-6">
