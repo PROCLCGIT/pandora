@@ -30,10 +30,7 @@ const navigationItems = [
     icon: <FileText size={20} />,
     path: '/proformas',
     submenu: [
-      { title: 'Todas las proformas', path: '/proformas' },
-      { title: 'En proceso', path: '/proformas/en-proceso' },
-      { title: 'Aprobadas', path: '/proformas/aprobadas' },
-      { title: 'Completadas', path: '/proformas/completadas' },
+      { title: 'Dash Proforma', path: '/proformas/dashboard' },
       { title: 'Nueva Proforma', path: '/proformas/add' },
     ],
   },
@@ -75,6 +72,7 @@ const navigationItems = [
     icon: <Files size={20} />,
     path: '/docmanager',
     submenu: [
+      { title: 'Gestor de Documentos', path: '/docmanager', icon: <Files size={16} /> },
       { title: 'Ver Documentos', path: '/docmanager/documentos', icon: <FileText size={16} /> },
       { title: 'Categorías', path: '/docmanager/categorias', icon: <FolderTree size={16} /> },
       { title: 'Subir Documento', path: '/docmanager/documentos/add', icon: <Upload size={16} /> },
@@ -173,15 +171,52 @@ const Sidebar = ({ isCollapsed, toggleCollapse }) => {
                       <ul className="pl-6 space-y-1">
                         {item.submenu.map((subitem) => (
                           <li key={subitem.title}>
-                            <Link
-                              to={subitem.path}
-                              className={`flex items-center px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${
-                                location.pathname === subitem.path ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : ''
-                              }`}
-                            >
-                              {subitem.icon && <span className="mr-2">{subitem.icon}</span>}
-                              <span>{subitem.title}</span>
-                            </Link>
+                            {subitem.submenu ? (
+                              <div className="space-y-1">
+                                <button
+                                  className={`flex justify-between items-center w-full px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700`}
+                                  onClick={() => toggleSubmenu(`${item.title}-${subitem.title}`)}
+                                >
+                                  <div className="flex items-center">
+                                    {subitem.icon && <span className="mr-2">{subitem.icon}</span>}
+                                    <span>{subitem.title}</span>
+                                  </div>
+                                  <span>
+                                    {openSubmenus[`${item.title}-${subitem.title}`] ? (
+                                      <ChevronDown size={14} />
+                                    ) : (
+                                      <ChevronRight size={14} />
+                                    )}
+                                  </span>
+                                </button>
+                                {openSubmenus[`${item.title}-${subitem.title}`] && (
+                                  <ul className="pl-6 space-y-1">
+                                    {subitem.submenu.map((nestedItem) => (
+                                      <li key={nestedItem.title}>
+                                        <Link
+                                          to={nestedItem.path}
+                                          className={`flex items-center px-4 py-2 text-sm text-gray-600 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${
+                                            location.pathname === nestedItem.path ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : ''
+                                          }`}
+                                        >
+                                          <span>{nestedItem.title}</span>
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ) : (
+                              <Link
+                                to={subitem.path}
+                                className={`flex items-center px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${
+                                  location.pathname === subitem.path ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : ''
+                                }`}
+                              >
+                                {subitem.icon && <span className="mr-2">{subitem.icon}</span>}
+                                <span>{subitem.title}</span>
+                              </Link>
+                            )}
                           </li>
                         ))}
                       </ul>

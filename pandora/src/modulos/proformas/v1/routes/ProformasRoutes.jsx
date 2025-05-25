@@ -1,12 +1,13 @@
-// /src/modulos/proformas/routes/ProformasRoutes.jsx
+// /src/modulos/proformas/v1/routes/ProformasRoutes.jsx
 
 import { Outlet, useRoutes } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 
-// Lazy-loaded components
-const ProformaPage = lazy(() => import('../pages/ProformaPage.jsx'));
 const AddProformaPage = lazy(() => import('../pages/addProformaPage.jsx'));
 const DetalleProforma = lazy(() => import('../pages/detalleProforma.jsx'));
+const ProformasDashPage = lazy(() => import('../pages/ProformasDashPage.jsx'));
+
+
 
 // Loading spinner para Suspense
 const LoadingSpinner = () => (
@@ -31,7 +32,15 @@ const ProformasRoutes = () => {
           index: true,
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <ProformaPage />
+              <ProformasDashPage />
+            </Suspense>
+          )
+        },
+        {
+          path: 'dashboard',
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <ProformasDashPage />
             </Suspense>
           )
         },
@@ -59,22 +68,7 @@ const ProformasRoutes = () => {
             </Suspense>
           )
         },
-        {
-          path: 'in-progress',
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <ProformaPage status="en-proceso" />
-            </Suspense>
-          )
-        },
-        {
-          path: 'approved',
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <ProformaPage status="aprobada" />
-            </Suspense>
-          )
-        }
+        
       ]
     }
   ]);

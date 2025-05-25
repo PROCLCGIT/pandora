@@ -25,7 +25,7 @@ const withSuspense = (Component) => (
 const Dashboard = lazy(() => import('./modulos/core/dashboard/Dashboard'));
 const BasicModule = lazy(() => import('./modulos/basic/routes/BasicRoutes'));
 const ProductosModule = lazy(() => import('./modulos/productos/routes/ProductosRoutes'));
-const ProformasModule = lazy(() => import('./modulos/proformas/routes/ProformasRoutes'));
+const ProformasModule = lazy(() => import('./modulos/proformas/v1/routes/ProformasRoutes'));
 const BriefModule = lazy(() => import('./modulos/brief/routes/BriefRoutes'));
 const DirectorioModule = lazy(() => import('./modulos/directorio/routes/DirectorioRoutes'));
 const DocmanagerModule = lazy(() => import('./modulos/docmanager/routes/DocmanagerRoutes'));
