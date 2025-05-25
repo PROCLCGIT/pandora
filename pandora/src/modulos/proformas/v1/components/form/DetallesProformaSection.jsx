@@ -1,16 +1,110 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   FileText,
   Edit3,
+  Calendar as CalendarIcon,
+  Building2,
+  FileCheck,
 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { proformaService } from '../../api/proformaService';
+import { toast } from '@/hooks/use-toast';
 
 const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
-  const handleNombreChange = (e) => {
+  const [isEditing, setIsEditing] = useState({
+    fechaEmision: false,
+    fechaVencimiento: false,
+    formaPago: false,
+    tiempoEntrega: false,
+    atencion: false,
+    empresa: false,
+    tipoContratacion: false,
+  });
+
+  const [empresas, setEmpresas] = useState([]);
+  const [tiposContratacion, setTiposContratacion] = useState([]);
+  const [configuracion, setConfiguracion] = useState(null);
+
+  // Load initial data
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      // Load configuration
+      const [configData, empresasData, tiposData] = await Promise.all([
+        proformaService.getConfiguration(),
+        proformaService.getEmpresas(),
+        proformaService.getTiposContratacion()
+      ]);
+
+      setConfiguracion(configData);
+      setEmpresas(empresasData.results || []);
+      setTiposContratacion(tiposData.results || []);
+
+      // Set default values from configuration
+      if (configData && !detalles.empresa) {
+        onDetallesChange({
+          ...detalles,
+          empresa: configData.empresa_predeterminada,
+          formaPago: configData.condiciones_pago_predeterminadas || '50% anticipo, 50% contra entrega',
+          tiempoEntrega: configData.tiempo_entrega_predeterminado || '5 días hábiles',
+          fechaEmision: new Date(),
+          fechaVencimiento: addDays(new Date(), configData.dias_validez_predeterminados || 15),
+          porcentajeImpuesto: configData.porcentaje_impuesto_predeterminado || 12
+        });
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo cargar la configuración inicial',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleChange = (field, value) => {
     if (onDetallesChange) {
-      onDetallesChange({ ...detalles, nombre: e.target.value });
+      onDetallesChange({ ...detalles, [field]: value });
+    }
+  };
+
+  const handleDateChange = (field, date) => {
+    handleChange(field, date);
+    setIsEditing({ ...isEditing, [field]: false });
+  };
+
+  const toggleEdit = (field) => {
+    setIsEditing({ ...isEditing, [field]: !isEditing[field] });
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      return format(dateObj, 'd/M/yyyy');
+    } catch (error) {
+      return '';
     }
   };
 
@@ -24,53 +118,263 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
       </CardHeader>
       <CardContent className="pt-4 pb-4 px-4">
         <div className="space-y-3">
+          {/* Nombre descriptivo */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Nombre:</span>
             <Input 
               className="h-8 text-sm text-left" 
               placeholder="Ingrese un nombre descriptivo"
               value={detalles.nombre || ''}
-              onChange={handleNombreChange}
+              onChange={(e) => handleChange('nombre', e.target.value)}
             />
             <div></div>
           </div>
           
+          {/* Empresa */}
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              Empresa:
+            </span>
+            {isEditing.empresa ? (
+              <Select
+                value={detalles.empresa?.toString() || ''}
+                onValueChange={(value) => {
+                  handleChange('empresa', parseInt(value));
+                  setIsEditing({ ...isEditing, empresa: false });
+                }}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Seleccione empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {empresas.map((empresa) => (
+                    <SelectItem key={empresa.id} value={empresa.id.toString()}>
+                      {empresa.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm text-gray-900">
+                {empresas.find(e => e.id === detalles.empresa)?.nombre || 'No seleccionada'}
+              </span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('empresa')}
+            >
+              <Edit3 className="h-3.5 w-3.5 text-blue-500" />
+            </Button>
+          </div>
+
+          {/* Tipo de contratación */}
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+              <FileCheck className="h-3 w-3" />
+              Tipo contrato:
+            </span>
+            {isEditing.tipoContratacion ? (
+              <Select
+                value={detalles.tipoContratacion?.toString() || ''}
+                onValueChange={(value) => {
+                  handleChange('tipoContratacion', parseInt(value));
+                  setIsEditing({ ...isEditing, tipoContratacion: false });
+                }}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Seleccione tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposContratacion.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                      {tipo.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm text-gray-900">
+                {tiposContratacion.find(t => t.id === detalles.tipoContratacion)?.nombre || 'No seleccionado'}
+              </span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('tipoContratacion')}
+            >
+              <Edit3 className="h-3.5 w-3.5 text-blue-500" />
+            </Button>
+          </div>
+          
+          {/* Fecha emisión */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Fecha emisión:</span>
-            <span className="text-sm text-gray-900">{detalles.fechaEmision || '21/3/2025'}</span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            {isEditing.fechaEmision ? (
+              <Popover open={isEditing.fechaEmision} onOpenChange={(open) => setIsEditing({ ...isEditing, fechaEmision: open })}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 text-sm justify-start text-left font-normal",
+                      !detalles.fechaEmision && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3" />
+                    {detalles.fechaEmision ? formatDate(detalles.fechaEmision) : "Seleccione fecha"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={detalles.fechaEmision}
+                    onSelect={(date) => handleDateChange('fechaEmision', date)}
+                    locale={es}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <span className="text-sm text-gray-900">{formatDate(detalles.fechaEmision) || 'No establecida'}</span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('fechaEmision')}
+            >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>
 
+          {/* Válido hasta */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Válido hasta:</span>
-            <span className="text-sm text-gray-900">{detalles.validoHasta || '5/4/2025'}</span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            {isEditing.fechaVencimiento ? (
+              <Popover open={isEditing.fechaVencimiento} onOpenChange={(open) => setIsEditing({ ...isEditing, fechaVencimiento: open })}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 text-sm justify-start text-left font-normal",
+                      !detalles.fechaVencimiento && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3" />
+                    {detalles.fechaVencimiento ? formatDate(detalles.fechaVencimiento) : "Seleccione fecha"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={detalles.fechaVencimiento}
+                    onSelect={(date) => handleDateChange('fechaVencimiento', date)}
+                    locale={es}
+                    initialFocus
+                    disabled={(date) => date < detalles.fechaEmision}
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <span className="text-sm text-gray-900">{formatDate(detalles.fechaVencimiento) || 'No establecida'}</span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('fechaVencimiento')}
+            >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>
 
+          {/* Forma de pago */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Forma de pago:</span>
-            <span className="text-sm text-gray-900">{detalles.formaPago || '50% anticipo, 50% contra entrega'}</span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            {isEditing.formaPago ? (
+              <Input 
+                className="h-8 text-sm" 
+                value={detalles.formaPago || ''}
+                onChange={(e) => handleChange('formaPago', e.target.value)}
+                onBlur={() => setIsEditing({ ...isEditing, formaPago: false })}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    setIsEditing({ ...isEditing, formaPago: false });
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <span className="text-sm text-gray-900">{detalles.formaPago || 'No especificada'}</span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('formaPago')}
+            >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>
 
+          {/* Tiempo entrega */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Tiempo entrega:</span>
-            <span className="text-sm text-gray-900">{detalles.tiempoEntrega || '5 días hábiles'}</span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            {isEditing.tiempoEntrega ? (
+              <Input 
+                className="h-8 text-sm" 
+                value={detalles.tiempoEntrega || ''}
+                onChange={(e) => handleChange('tiempoEntrega', e.target.value)}
+                onBlur={() => setIsEditing({ ...isEditing, tiempoEntrega: false })}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    setIsEditing({ ...isEditing, tiempoEntrega: false });
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <span className="text-sm text-gray-900">{detalles.tiempoEntrega || 'No especificado'}</span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('tiempoEntrega')}
+            >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>
 
+          {/* Atención */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Atención:</span>
-            <span className="text-sm text-gray-900">{detalles.atencion || ''}</span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            {isEditing.atencion ? (
+              <Input 
+                className="h-8 text-sm" 
+                placeholder="Nombre de la persona"
+                value={detalles.atencion || ''}
+                onChange={(e) => handleChange('atencion', e.target.value)}
+                onBlur={() => setIsEditing({ ...isEditing, atencion: false })}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    setIsEditing({ ...isEditing, atencion: false });
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <span className="text-sm text-gray-900">{detalles.atencion || 'No especificado'}</span>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => toggleEdit('atencion')}
+            >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>

@@ -10,6 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   Search, 
   Loader2, 
@@ -22,7 +30,9 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Info as InfoIcon
+  Info as InfoIcon,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { clienteService } from '../../api/clienteService';
 import { useDebounce } from '@/hooks/custom/useDebounce';
@@ -33,6 +43,7 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [viewMode, setViewMode] = useState('card'); // 'card' or 'list'
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -114,15 +125,48 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
         
         {/* Search Bar */}
         <div className="px-6 py-4 border-b bg-gray-50">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              placeholder="Buscar por nombre, alias, RUC o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-11 text-base bg-white border-gray-200 focus:border-blue-500"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                placeholder="Buscar por nombre, alias, RUC o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 text-base bg-white border-gray-200 focus:border-blue-500"
+              />
+            </div>
+            
+            {/* View Mode Toggle */}
+            <div className="flex border rounded-lg bg-white">
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('card')}
+                className={`h-11 px-3 rounded-r-none ${
+                  viewMode === 'card' 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'hover:bg-gray-100'
+                }`}
+                title="Vista de tarjetas"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`h-11 px-3 rounded-l-none border-l ${
+                  viewMode === 'list' 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'hover:bg-gray-100'
+                }`}
+                title="Vista de lista"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+          
           <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
             <InfoIcon className="h-3 w-3" />
             Tip: Haz doble clic en un cliente para seleccionarlo rápidamente
@@ -142,15 +186,16 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
               <p className="text-gray-500 text-lg">No se encontraron clientes</p>
               <p className="text-gray-400 text-sm">Intenta con otros términos de búsqueda</p>
             </div>
-          ) : (
-            <div className="grid gap-3 py-4">
+          ) : viewMode === 'card' ? (
+            // Card View
+            <div className="grid gap-2 py-3">
               {clientes.map((cliente) => (
                 <Card
                   key={cliente.id}
                   className={`
-                    p-4 cursor-pointer transition-all duration-200 border-2
+                    p-3 cursor-pointer transition-all duration-200 border
                     ${selectedClient?.id === cliente.id 
-                      ? 'border-blue-500 bg-blue-50 shadow-md transform scale-[1.02]' 
+                      ? 'border-blue-500 bg-blue-50 shadow-sm transform scale-[1.01]' 
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                     }
                   `}
@@ -158,69 +203,69 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
                   onDoubleClick={() => handleRowDoubleClick(cliente)}
                   title="Haz doble clic para seleccionar"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     {/* Left Section - Main Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Building2 className="h-5 w-5 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <h3 className="text-base font-semibold text-gray-900 truncate">
                           {cliente.nombre}
                         </h3>
                         {selectedClient?.id === cliente.id && (
-                          <CheckCircle2 className="h-5 w-5 text-blue-600 ml-auto" />
+                          <CheckCircle2 className="h-4 w-4 text-blue-600 ml-auto flex-shrink-0" />
                         )}
                       </div>
                       
                       {cliente.alias && (
-                        <p className="text-sm text-gray-600 mb-2 italic">
+                        <p className="text-xs text-gray-600 mb-1 italic ml-6">
                           "{cliente.alias}"
                         </p>
                       )}
                       
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-400" />
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs ml-6">
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="h-3 w-3 text-gray-400 flex-shrink-0" />
                           <span className="text-gray-600">RUC:</span>
-                          <span className="font-medium text-gray-900">{cliente.ruc}</span>
+                          <span className="font-medium text-gray-900 truncate">{cliente.ruc}</span>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
                           <span className="text-gray-600">Tel:</span>
-                          <span className="font-medium text-gray-900">
-                            {cliente.telefono || 'No registrado'}
+                          <span className="font-medium text-gray-900 truncate">
+                            {cliente.telefono || 'N/A'}
                           </span>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3 w-3 text-gray-400 flex-shrink-0" />
                           <span className="text-gray-600">Email:</span>
-                          <span className="font-medium text-gray-900 truncate max-w-[200px]">
-                            {cliente.email || 'No registrado'}
+                          <span className="font-medium text-gray-900 truncate" title={cliente.email}>
+                            {cliente.email || 'N/A'}
                           </span>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
                           <span className="text-gray-600">Ciudad:</span>
-                          <span className="font-medium text-gray-900">
-                            {cliente.ciudad?.nombre || 'No especificada'}
+                          <span className="font-medium text-gray-900 truncate">
+                            {cliente.ciudad?.nombre || 'N/A'}
                           </span>
                         </div>
                       </div>
                       
                       {cliente.direccion && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          <span className="font-medium">Dirección:</span> {cliente.direccion}
+                        <div className="mt-1 text-xs text-gray-600 ml-6 truncate" title={cliente.direccion}>
+                          <span className="font-medium">Dir:</span> {cliente.direccion}
                         </div>
                       )}
                     </div>
                     
                     {/* Right Section - Type Badge */}
-                    <div className="ml-4">
+                    <div className="flex-shrink-0">
                       <Badge 
                         variant={selectedClient?.id === cliente.id ? "default" : "outline"} 
-                        className="whitespace-nowrap"
+                        className="text-xs px-2 py-0.5"
                       >
                         {cliente.tipo_cliente?.nombre || 'Sin tipo'}
                       </Badge>
@@ -228,6 +273,89 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
                   </div>
                 </Card>
               ))}
+            </div>
+          ) : (
+            // List View
+            <div className="py-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold">Nombre</TableHead>
+                    <TableHead className="font-semibold">RUC</TableHead>
+                    <TableHead className="font-semibold">Email</TableHead>
+                    <TableHead className="font-semibold">Teléfono</TableHead>
+                    <TableHead className="font-semibold">Ciudad</TableHead>
+                    <TableHead className="font-semibold">Tipo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientes.map((cliente) => (
+                    <TableRow
+                      key={cliente.id}
+                      className={`
+                        cursor-pointer transition-colors
+                        ${selectedClient?.id === cliente.id 
+                          ? 'bg-blue-50 hover:bg-blue-100' 
+                          : 'hover:bg-gray-50'
+                        }
+                      `}
+                      onClick={() => handleRowClick(cliente)}
+                      onDoubleClick={() => handleRowDoubleClick(cliente)}
+                      title="Haz doble clic para seleccionar"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {selectedClient?.id === cliente.id && (
+                            <CheckCircle2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="font-medium">{cliente.nombre}</div>
+                            {cliente.alias && (
+                              <div className="text-sm text-gray-500 italic">"{cliente.alias}"</div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="text-sm">{cliente.ruc}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="text-sm truncate max-w-[200px]">
+                            {cliente.email || '-'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="text-sm">{cliente.telefono || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="text-sm">
+                            {cliente.ciudad?.nombre || '-'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={selectedClient?.id === cliente.id ? "default" : "outline"} 
+                          className="text-xs"
+                        >
+                          {cliente.tipo_cliente?.nombre || 'Sin tipo'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </ScrollArea>
