@@ -1,15 +1,38 @@
 # backend/directorio/serializers.py
 
 from rest_framework import serializers
-from .models import Cliente, Proveedor, Vendedor, Contacto, RelacionBlue
+from .models import (
+    Cliente,
+    Proveedor,
+    Vendedor,
+    Contacto,
+    RelacionBlue,
+    Tag,
+)
 from basic.serializers import CiudadSerializer
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "color_code", "created_at", "updated_at"]
+        read_only_fields = ("created_at", "updated_at")
 
 class ContactoSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Contacto"""
+
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
+    )
+
     class Meta:
         model = Contacto
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at')
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['tags'] = TagSerializer(instance.tags.all(), many=True).data
+        return ret
 
 class ClienteSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Cliente.
@@ -22,6 +45,10 @@ class ClienteSerializer(serializers.ModelSerializer):
     Para mantener la respuesta enriquecida (con nombre e id) se sobreescribe
     `to_representation`.
     """
+
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = Cliente
@@ -51,20 +78,30 @@ class ClienteSerializer(serializers.ModelSerializer):
             if instance.tipo_cliente else None
         )
 
+        ret['tags'] = TagSerializer(instance.tags.all(), many=True).data
+
         return ret
 
 class ProveedorSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Proveedor"""
     ciudad = CiudadSerializer(read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = Proveedor
         fields = [
-            'id', 'ruc', 'razon_social', 'nombre', 'direccion1', 
-            'direccion2', 'correo', 'telefono', 'tipo_primario', 
-            'activo', 'created_at', 'updated_at', 'ciudad'
+            'id', 'ruc', 'razon_social', 'nombre', 'direccion1',
+            'direccion2', 'correo', 'telefono', 'tipo_primario',
+            'activo', 'created_at', 'updated_at', 'ciudad', 'tags'
         ]
         read_only_fields = ('created_at', 'updated_at')
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['tags'] = TagSerializer(instance.tags.all(), many=True).data
+        return ret
 
 class VendedorSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Vendedor"""
@@ -92,6 +129,7 @@ class ClienteDetalladoSerializer(serializers.ModelSerializer):
     anidadas y mantiene un formato consistente con `ClienteSerializer`."""
 
     relaciones = RelacionBlueSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cliente
@@ -131,6 +169,7 @@ class ProveedorDetalladoSerializer(serializers.ModelSerializer):
     """Serializer detallado para el modelo Proveedor con relaciones anidadas"""
     vendedores = VendedorSerializer(many=True, read_only=True)
     ciudad = CiudadSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Proveedor
@@ -140,6 +179,7 @@ class ProveedorDetalladoSerializer(serializers.ModelSerializer):
 class ContactoDetalladoSerializer(serializers.ModelSerializer):
     """Serializer detallado para el modelo Contacto con relaciones anidadas"""
     relaciones = RelacionBlueSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     
     class Meta:
         model = Contacto
