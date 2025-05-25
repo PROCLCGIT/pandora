@@ -7,13 +7,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from .models import Cliente, Proveedor, Vendedor, Contacto, RelacionBlue
+from .models import Cliente, Proveedor, Vendedor, Contacto, RelacionBlue, Tag
 from .serializers import (
     ClienteSerializer, ClienteDetalladoSerializer,
     ProveedorSerializer, ProveedorDetalladoSerializer,
     VendedorSerializer,
     ContactoSerializer, ContactoDetalladoSerializer,
-    RelacionBlueSerializer
+    RelacionBlueSerializer,
+    TagSerializer
 )
 from .pagination import StandardResultsSetPagination, LargeResultsSetPagination, CustomLimitOffsetPagination
 # Utilizamos los permisos estándar de DRF en lugar de redefiniciones personalizadas
@@ -368,3 +369,17 @@ class RelacionBlueViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(relaciones, many=True)
             return Response(serializer.data)
         return Response({"error": "Se requiere el parámetro contacto_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TagViewSet(viewsets.ModelViewSet):
+    """API endpoint para gestionar etiquetas del directorio."""
+
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = ["name", "created_at"]
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [UserBurstRateThrottle, UserSustainedRateThrottle]
+
