@@ -22,7 +22,6 @@ import {
   Edit3,
   Clock,
   FileText,
-  ShoppingCart,
   ChevronDown,
   Filter,
   ArrowLeftRight,
@@ -40,6 +39,8 @@ import ClienteSection from '../components/form/ClienteSection';
 import DetallesProformaSection from '../components/form/DetallesProformaSection';
 import ProductosServiciosTable from '../components/form/ProductosServiciosTable';
 import ResumenSection from '../components/form/ResumenSection';
+import ProductosDisponiblesSelectionModal from '../components/modals/ProductosDisponiblesSelectionModal';
+import ToolBarSection from '../components/form/ToolBarSection';
 import { proformaService } from '../api/proformaService';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -51,14 +52,29 @@ export default function AddProformaPage() {
   const [productos, setProductos] = useState([]);
   const [totales, setTotales] = useState({ subtotal: 0, iva: 0, total: 0 });
   const [showProductosDisponibles, setShowProductosDisponibles] = useState(false);
+  const [showProductosModal, setShowProductosModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proformaNumero, setProformaNumero] = useState('');
+  const [empresas, setEmpresas] = useState([]);
 
   // Generate proforma number on mount
   useEffect(() => {
     const year = new Date().getFullYear();
     const random = Math.floor(Math.random() * 9000) + 1000;
     setProformaNumero(`PRO-${year}-${random}`);
+  }, []);
+
+  // Fetch empresas on mount
+  useEffect(() => {
+    const fetchEmpresas = async () => {
+      try {
+        const data = await proformaService.getEmpresas();
+        setEmpresas(data.results || []);
+      } catch (error) {
+        console.error('Error fetching empresas:', error);
+      }
+    };
+    fetchEmpresas();
   }, []);
 
   // Calculate totals when products change
@@ -74,6 +90,12 @@ export default function AddProformaPage() {
       total
     });
   }, [productos, detallesProforma.porcentajeImpuesto]);
+
+  // Handle products selected from productos disponibles modal
+  const handleProductosSelected = (selectedProducts) => {
+    // Add selected products to existing productos array
+    setProductos(prevProductos => [...prevProductos, ...selectedProducts]);
+  };
 
   const handleSaveProforma = async () => {
     try {
@@ -222,45 +244,69 @@ export default function AddProformaPage() {
         </span>
       </div>
 
-      {/* Cliente + Detalles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Cliente Section */}
-        <ClienteSection 
-          cliente={cliente} 
-          onClienteChange={setCliente}
-        />
+      {/* Información Base */}
+      <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5 text-blue-700" />
+          <h2 className="text-lg font-semibold text-blue-900">Información Base</h2>
+        </div>
+        
+        {/* Empresa y Nombre de Proforma */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-2">
+              Empresa:
+            </label>
+            <Select 
+              value={detallesProforma.empresa?.toString() || ''}
+              onValueChange={(value) => setDetallesProforma({...detallesProforma, empresa: value})}
+            >
+              <SelectTrigger className="w-full bg-white border-blue-300">
+                <SelectValue placeholder="Seleccione una empresa" />
+              </SelectTrigger>
+              <SelectContent>
+                {empresas.map((empresa) => (
+                  <SelectItem key={empresa.id} value={empresa.id.toString()}>
+                    {empresa.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-2">
+              Nombre de Proforma:
+            </label>
+            <Input
+              value={detallesProforma.nombre || ''}
+              onChange={(e) => setDetallesProforma({...detallesProforma, nombre: e.target.value})}
+              placeholder="Ingrese un nombre descriptivo para la proforma"
+              className="bg-white border-blue-300"
+            />
+          </div>
+        </div>
+        
+        {/* Cliente + Detalles */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Cliente Section */}
+          <ClienteSection 
+            cliente={cliente} 
+            onClienteChange={setCliente}
+          />
 
-        {/* Detalles de Proforma Section */}
-        <DetallesProformaSection 
-          detalles={detallesProforma}
-          onDetallesChange={setDetallesProforma}
-        />
+          {/* Detalles de Proforma Section */}
+          <DetallesProformaSection 
+            detalles={detallesProforma}
+            onDetallesChange={setDetallesProforma}
+          />
+        </div>
       </div>
 
-      {/* Agregar ítem desplegable */}
-      <Card className="bg-purple-300/20 border-purple-200 cursor-pointer hover:bg-purple-300/30 transition-colors">
-        <CardContent 
-          className="py-3"
-          onClick={() => setShowProductosDisponibles(!showProductosDisponibles)}
-        >
-          <div className="flex items-center text-purple-700 font-medium">
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Agregar ítem desde productos disponibles:
-            <ChevronDown className={`ml-auto h-5 w-5 transition-transform ${showProductosDisponibles ? 'rotate-180' : ''}`} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Panel de productos disponibles (placeholder por ahora) */}
-      {showProductosDisponibles && (
-        <Card className="border-purple-200">
-          <CardContent className="p-4">
-            <p className="text-gray-600 text-center">
-              Aquí se mostrarán los productos disponibles para agregar
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Herramientas */}
+      <ToolBarSection 
+        onSelectProducts={() => setShowProductosModal(true)}
+      />
 
       {/* Tabla de Productos y Servicios */}
       <ProductosServiciosTable 
@@ -292,6 +338,13 @@ export default function AddProformaPage() {
       <p className="text-center text-sm text-gray-500">
         Gracias por su preferencia. Esta proforma no constituye una factura.
       </p>
+
+      {/* Modal for selecting productos disponibles */}
+      <ProductosDisponiblesSelectionModal
+        isOpen={showProductosModal}
+        onClose={() => setShowProductosModal(false)}
+        onProductosSelected={handleProductosSelected}
+      />
     </div>
   );
 }

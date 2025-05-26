@@ -19,7 +19,6 @@ import {
   FileText,
   Edit3,
   Calendar as CalendarIcon,
-  Building2,
   FileCheck,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
@@ -35,7 +34,6 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
     formaPago: false,
     tiempoEntrega: false,
     atencion: false,
-    empresa: false,
     tipoContratacion: false,
   });
 
@@ -118,58 +116,6 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
       </CardHeader>
       <CardContent className="pt-4 pb-4 px-4">
         <div className="space-y-3">
-          {/* Nombre descriptivo */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
-            <span className="text-sm text-gray-600 font-medium">Nombre:</span>
-            <Input 
-              className="h-8 text-sm text-left" 
-              placeholder="Ingrese un nombre descriptivo"
-              value={detalles.nombre || ''}
-              onChange={(e) => handleChange('nombre', e.target.value)}
-            />
-            <div></div>
-          </div>
-          
-          {/* Empresa */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
-            <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-              <Building2 className="h-3 w-3" />
-              Empresa:
-            </span>
-            {isEditing.empresa ? (
-              <Select
-                value={detalles.empresa?.toString() || ''}
-                onValueChange={(value) => {
-                  handleChange('empresa', parseInt(value));
-                  setIsEditing({ ...isEditing, empresa: false });
-                }}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Seleccione empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {empresas.map((empresa) => (
-                    <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                      {empresa.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <span className="text-sm text-gray-900">
-                {empresas.find(e => e.id === detalles.empresa)?.nombre || 'No seleccionada'}
-              </span>
-            )}
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-6 w-6 p-0"
-              onClick={() => toggleEdit('empresa')}
-            >
-              <Edit3 className="h-3.5 w-3.5 text-blue-500" />
-            </Button>
-          </div>
-
           {/* Tipo de contratación */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium flex items-center gap-1">

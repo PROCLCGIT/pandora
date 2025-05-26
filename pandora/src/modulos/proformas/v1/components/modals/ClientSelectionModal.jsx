@@ -261,14 +261,38 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
                       )}
                     </div>
                     
-                    {/* Right Section - Type Badge */}
-                    <div className="flex-shrink-0">
+                    {/* Right Section - Type Badge and Tags */}
+                    <div className="flex-shrink-0 flex flex-col items-end gap-2">
                       <Badge 
                         variant={selectedClient?.id === cliente.id ? "default" : "outline"} 
                         className="text-xs px-2 py-0.5"
                       >
                         {cliente.tipo_cliente?.nombre || 'Sin tipo'}
                       </Badge>
+                      
+                      {/* Client Tags */}
+                      {cliente.tags && cliente.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
+                          {cliente.tags.map((tag) => (
+                            <Badge
+                              key={tag.id}
+                              variant="outline"
+                              className="text-xs px-1.5 py-0 h-5 border"
+                              style={{
+                                backgroundColor: `${tag.color_code}15`,
+                                borderColor: tag.color_code,
+                                color: tag.color_code,
+                              }}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full mr-1 inline-block"
+                                style={{ backgroundColor: tag.color_code }}
+                              />
+                              {tag.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -286,6 +310,7 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
                     <TableHead className="font-semibold">Teléfono</TableHead>
                     <TableHead className="font-semibold">Ciudad</TableHead>
                     <TableHead className="font-semibold">Tipo</TableHead>
+                    <TableHead className="font-semibold">Etiquetas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -351,6 +376,32 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
                         >
                           {cliente.tipo_cliente?.nombre || 'Sin tipo'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {cliente.tags && cliente.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {cliente.tags.map((tag) => (
+                              <Badge
+                                key={tag.id}
+                                variant="outline"
+                                className="text-xs px-1.5 py-0 h-5 border"
+                                style={{
+                                  backgroundColor: `${tag.color_code}15`,
+                                  borderColor: tag.color_code,
+                                  color: tag.color_code,
+                                }}
+                              >
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full mr-1 inline-block"
+                                  style={{ backgroundColor: tag.color_code }}
+                                />
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

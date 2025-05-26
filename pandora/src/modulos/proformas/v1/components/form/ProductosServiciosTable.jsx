@@ -27,10 +27,17 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
   const [editingId, setEditingId] = useState(null);
   const [editingItem, setEditingItem] = useState({});
 
+  // Calcular total por línea
+  const calculateLineTotal = (item) => {
+    const subtotal = (item.cantidad || 0) * (item.precioUnitario || 0);
+    const descuento = subtotal * ((item.descuento || 0) / 100);
+    return subtotal - descuento;
+  };
+
   // Calcular totales cuando cambien los productos
   useEffect(() => {
     const subtotal = productos.reduce((sum, item) => {
-      const total = (item.cantidad || 0) * (item.precioUnitario || 0) * (1 - (item.descuento || 0) / 100);
+      const total = calculateLineTotal(item);
       return sum + total;
     }, 0);
 
@@ -52,6 +59,7 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
       cantidad: 1,
       precioUnitario: 0,
       descuento: 0,
+      total: 0,
     };
     onProductosChange([...productos, newItem]);
     setEditingId(newItem.id);
@@ -77,9 +85,15 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
 
   // Guardar edición
   const handleSaveEdit = () => {
+    // Calcular el total del item antes de guardarlo
+    const updatedItem = {
+      ...editingItem,
+      total: calculateLineTotal(editingItem)
+    };
+    
     onProductosChange(
       productos.map(item => 
-        item.id === editingId ? editingItem : item
+        item.id === editingId ? updatedItem : item
       )
     );
     setEditingId(null);
@@ -89,13 +103,6 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
   // Actualizar campo en edición
   const handleEditChange = (field, value) => {
     setEditingItem({ ...editingItem, [field]: value });
-  };
-
-  // Calcular total por línea
-  const calculateLineTotal = (item) => {
-    const subtotal = (item.cantidad || 0) * (item.precioUnitario || 0);
-    const descuento = subtotal * ((item.descuento || 0) / 100);
-    return subtotal - descuento;
   };
 
   // Filtrar productos

@@ -9,9 +9,11 @@ import {
   Clock,
 } from 'lucide-react';
 import ClientSelectionModal from '../modals/ClientSelectionModal';
+import AddClientModal from '../modals/AddClientModal';
 
 const ClienteSection = ({ cliente = {}, onClienteChange }) => {
   const [showClientModal, setShowClientModal] = useState(false);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
 
   const handleSelectClient = (selectedClient) => {
     // Map the client data to the expected format
@@ -38,6 +40,13 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
       onClienteChange(clienteData);
     }
   };
+  
+  const handleClientCreated = (newClient) => {
+    // Close the add modal and automatically select the new client
+    setShowAddClientModal(false);
+    handleSelectClient(newClient);
+  };
+  
   return (
     <Card>
       <CardHeader className="py-3 px-4 bg-blue-300/20">
@@ -56,7 +65,13 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
             >
               <Search className="h-3.5 w-3.5 text-gray-500" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 w-7 p-0"
+              onClick={() => setShowAddClientModal(true)}
+              title="Agregar nuevo cliente"
+            >
               <PlusSquare className="h-3.5 w-3.5 text-green-500" />
             </Button>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
@@ -98,6 +113,13 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
         isOpen={showClientModal}
         onClose={() => setShowClientModal(false)}
         onSelectClient={handleSelectClient}
+      />
+      
+      {/* Add Client Modal */}
+      <AddClientModal
+        isOpen={showAddClientModal}
+        onClose={() => setShowAddClientModal(false)}
+        onClientCreated={handleClientCreated}
       />
     </Card>
   );
