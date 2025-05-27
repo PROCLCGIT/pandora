@@ -103,7 +103,7 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
   return (
     <Card>
       <CardHeader className="py-3 px-4 bg-blue-300/20">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center min-h-[32px]">
           <CardTitle className="flex items-center text-base font-bold">
             <FileText className="mr-2 h-4 w-4 text-blue-600" />
             Detalles de la Proforma

@@ -51,7 +51,7 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
   return (
     <Card>
       <CardHeader className="py-3 px-4 bg-blue-300/20">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center min-h-[32px]">
           <CardTitle className="flex items-center text-base font-bold">
             <User className="mr-2 h-4 w-4 text-blue-600" />
             Cliente
@@ -85,24 +85,24 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
         </div>
       </CardHeader>
       <CardContent className="pt-4 pb-4 px-4">
-        <div className="space-y-3">
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+        <div className="space-y-4">
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Empresa:</span>
             <span className="text-sm text-gray-900">{cliente.empresa || 'No seleccionado'}</span>
           </div>
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">RUC:</span>
             <span className="text-sm text-gray-900">{cliente.ruc || 'No especificado'}</span>
           </div>
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Email:</span>
             <span className="text-sm text-gray-900">{cliente.email || 'No especificado'}</span>
           </div>
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Teléfono:</span>
             <span className="text-sm text-gray-900">{cliente.telefono || 'No especificado'}</span>
           </div>
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Dirección:</span>
             <span className="text-sm text-gray-900">{cliente.direccion || 'No especificado'}</span>
           </div>

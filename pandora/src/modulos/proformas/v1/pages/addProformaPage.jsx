@@ -256,18 +256,19 @@ export default function AddProformaPage() {
           <h2 className="text-lg font-semibold text-blue-900">Información Base</h2>
         </div>
         
-        {/* Empresa, Tipo Contrato y Nombre de Proforma */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-blue-800 mb-2">
+        {/* Empresa, Tipo Contrato y Nombre de Proforma con layout alineado */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Empresa */}
+            <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+              <label className="text-sm font-medium text-blue-800">
                 Empresa:
               </label>
               <Select 
                 value={detallesProforma.empresa?.toString() || ''}
                 onValueChange={(value) => setDetallesProforma({...detallesProforma, empresa: value})}
               >
-                <SelectTrigger className="w-full bg-white border-blue-300">
+                <SelectTrigger className="w-full bg-white border-blue-300 h-8 text-sm">
                   <SelectValue placeholder="Seleccione una empresa" />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,15 +281,16 @@ export default function AddProformaPage() {
               </Select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-blue-800 mb-2">
+            {/* Tipo de Contrato */}
+            <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+              <label className="text-sm font-medium text-blue-800">
                 Tipo de Contrato:
               </label>
               <Select 
                 value={detallesProforma.tipoContratacion?.toString() || ''}
                 onValueChange={(value) => setDetallesProforma({...detallesProforma, tipoContratacion: parseInt(value)})}
               >
-                <SelectTrigger className="w-full bg-white border-blue-300">
+                <SelectTrigger className="w-full bg-white border-blue-300 h-8 text-sm">
                   <SelectValue placeholder="Seleccione tipo de contrato" />
                 </SelectTrigger>
                 <SelectContent>
@@ -302,15 +304,16 @@ export default function AddProformaPage() {
             </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-blue-800 mb-2">
+          {/* Nombre de Proforma */}
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <label className="text-sm font-medium text-blue-800">
               Nombre de Proforma:
             </label>
             <Input
               value={detallesProforma.nombre || ''}
               onChange={(e) => setDetallesProforma({...detallesProforma, nombre: e.target.value})}
               placeholder="Ingrese un nombre descriptivo para la proforma"
-              className="bg-white border-blue-300"
+              className="bg-white border-blue-300 h-8 text-sm"
             />
           </div>
         </div>
