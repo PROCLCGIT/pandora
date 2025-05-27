@@ -12,6 +12,8 @@ const LOGOUT_PATH = '/login';
 // Variables para control de refresco de tokens
 let isRefreshing = false;
 let failedQueue = [];
+let lastRefreshAttempt = 0;
+const REFRESH_THROTTLE_MS = 10000; // 10 segundos entre intentos de refresh
 
 // Función para procesar la cola de peticiones pendientes
 const processQueue = (error, token = null) => {
@@ -108,6 +110,13 @@ axiosInstance.interceptors.request.use(
 
 // Función para refrescar token
 const refreshToken = async () => {
+  const now = Date.now();
+  if (now - lastRefreshAttempt < REFRESH_THROTTLE_MS) {
+    console.warn('Refresco de token cancelado por throttling');
+    return Promise.reject(new Error('Refresh throttled'));
+  }
+  lastRefreshAttempt = now;
+
   return axios.post(`${BASE_URL}${TOKEN_REFRESH_URL}`, {}, {
     withCredentials: true
   });

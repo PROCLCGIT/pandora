@@ -103,6 +103,11 @@ let tokenVerificationCache = {
   expiresIn: 0
 };
 
+// Control de refresco para evitar múltiples intentos en poco tiempo
+const REFRESH_THROTTLE_MS = 10000; // 10 segundos entre intentos
+let lastRefreshAttempt = 0;
+let refreshInProgress = null;
+
 // Número de verificaciones por segundo permitidas
 const VERIFY_THROTTLE_MS = 60000; // Verificar máximo cada 60 segundos para reducir carga significativamente
 let lastVerifyTime = 0;
@@ -250,40 +255,56 @@ export const login = async (username, password) => {
  * Refresca el token automáticamente
  */
 export const refreshToken = async () => {
-  try {
-    const api = getApiClient();
-    logAuth('Intentando refrescar token');
-    const response = await api.post('/auth/refresh/');
-    
-    logAuth('Token refrescado correctamente');
-    
-    // Las cookies se manejan automáticamente
-    tokenVerificationCache.lastChecked = Date.now();
-    tokenVerificationCache.expiresIn = response.data.expires_in_minutes || 15;
-    
-    return true;
-  } catch (error) {
-    // Log detallado del error
-    if (error.response) {
-      logAuth(`Error al refrescar token: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-    } else if (error.request) {
-      logAuth('Error al refrescar token: Sin respuesta del servidor');
-    } else {
-      logAuth(`Error al refrescar token: ${error.message}`);
-    }
-    
-    // Intentamos preservar la sesión actual en lugar de fallar directamente
-    // Solo si el error es 401 consideramos que el token no es válido
-    // Para otros errores (como de red), asumimos que el token sigue siendo válido
-    if (error.response?.status === 401) {
-      // Token definitivamente no válido
-      return false;
-    } else {
-      // Error de red u otro, intentamos mantener la sesión
-      logAuth('Asumiendo que token sigue válido debido a error temporal');
-      return true;
-    }
+  const now = Date.now();
+  if (refreshInProgress) {
+    return refreshInProgress;
   }
+  if (now - lastRefreshAttempt < REFRESH_THROTTLE_MS) {
+    logAuth('Refresco de token ignorado por throttling');
+    return false;
+  }
+  lastRefreshAttempt = now;
+
+  refreshInProgress = (async () => {
+    try {
+      const api = getApiClient();
+      logAuth('Intentando refrescar token');
+      const response = await api.post('/auth/refresh/');
+    
+      logAuth('Token refrescado correctamente');
+
+      // Las cookies se manejan automáticamente
+      tokenVerificationCache.lastChecked = Date.now();
+      tokenVerificationCache.expiresIn = response.data.expires_in_minutes || 15;
+
+      return true;
+    } catch (error) {
+    // Log detallado del error
+      if (error.response) {
+        logAuth(`Error al refrescar token: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      } else if (error.request) {
+        logAuth('Error al refrescar token: Sin respuesta del servidor');
+      } else {
+        logAuth(`Error al refrescar token: ${error.message}`);
+      }
+
+      // Intentamos preservar la sesión actual en lugar de fallar directamente
+      // Solo si el error es 401 consideramos que el token no es válido
+      // Para otros errores (como de red), asumimos que el token sigue siendo válido
+      if (error.response?.status === 401) {
+        // Token definitivamente no válido
+        return false;
+      } else {
+        // Error de red u otro, intentamos mantener la sesión
+        logAuth('Asumiendo que token sigue válido debido a error temporal');
+        return true;
+      }
+    } finally {
+      refreshInProgress = null;
+    }
+  })();
+
+  return refreshInProgress;
 };
 
 /**
