@@ -252,26 +252,28 @@ export default function AddProformaPage() {
         </div>
         
         {/* Empresa y Nombre de Proforma */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-blue-800 mb-2">
-              Empresa:
-            </label>
-            <Select 
-              value={detallesProforma.empresa?.toString() || ''}
-              onValueChange={(value) => setDetallesProforma({...detallesProforma, empresa: value})}
-            >
-              <SelectTrigger className="w-full bg-white border-blue-300">
-                <SelectValue placeholder="Seleccione una empresa" />
-              </SelectTrigger>
-              <SelectContent>
-                {empresas.map((empresa) => (
-                  <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                    {empresa.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Empresa:
+              </label>
+              <Select 
+                value={detallesProforma.empresa?.toString() || ''}
+                onValueChange={(value) => setDetallesProforma({...detallesProforma, empresa: value})}
+              >
+                <SelectTrigger className="w-full bg-white border-blue-300">
+                  <SelectValue placeholder="Seleccione una empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {empresas.map((empresa) => (
+                    <SelectItem key={empresa.id} value={empresa.id.toString()}>
+                      {empresa.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div>
@@ -286,21 +288,21 @@ export default function AddProformaPage() {
             />
           </div>
         </div>
-        
-        {/* Cliente + Detalles */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Cliente Section */}
-          <ClienteSection 
-            cliente={cliente} 
-            onClienteChange={setCliente}
-          />
+      </div>
 
-          {/* Detalles de Proforma Section */}
-          <DetallesProformaSection 
-            detalles={detallesProforma}
-            onDetallesChange={setDetallesProforma}
-          />
-        </div>
+      {/* Cliente + Detalles */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Cliente Section */}
+        <ClienteSection 
+          cliente={cliente} 
+          onClienteChange={setCliente}
+        />
+
+        {/* Detalles de Proforma Section */}
+        <DetallesProformaSection 
+          detalles={detallesProforma}
+          onDetallesChange={setDetallesProforma}
+        />
       </div>
 
       {/* Herramientas */}
