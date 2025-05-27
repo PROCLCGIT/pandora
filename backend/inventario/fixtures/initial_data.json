@@ -1,0 +1,96 @@
+[
+  {
+    "model": "inventario.almacen",
+    "pk": 1,
+    "fields": {
+      "codigo": "ALM-001",
+      "nombre": "Almacén Principal",
+      "direccion": "Av. Principal 123, Guayaquil",
+      "responsable": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.almacen",
+    "pk": 2,
+    "fields": {
+      "codigo": "ALM-002",
+      "nombre": "Bodega Secundaria",
+      "direccion": "Calle 5 y Av. 10, Samborondón",
+      "responsable": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 1,
+    "fields": {
+      "codigo": "ENT-001",
+      "nombre": "Entrada por Compra",
+      "tipo": "entrada",
+      "afecta_costo": true,
+      "requiere_documento": true,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 2,
+    "fields": {
+      "codigo": "SAL-001",
+      "nombre": "Salida por Venta",
+      "tipo": "salida",
+      "afecta_costo": false,
+      "requiere_documento": true,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 3,
+    "fields": {
+      "codigo": "AJU-001",
+      "nombre": "Ajuste de Inventario",
+      "tipo": "ajuste",
+      "afecta_costo": false,
+      "requiere_documento": false,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 4,
+    "fields": {
+      "codigo": "TRA-001",
+      "nombre": "Transferencia entre Almacenes",
+      "tipo": "transferencia",
+      "afecta_costo": false,
+      "requiere_documento": true,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 5,
+    "fields": {
+      "codigo": "ENT-002",
+      "nombre": "Entrada por Devolución",
+      "tipo": "entrada",
+      "afecta_costo": false,
+      "requiere_documento": true,
+      "activo": true
+    }
+  },
+  {
+    "model": "inventario.tipomovimiento",
+    "pk": 6,
+    "fields": {
+      "codigo": "SAL-002",
+      "nombre": "Salida por Consumo Interno",
+      "tipo": "salida",
+      "afecta_costo": false,
+      "requiere_documento": false,
+      "activo": true
+    }
+  }
+]

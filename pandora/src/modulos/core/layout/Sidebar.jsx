@@ -6,7 +6,8 @@ import {
   FolderOpen, Settings, ChevronDown, ChevronRight,
   Code, MapPin, Building, Layers, Users, 
   FileArchive, Database, Files, Upload, Tags, FolderTree,
-  FileUp, Download, FilePlus, FileSpreadsheet, ShoppingBag
+  FileUp, Download, FilePlus, FileSpreadsheet, ShoppingBag,
+  Warehouse, PackageSearch, TruckIcon, AlertCircle
 } from 'lucide-react';
 
 // Estructura de navegación del sidebar
@@ -23,6 +24,18 @@ const navigationItems = [
     submenu: [
       { title: 'Productos Ofertados', path: '/productos/productos-ofertados', icon: <Tags size={16} /> },
       { title: 'Productos Disponibles', path: '/productos/productos-disponibles', icon: <ShoppingBag size={16} /> },
+    ],
+  },
+  {
+    title: 'Inventario',
+    icon: <Warehouse size={20} />,
+    path: '/inventario',
+    submenu: [
+      { title: 'Dashboard', path: '/inventario/dashboard', icon: <Home size={16} /> },
+      { title: 'Almacenes', path: '/inventario/almacenes', icon: <Warehouse size={16} /> },
+      { title: 'Stock', path: '/inventario/stock', icon: <PackageSearch size={16} /> },
+      { title: 'Movimientos', path: '/inventario/movimientos', icon: <TruckIcon size={16} /> },
+      { title: 'Alertas', path: '/inventario/alertas', icon: <AlertCircle size={16} /> },
     ],
   },
   {

@@ -1,140 +1,82 @@
-# backend/inventario/serializers.py
-
 from rest_framework import serializers
 from .models import (
-    Unidad, Categoria, ProductoInventario, Almacen, Ubicacion, 
-    Existencia, MovimientoInventario, Proveedor, OrdenCompra,
-    LineaOrdenCompra, Cliente, OrdenVenta, LineaOrdenVenta,
-    ReservaInventario
+    Almacen, Stock, TipoMovimiento, 
+    Movimiento, DetalleMovimiento, AlertaStock
 )
-
-# Serializadores básicos
-class UnidadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Unidad
-        fields = '__all__'
-
-class CategoriaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Categoria
-        fields = '__all__'
-
-class ProveedorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Proveedor
-        fields = '__all__'
-
-class ClienteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cliente
-        fields = '__all__'
+from productos.serializers import ProductoDisponibleSerializer
+from directorio.serializers import ProveedorSerializer, ClienteSerializer
 
 class AlmacenSerializer(serializers.ModelSerializer):
+    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
+    
     class Meta:
         model = Almacen
         fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
 
-class UbicacionSerializer(serializers.ModelSerializer):
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
+class StockSerializer(serializers.ModelSerializer):
+    producto_detalle = ProductoDisponibleSerializer(source='producto', read_only=True)
+    almacen_nombre = serializers.CharField(source='almacen.nombre', read_only=True)
+    cantidad_disponible = serializers.DecimalField(max_digits=14, decimal_places=4, read_only=True)
+    estado_stock = serializers.CharField(read_only=True)
     
     class Meta:
-        model = Ubicacion
+        model = Stock
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'ultimo_movimiento')
+
+class TipoMovimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoMovimiento
         fields = '__all__'
 
-# Serializadores con relaciones
-class ProductoInventarioSerializer(serializers.ModelSerializer):
-    categoria_nombre = serializers.ReadOnlyField(source='categoria.nombre')
-    unidad_abreviatura = serializers.ReadOnlyField(source='unidad.abreviatura')
+class DetalleMovimientoSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    unidad_medida_nombre = serializers.CharField(source='unidad_medida.nombre', read_only=True)
+    subtotal = serializers.SerializerMethodField()
     
     class Meta:
-        model = ProductoInventario
+        model = DetalleMovimiento
         fields = '__all__'
+    
+    def get_subtotal(self, obj):
+        return obj.cantidad * obj.costo_unitario
 
-class ExistenciaSerializer(serializers.ModelSerializer):
-    producto_sku = serializers.ReadOnlyField(source='producto.sku')
-    producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
-    ubicacion_codigo = serializers.ReadOnlyField(source='ubicacion.codigo', default='-')
+class MovimientoSerializer(serializers.ModelSerializer):
+    detalles = DetalleMovimientoSerializer(many=True, read_only=True)
+    tipo_movimiento_nombre = serializers.CharField(source='tipo_movimiento.nombre', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
+    total = serializers.SerializerMethodField()
     
     class Meta:
-        model = Existencia
+        model = Movimiento
         fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'usuario')
+    
+    def get_total(self, obj):
+        return sum(d.cantidad * d.costo_unitario for d in obj.detalles.all())
 
-class MovimientoInventarioSerializer(serializers.ModelSerializer):
-    producto_sku = serializers.ReadOnlyField(source='producto.sku')
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
+class MovimientoCreateSerializer(serializers.ModelSerializer):
+    detalles = DetalleMovimientoSerializer(many=True)
     
     class Meta:
-        model = MovimientoInventario
+        model = Movimiento
         fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+    
+    def create(self, validated_data):
+        detalles_data = validated_data.pop('detalles')
+        movimiento = Movimiento.objects.create(**validated_data)
+        
+        for detalle_data in detalles_data:
+            DetalleMovimiento.objects.create(movimiento=movimiento, **detalle_data)
+        
+        return movimiento
 
-class LineaOrdenCompraSerializer(serializers.ModelSerializer):
-    producto_sku = serializers.ReadOnlyField(source='producto.sku')
-    producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
+class AlertaStockSerializer(serializers.ModelSerializer):
+    stock_info = StockSerializer(source='stock', read_only=True)
     
     class Meta:
-        model = LineaOrdenCompra
+        model = AlertaStock
         fields = '__all__'
-
-class OrdenCompraSerializer(serializers.ModelSerializer):
-    proveedor_nombre = serializers.ReadOnlyField(source='proveedor.nombre')
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
-    lineas = LineaOrdenCompraSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = OrdenCompra
-        fields = '__all__'
-
-class LineaOrdenVentaSerializer(serializers.ModelSerializer):
-    producto_sku = serializers.ReadOnlyField(source='producto.sku')
-    producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
-    
-    class Meta:
-        model = LineaOrdenVenta
-        fields = '__all__'
-
-class OrdenVentaSerializer(serializers.ModelSerializer):
-    cliente_nombre = serializers.ReadOnlyField(source='cliente.nombre')
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
-    lineas = LineaOrdenVentaSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = OrdenVenta
-        fields = '__all__'
-
-class ReservaInventarioSerializer(serializers.ModelSerializer):
-    producto_sku = serializers.ReadOnlyField(source='producto.sku')
-    producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
-    almacen_codigo = serializers.ReadOnlyField(source='almacen.codigo')
-    
-    class Meta:
-        model = ReservaInventario
-        fields = '__all__'
-
-# Serializadores detallados (para endpoints específicos)
-class ProductoInventarioDetalleSerializer(serializers.ModelSerializer):
-    categoria = CategoriaSerializer(read_only=True)
-    unidad = UnidadSerializer(read_only=True)
-    existencias = ExistenciaSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = ProductoInventario
-        fields = '__all__'
-
-class OrdenCompraDetalleSerializer(serializers.ModelSerializer):
-    proveedor = ProveedorSerializer(read_only=True)
-    almacen = AlmacenSerializer(read_only=True)
-    lineas = LineaOrdenCompraSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = OrdenCompra
-        fields = '__all__'
-
-class OrdenVentaDetalleSerializer(serializers.ModelSerializer):
-    cliente = ClienteSerializer(read_only=True)
-    almacen = AlmacenSerializer(read_only=True)
-    lineas = LineaOrdenVentaSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = OrdenVenta
-        fields = '__all__'
+        read_only_fields = ('created_at',)

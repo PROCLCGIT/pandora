@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -121,6 +122,9 @@ const ClientSelectionModal = ({ isOpen, onClose, onSelectClient }) => {
             <Users className="h-5 w-5 text-blue-600" />
             Seleccionar Cliente
           </DialogTitle>
+          <DialogDescription>
+            Busca y selecciona un cliente existente para asociarlo con la proforma.
+          </DialogDescription>
         </DialogHeader>
         
         {/* Search Bar */}

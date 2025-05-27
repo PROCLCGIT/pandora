@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('basic', '0001_initial'),
-        ('inventario', '0001_initial'),
+        # ('inventario', '0001_initial'),  # Comentado temporalmente
         ('productos', '0002_initial'),
         ('proformas', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -28,11 +28,11 @@ class Migration(migrations.Migration):
             name='proforma',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='historial', to='proformas.proforma', verbose_name='Proforma'),
         ),
-        migrations.AddField(
-            model_name='proformaitem',
-            name='inventario',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='inventario.productoinventario', verbose_name='Producto de inventario'),
-        ),
+        # migrations.AddField(
+        #     model_name='proformaitem',
+        #     name='inventario',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='inventario.productoinventario', verbose_name='Producto de inventario'),
+        # ),  # Comentado temporalmente
         migrations.AddField(
             model_name='proformaitem',
             name='producto_disponible',

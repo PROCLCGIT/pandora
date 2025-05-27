@@ -83,7 +83,7 @@ class ProformaItem(TimeStampedModel):
     class TipoItem(models.TextChoices):
         PRODUCTO_OFERTADO = 'producto_ofertado', _('Producto Ofertado')
         PRODUCTO_DISPONIBLE = 'producto_disponible', _('Producto Disponible')
-        INVENTARIO = 'inventario', _('Producto de Inventario')
+        # INVENTARIO = 'inventario', _('Producto de Inventario')  # Temporalmente comentado
         PERSONALIZADO = 'personalizado', _('Ítem Personalizado')
     
     # Relación principal
@@ -97,8 +97,8 @@ class ProformaItem(TimeStampedModel):
                                         on_delete=models.SET_NULL, verbose_name=_('Producto ofertado'))
     producto_disponible = models.ForeignKey('productos.ProductoDisponible', null=True, blank=True, 
                                           on_delete=models.SET_NULL, verbose_name=_('Producto disponible'))
-    inventario = models.ForeignKey('inventario.ProductoInventario', null=True, blank=True, 
-                                 on_delete=models.SET_NULL, verbose_name=_('Producto de inventario'))
+    # inventario = models.ForeignKey('inventario.ProductoInventario', null=True, blank=True, 
+    #                              on_delete=models.SET_NULL, verbose_name=_('Producto de inventario'))  # Temporalmente comentado
     
     # Detalles del ítem
     codigo = models.CharField(max_length=50, verbose_name=_('Código'))

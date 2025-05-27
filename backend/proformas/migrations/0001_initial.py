@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')),
                 ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')),
-                ('tipo_item', models.CharField(choices=[('producto_ofertado', 'Producto Ofertado'), ('producto_disponible', 'Producto Disponible'), ('inventario', 'Producto de Inventario'), ('personalizado', 'Ítem Personalizado')], max_length=25, verbose_name='Tipo de ítem')),
+                ('tipo_item', models.CharField(choices=[('producto_ofertado', 'Producto Ofertado'), ('producto_disponible', 'Producto Disponible'), ('personalizado', 'Ítem Personalizado')], max_length=25, verbose_name='Tipo de ítem')),
                 ('codigo', models.CharField(max_length=50, verbose_name='Código')),
                 ('descripcion', models.TextField(verbose_name='Descripción')),
                 ('cantidad', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Cantidad')),

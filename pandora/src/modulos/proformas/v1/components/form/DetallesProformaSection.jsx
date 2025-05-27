@@ -20,6 +20,9 @@ import {
   Edit3,
   Calendar as CalendarIcon,
   FileCheck,
+  Plus,
+  Tag,
+  Replace
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -34,11 +37,8 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
     formaPago: false,
     tiempoEntrega: false,
     atencion: false,
-    tipoContratacion: false,
   });
 
-  const [empresas, setEmpresas] = useState([]);
-  const [tiposContratacion, setTiposContratacion] = useState([]);
   const [configuracion, setConfiguracion] = useState(null);
 
   // Load initial data
@@ -49,15 +49,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
   const loadInitialData = async () => {
     try {
       // Load configuration
-      const [configData, empresasData, tiposData] = await Promise.all([
-        proformaService.getConfiguration(),
-        proformaService.getEmpresas(),
-        proformaService.getTiposContratacion()
-      ]);
+      const configData = await proformaService.getConfiguration();
 
       setConfiguracion(configData);
-      setEmpresas(empresasData.results || []);
-      setTiposContratacion(tiposData.results || []);
 
       // Set default values from configuration
       if (configData && !detalles.empresa) {
@@ -109,53 +103,23 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
   return (
     <Card>
       <CardHeader className="py-3 px-4 bg-blue-300/20">
-        <CardTitle className="flex items-center text-base font-bold">
-          <FileText className="mr-2 h-4 w-4 text-blue-600" />
-          Detalles de la Proforma
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center text-base font-bold">
+            <FileText className="mr-2 h-4 w-4 text-blue-600" />
+            Detalles de la Proforma
+          </CardTitle>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-7 w-7 p-0"
+            title="Info estandar"
+          >
+            <Replace className="h-3.5 w-3.5 text-orange-500" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="pt-4 pb-4 px-4">
         <div className="space-y-3">
-          {/* Tipo de contratación */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
-            <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-              <FileCheck className="h-3 w-3" />
-              Tipo contrato:
-            </span>
-            {isEditing.tipoContratacion ? (
-              <Select
-                value={detalles.tipoContratacion?.toString() || ''}
-                onValueChange={(value) => {
-                  handleChange('tipoContratacion', parseInt(value));
-                  setIsEditing({ ...isEditing, tipoContratacion: false });
-                }}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Seleccione tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposContratacion.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                      {tipo.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <span className="text-sm text-gray-900">
-                {tiposContratacion.find(t => t.id === detalles.tipoContratacion)?.nombre || 'No seleccionado'}
-              </span>
-            )}
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-6 w-6 p-0"
-              onClick={() => toggleEdit('tipoContratacion')}
-            >
-              <Edit3 className="h-3.5 w-3.5 text-blue-500" />
-            </Button>
-          </div>
-          
           {/* Fecha emisión */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Fecha emisión:</span>

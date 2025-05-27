@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/importexport/', include('importexport.urls')),
     path('api/docmanager/', include('docmanager.urls')),  # Añadida esta línea
     path('api/proformas/', include('proformas.urls')),
+    path('api/inventario/', include('inventario.urls')),
     
     # URLs para autenticación JWT con cookies (nuevas)
     path('api/auth/login/', CookieTokenObtainPairView.as_view(), name='token_obtain_pair_cookie'),

@@ -56,6 +56,7 @@ export default function AddProformaPage() {
   const [loading, setLoading] = useState(false);
   const [proformaNumero, setProformaNumero] = useState('');
   const [empresas, setEmpresas] = useState([]);
+  const [tiposContratacion, setTiposContratacion] = useState([]);
 
   // Generate proforma number on mount
   useEffect(() => {
@@ -64,17 +65,21 @@ export default function AddProformaPage() {
     setProformaNumero(`PRO-${year}-${random}`);
   }, []);
 
-  // Fetch empresas on mount
+  // Fetch empresas and tipos contratacion on mount
   useEffect(() => {
-    const fetchEmpresas = async () => {
+    const fetchInitialData = async () => {
       try {
-        const data = await proformaService.getEmpresas();
-        setEmpresas(data.results || []);
+        const [empresasData, tiposData] = await Promise.all([
+          proformaService.getEmpresas(),
+          proformaService.getTiposContratacion()
+        ]);
+        setEmpresas(empresasData.results || []);
+        setTiposContratacion(tiposData.results || []);
       } catch (error) {
-        console.error('Error fetching empresas:', error);
+        console.error('Error fetching initial data:', error);
       }
     };
-    fetchEmpresas();
+    fetchInitialData();
   }, []);
 
   // Calculate totals when products change
@@ -251,7 +256,7 @@ export default function AddProformaPage() {
           <h2 className="text-lg font-semibold text-blue-900">Información Base</h2>
         </div>
         
-        {/* Empresa y Nombre de Proforma */}
+        {/* Empresa, Tipo Contrato y Nombre de Proforma */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
@@ -269,6 +274,27 @@ export default function AddProformaPage() {
                   {empresas.map((empresa) => (
                     <SelectItem key={empresa.id} value={empresa.id.toString()}>
                       {empresa.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Tipo de Contrato:
+              </label>
+              <Select 
+                value={detallesProforma.tipoContratacion?.toString() || ''}
+                onValueChange={(value) => setDetallesProforma({...detallesProforma, tipoContratacion: parseInt(value)})}
+              >
+                <SelectTrigger className="w-full bg-white border-blue-300">
+                  <SelectValue placeholder="Seleccione tipo de contrato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposContratacion.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                      {tipo.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>

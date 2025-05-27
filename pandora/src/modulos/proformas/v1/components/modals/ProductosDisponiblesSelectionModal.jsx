@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -187,6 +188,9 @@ const ProductosDisponiblesSelectionModal = ({
             <Package className="h-5 w-5 text-blue-600" />
             Seleccionar Productos
           </DialogTitle>
+          <DialogDescription>
+            Busca y selecciona productos disponibles u ofertados para agregar a la proforma.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Tabs and Search */}

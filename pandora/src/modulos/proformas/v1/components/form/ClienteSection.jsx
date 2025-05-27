@@ -7,6 +7,7 @@ import {
   PlusSquare,
   Edit3,
   Clock,
+  Replace,
 } from 'lucide-react';
 import ClientSelectionModal from '../modals/ClientSelectionModal';
 import AddClientModal from '../modals/AddClientModal';
@@ -78,32 +79,32 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-              <Clock className="h-3.5 w-3.5 text-orange-500" />
+              <Replace className="h-3.5 w-3.5 text-orange-500" />
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-4 pb-4 px-4">
-        <div className="space-y-2">
-          <div className="flex items-center">
-            <span className="text-sm text-gray-600 font-medium w-24">Empresa:</span>
-            <span className="text-sm text-gray-900">{cliente.empresa || ''}</span>
+        <div className="space-y-3">
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">Empresa:</span>
+            <span className="text-sm text-gray-900">{cliente.empresa || 'No seleccionado'}</span>
           </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-600 font-medium w-24">RUC:</span>
-            <span className="text-sm text-gray-900">{cliente.ruc || ''}</span>
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">RUC:</span>
+            <span className="text-sm text-gray-900">{cliente.ruc || 'No especificado'}</span>
           </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-600 font-medium w-24">Email:</span>
-            <span className="text-sm text-gray-900">{cliente.email || ''}</span>
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">Email:</span>
+            <span className="text-sm text-gray-900">{cliente.email || 'No especificado'}</span>
           </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-600 font-medium w-24">Teléfono:</span>
-            <span className="text-sm text-gray-900">{cliente.telefono || ''}</span>
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">Teléfono:</span>
+            <span className="text-sm text-gray-900">{cliente.telefono || 'No especificado'}</span>
           </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-600 font-medium w-24">Dirección:</span>
-            <span className="text-sm text-gray-900">{cliente.direccion || ''}</span>
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">Dirección:</span>
+            <span className="text-sm text-gray-900">{cliente.direccion || 'No especificado'}</span>
           </div>
         </div>
       </CardContent>

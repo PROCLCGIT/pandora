@@ -32,6 +32,8 @@ const DocmanagerModule = lazy(() => import('./modulos/docmanager/routes/Docmanag
 const ProfilePage = lazy(() => import('./modulos/auth/ProfilePage'));
 // Importamos las rutas del módulo importexport
 const ImportExportModule = lazy(() => import('./modulos/importexport/routes/routerimportexport'));
+// Importamos las rutas del módulo inventario
+const InventarioModule = lazy(() => import('./modulos/inventario/routes/InventarioRoutes'));
 
 // Placeholder genérico para módulos en desarrollo
 const ModulePlaceholder = ({ moduleName }) => (
@@ -56,6 +58,7 @@ const protectedChildren = [
   { path: 'docmanager/*', element: withSuspense(DocmanagerModule) },
   { path: 'settings/*', element: withSuspense(() => <ModulePlaceholder moduleName="Configuración" />) },
   { path: 'importexport/*', element: withSuspense(ImportExportModule) },
+  { path: 'inventario/*', element: withSuspense(InventarioModule) },
 ];
 
 export const routes = [

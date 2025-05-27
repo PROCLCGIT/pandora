@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -149,6 +150,9 @@ const AddClientModal = ({ isOpen, onClose, onClientCreated }) => {
             <UserPlus className="h-5 w-5 text-blue-600" />
             Crear Nuevo Cliente
           </DialogTitle>
+          <DialogDescription>
+            Complete el formulario para registrar un nuevo cliente en el sistema.
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
