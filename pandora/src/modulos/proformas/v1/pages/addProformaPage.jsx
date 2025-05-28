@@ -45,6 +45,9 @@ import { proformaService } from '../api/proformaService';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+// Clave para guardar el borrador en localStorage
+const DRAFT_KEY = 'proformaDraft';
+
 export default function AddProformaPage() {
   const navigate = useNavigate();
   const [cliente, setCliente] = useState({});
@@ -57,6 +60,35 @@ export default function AddProformaPage() {
   const [proformaNumero, setProformaNumero] = useState('');
   const [empresas, setEmpresas] = useState([]);
   const [tiposContratacion, setTiposContratacion] = useState([]);
+
+  // Cargar borrador desde localStorage al iniciar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.cliente) setCliente(draft.cliente);
+        if (draft.detallesProforma) setDetallesProforma(draft.detallesProforma);
+        if (draft.productos) setProductos(draft.productos);
+      }
+    } catch (err) {
+      console.warn('No se pudo cargar el borrador de proforma', err);
+    }
+  }, []);
+
+  // Guardar borrador en localStorage cuando cambie el formulario
+  useEffect(() => {
+    const draft = {
+      cliente,
+      detallesProforma,
+      productos
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch (err) {
+      console.warn('No se pudo guardar el borrador de proforma', err);
+    }
+  }, [cliente, detallesProforma, productos]);
 
   // Generate proforma number on mount
   useEffect(() => {
@@ -173,11 +205,14 @@ export default function AddProformaPage() {
 
       // Create proforma
       const response = await proformaService.createProforma(proformaData);
-      
+
       toast({
         title: 'Éxito',
         description: `Proforma ${response.numero} creada correctamente`,
       });
+
+      // Limpiar borrador almacenado
+      localStorage.removeItem(DRAFT_KEY);
 
       // TODO: Save proforma items if any
 
