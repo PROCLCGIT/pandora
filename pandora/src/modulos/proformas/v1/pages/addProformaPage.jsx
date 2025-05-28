@@ -46,6 +46,9 @@ import { proformaService } from '../api/proformaService';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+// Clave para guardar el borrador en localStorage
+const DRAFT_KEY = 'proformaDraft';
+
 export default function AddProformaPage() {
   const navigate = useNavigate();
   const [cliente, setCliente] = useState({});
@@ -57,6 +60,42 @@ export default function AddProformaPage() {
   const [loading, setLoading] = useState(false);
   const [empresas, setEmpresas] = useState([]);
   const [tiposContratacion, setTiposContratacion] = useState([]);
+
+  // Cargar borrador desde localStorage al iniciar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.cliente) setCliente(draft.cliente);
+        if (draft.detallesProforma) setDetallesProforma(draft.detallesProforma);
+        if (draft.productos) setProductos(draft.productos);
+      }
+    } catch (err) {
+      console.warn('No se pudo cargar el borrador de proforma', err);
+    }
+  }, []);
+
+  // Guardar borrador en localStorage cuando cambie el formulario
+  useEffect(() => {
+    const draft = {
+      cliente,
+      detallesProforma,
+      productos
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch (err) {
+      console.warn('No se pudo guardar el borrador de proforma', err);
+    }
+  }, [cliente, detallesProforma, productos]);
+
+  // Generate proforma number on mount
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 9000) + 1000;
+    setProformaNumero(`PRO-${year}-${random}`);
+  }, []);
   const [notas, setNotas] = useState('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
 
   // Fetch empresas and tipos contratacion on mount
@@ -168,40 +207,12 @@ export default function AddProformaPage() {
       // Create proforma
       const response = await proformaService.createProforma(proformaData);
       
-      // Save proforma items if any
-      if (productos.length > 0) {
-        const itemPromises = productos.map((producto, index) => {
-          const itemData = {
-            proforma: response.id,
-            tipo_item: producto.tipo_item || 'producto_disponible',
-            producto_disponible: producto.producto_disponible_id || null,
-            producto_ofertado: producto.producto_ofertado_id || null,
-            codigo: producto.codigo || '',
-            descripcion: producto.descripcion || producto.nombre || '',
-            unidad: producto.unidad_id || 1, // Default unit if not specified
-            cantidad: producto.cantidad || 1,
-            precio_unitario: producto.precio_unitario || producto.precio || 0,
-            porcentaje_descuento: producto.porcentaje_descuento || 0,
-            total: producto.total || 0,
-            orden: index + 1
-          };
-          
-          return proformaService.createProformaItem(itemData);
-        });
-        
-        try {
-          await Promise.all(itemPromises);
-          console.log(`${productos.length} items guardados correctamente`);
-        } catch (itemError) {
-          console.error('Error saving proforma items:', itemError);
-          // Don't fail the entire operation if items fail
-        }
-      }
-      
       toast({
         title: 'Éxito',
         description: `Proforma ${response.numero} creada correctamente con ${productos.length} productos`,
       });
+
+      // TODO: Save proforma items if any
 
       // Redirect to proforma detail or list
       navigate('/proformas');
