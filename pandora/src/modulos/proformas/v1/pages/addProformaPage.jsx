@@ -32,6 +32,7 @@ import {
   CheckSquare,
   Save,
   Loader2,
+  Eye,
 } from 'lucide-react';
 
 // Importar componentes factorizados
@@ -54,16 +55,9 @@ export default function AddProformaPage() {
   const [showProductosDisponibles, setShowProductosDisponibles] = useState(false);
   const [showProductosModal, setShowProductosModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [proformaNumero, setProformaNumero] = useState('');
   const [empresas, setEmpresas] = useState([]);
   const [tiposContratacion, setTiposContratacion] = useState([]);
-
-  // Generate proforma number on mount
-  useEffect(() => {
-    const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 9000) + 1000;
-    setProformaNumero(`PRO-${year}-${random}`);
-  }, []);
+  const [notas, setNotas] = useState('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
 
   // Fetch empresas and tipos contratacion on mount
   useEffect(() => {
@@ -165,7 +159,7 @@ export default function AddProformaPage() {
         subtotal: totales.subtotal,
         impuesto: totales.iva,
         total: totales.total,
-        notas: detallesProforma.notas || '',
+        notas: notas,
         estado: 'borrador'
       };
 
@@ -174,12 +168,40 @@ export default function AddProformaPage() {
       // Create proforma
       const response = await proformaService.createProforma(proformaData);
       
+      // Save proforma items if any
+      if (productos.length > 0) {
+        const itemPromises = productos.map((producto, index) => {
+          const itemData = {
+            proforma: response.id,
+            tipo_item: producto.tipo_item || 'producto_disponible',
+            producto_disponible: producto.producto_disponible_id || null,
+            producto_ofertado: producto.producto_ofertado_id || null,
+            codigo: producto.codigo || '',
+            descripcion: producto.descripcion || producto.nombre || '',
+            unidad: producto.unidad_id || 1, // Default unit if not specified
+            cantidad: producto.cantidad || 1,
+            precio_unitario: producto.precio_unitario || producto.precio || 0,
+            porcentaje_descuento: producto.porcentaje_descuento || 0,
+            total: producto.total || 0,
+            orden: index + 1
+          };
+          
+          return proformaService.createProformaItem(itemData);
+        });
+        
+        try {
+          await Promise.all(itemPromises);
+          console.log(`${productos.length} items guardados correctamente`);
+        } catch (itemError) {
+          console.error('Error saving proforma items:', itemError);
+          // Don't fail the entire operation if items fail
+        }
+      }
+      
       toast({
         title: 'Éxito',
-        description: `Proforma ${response.numero} creada correctamente`,
+        description: `Proforma ${response.numero} creada correctamente con ${productos.length} productos`,
       });
-
-      // TODO: Save proforma items if any
 
       // Redirect to proforma detail or list
       navigate('/proformas');
@@ -223,6 +245,13 @@ export default function AddProformaPage() {
             Generar
           </Button>
           <Button 
+            variant="outline"
+            onClick={() => navigate('/proformas')}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Guardadas
+          </Button>
+          <Button 
             onClick={handleSaveProforma}
             disabled={loading}
           >
@@ -243,7 +272,7 @@ export default function AddProformaPage() {
 
       {/* Sub-header */}
       <div className="flex items-center justify-between">
-        <span className="text-gray-600">#{proformaNumero}</span>
+        <span className="text-gray-600"># Se generará automáticamente</span>
         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
           Válida hasta: {detallesProforma.fechaVencimiento ? format(detallesProforma.fechaVencimiento, 'd/M/yyyy') : 'No establecida'}
         </span>
@@ -357,8 +386,10 @@ export default function AddProformaPage() {
           </CardHeader>
           <CardContent className="pt-4">
             <Textarea
-              defaultValue="Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano."
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
               className="w-full min-h-[80px] h-20"
+              placeholder="Ingrese notas adicionales para la proforma"
             />
           </CardContent>
         </Card>
