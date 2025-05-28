@@ -90,12 +90,6 @@ export default function AddProformaPage() {
     }
   }, [cliente, detallesProforma, productos]);
 
-  // Generate proforma number on mount
-  useEffect(() => {
-    const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 9000) + 1000;
-    setProformaNumero(`PRO-${year}-${random}`);
-  }, []);
   const [notas, setNotas] = useState('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
 
   // Fetch empresas and tipos contratacion on mount
@@ -207,12 +201,47 @@ export default function AddProformaPage() {
       // Create proforma
       const response = await proformaService.createProforma(proformaData);
       
+      // Save proforma items if any
+      if (productos.length > 0) {
+        const itemPromises = productos.map((producto, index) => {
+          const itemData = {
+            proforma: response.id,
+            tipo_item: producto.tipo_item || 'producto_disponible',
+            producto_disponible: producto.producto_disponible_id || null,
+            producto_ofertado: producto.producto_ofertado_id || null,
+            codigo: producto.codigo || '',
+            descripcion: producto.descripcion || producto.nombre || '',
+            unidad: producto.unidad_id || 1, // Default unit if not specified
+            cantidad: producto.cantidad || 1,
+            precio_unitario: producto.precio_unitario || producto.precio || 0,
+            porcentaje_descuento: producto.porcentaje_descuento || 0,
+            total: producto.total || 0,
+            orden: index + 1
+          };
+          
+          return proformaService.createProformaItem(itemData);
+        });
+        
+        try {
+          await Promise.all(itemPromises);
+          console.log(`${productos.length} items guardados correctamente`);
+        } catch (itemError) {
+          console.error('Error saving proforma items:', itemError);
+          // Don't fail the entire operation if items fail
+        }
+      }
+      
       toast({
         title: 'Éxito',
         description: `Proforma ${response.numero} creada correctamente con ${productos.length} productos`,
       });
 
-      // TODO: Save proforma items if any
+      // Clear localStorage draft after successful save
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch (err) {
+        console.warn('No se pudo limpiar el borrador', err);
+      }
 
       // Redirect to proforma detail or list
       navigate('/proformas');
