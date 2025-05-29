@@ -50,6 +50,7 @@ const ProformasGuardadasModal = ({ isOpen, onClose }) => {
     totalPages: 1,
     totalItems: 0
   });
+  const [navigating, setNavigating] = useState(false);
 
   const debouncedSearch = useDebounce(searchTerm, 300);
 
@@ -116,6 +117,9 @@ const ProformasGuardadasModal = ({ isOpen, onClose }) => {
         throw new Error('ID de proforma inválido');
       }
 
+      // Set navigating state
+      setNavigating(true);
+
       // Close modal first
       onClose();
       
@@ -130,6 +134,11 @@ const ProformasGuardadasModal = ({ isOpen, onClose }) => {
         
         // Try both methods to ensure navigation works
         navigate(path);
+        
+        // Reset navigating state after navigation
+        setTimeout(() => {
+          setNavigating(false);
+        }, 500);
         
         // As backup, also set window location
         const fullUrl = `${window.location.origin}${path}`;
@@ -370,19 +379,33 @@ const ProformasGuardadasModal = ({ isOpen, onClose }) => {
                       <div className="flex items-center justify-center gap-2">
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => handleEditProforma(proforma)}
                           title="Editar proforma"
+                          className="text-xs px-2 py-1"
+                          disabled={navigating}
                         >
-                          <Edit3 className="h-4 w-4" />
+                          {navigating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Cargando...
+                            </>
+                          ) : (
+                            <>
+                              <Edit3 className="h-4 w-4 mr-1" />
+                              Editar
+                            </>
+                          )}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDuplicateProforma(proforma)}
-                          title="Duplicar"
+                          title="Duplicar proforma"
+                          className="text-xs px-2 py-1"
                         >
-                          <FileText className="h-4 w-4" />
+                          <FileText className="h-4 w-4 mr-1" />
+                          Duplicar
                         </Button>
                       </div>
                     </TableCell>

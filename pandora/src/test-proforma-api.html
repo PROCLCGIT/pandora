@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Proforma API</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { margin: 10px 5px; padding: 10px 20px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Proforma API Debug</h1>
+    
+    <button onclick="testBasicAPI()">Test Basic API</button>
+    <button onclick="testProformasList()">Test Proformas List</button>
+    <button onclick="testSpecificProforma()">Test Proforma ID 19</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        function addResult(message, type = 'info', data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong>: ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testBasicAPI() {
+            addResult('Testing basic API connectivity...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/basic/empresas/?page_size=1`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Basic API test successful (${response.status})`, 'success', data);
+                } else {
+                    const errorData = await response.text();
+                    addResult(`❌ Basic API test failed (${response.status})`, 'error', { 
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: errorData 
+                    });
+                }
+            } catch (error) {
+                addResult(`❌ Basic API test error: ${error.message}`, 'error', error);
+            }
+        }
+        
+        async function testProformasList() {
+            addResult('Testing proformas list...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/proformas/proformas/?page_size=5`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Proformas list successful (${response.status})`, 'success', data);
+                } else {
+                    const errorData = await response.text();
+                    addResult(`❌ Proformas list failed (${response.status})`, 'error', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: errorData
+                    });
+                }
+            } catch (error) {
+                addResult(`❌ Proformas list error: ${error.message}`, 'error', error);
+            }
+        }
+        
+        async function testSpecificProforma() {
+            addResult('Testing specific proforma (ID 19)...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/proformas/proformas/19/`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Specific proforma successful (${response.status})`, 'success', data);
+                } else {
+                    const errorData = await response.text();
+                    addResult(`❌ Specific proforma failed (${response.status})`, 'error', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: errorData
+                    });
+                }
+            } catch (error) {
+                addResult(`❌ Specific proforma error: ${error.message}`, 'error', error);
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            addResult('Page loaded. Click buttons to test API endpoints.', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -28,6 +28,7 @@ import {
   ArrowLeftRight,
   Download,
   Printer,
+  AlertCircle,
   Share2,
   Settings2,
   CheckSquare,
@@ -46,6 +47,7 @@ import ProformasGuardadasModal from '../components/modals/ProformasGuardadasModa
 import TemplateSelector from '../components/TemplateSelector';
 import ToolBarSection from '../components/form/ToolBarSection';
 import { proformaService } from '../api/proformaService';
+import axios from '@/config/axios';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -83,6 +85,7 @@ export default function AddProformaPage() {
   const [savedProformaId, setSavedProformaId] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [loadingProforma, setLoadingProforma] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [tiposContratacion, setTiposContratacion] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -229,9 +232,29 @@ export default function AddProformaPage() {
 
   const loadProformaForEditing = async (proformaId) => {
     setLoadingProforma(true);
+    setLoadError(null);
     try {
       console.log('=== LOADING PROFORMA FOR EDITING ===');
       console.log('Proforma ID:', proformaId);
+      
+      // First, test if we can access the API at all
+      console.log('Testing API connectivity...');
+      try {
+        // Try a simple endpoint first to test auth
+        const testResponse = await axios.get('/basic/empresas/', { 
+          params: { page_size: 1 } 
+        });
+        console.log('API test successful:', testResponse.status);
+      } catch (apiTestError) {
+        console.error('API connectivity test failed:', apiTestError);
+        console.error('API test error details:', {
+          status: apiTestError.response?.status,
+          statusText: apiTestError.response?.statusText,
+          data: apiTestError.response?.data,
+          message: apiTestError.message
+        });
+        throw new Error(`No se puede acceder a la API: ${apiTestError.message}`);
+      }
       
       // Load proforma data first
       console.log('Attempting to load proforma data...');
@@ -297,20 +320,23 @@ export default function AddProformaPage() {
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
       });
       
       toast({
         title: 'Error',
-        description: 'No se pudo cargar la proforma para edición',
+        description: `Error al cargar proforma: ${error.message}`,
         variant: 'destructive'
       });
       
-      // Si hay error, NO redirigir inmediatamente para debugging
-      console.log('Error occurred, but NOT redirecting for debugging');
-      console.log('Would normally redirect to /proformas');
-      // Comentado temporalmente para debugging:
-      // navigate('/proformas');
+      // En lugar de redirigir, mostrar el formulario vacío para debugging
+      console.log('Error occurred, showing empty form for debugging');
+      console.log('Error details:', error);
+      setLoadError(error.message);
+      setIsEditMode(false); // Resetear modo edición
+      setSavedProformaId(null);
     } finally {
       setLoadingProforma(false);
     }
@@ -891,9 +917,45 @@ export default function AddProformaPage() {
         />
       )}
       <div className="space-y-6 p-6 bg-gray-50">
+      
+      {/* Error Alert */}
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <div>
+                <h3 className="font-medium text-red-800">Error al cargar proforma</h3>
+                <p className="text-red-700 text-sm mt-1">{loadError}</p>
+                <p className="text-red-600 text-xs mt-1">Mostrando formulario vacío para continuar trabajando.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  console.log('🔧 DEBUG: Retrying proforma load...');
+                  if (id) loadProformaForEditing(id);
+                }}
+              >
+                Reintentar
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => setLoadError(null)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Top Bar */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-blue-600 text-1xl font-bold">
           {isEditMode ? 'Editar Proforma' : 'Nueva Proforma'}
         </h1>
         <div className="flex flex-wrap gap-2">
