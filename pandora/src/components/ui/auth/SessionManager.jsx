@@ -1,3 +1,5 @@
+// /Users/clc/Ws/Appclc/pandora/src/components/ui/auth/SessionManager.jsx
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../modulos/auth/authContext';
 import { refreshToken } from '../../../utils/auth';
@@ -5,54 +7,49 @@ import { Toaster } from '../../../components/ui/toaster';
 import { useToast } from '../../../hooks/use-toast';
 
 /**
- * Componente para gestionar la sesión del usuario y refrescar el token automáticamente
+ * Componente para gestionar la sesión del usuario con timeout de 20 minutos
+ * CAMBIO CRÍTICO: Solo refrescar después de 20 minutos de inactividad real
  */
 function SessionManager({ children }) {
   const { isAuthenticated, isLoading, checkAuthStatus } = useAuth();
   const [showSessionAlert, setShowSessionAlert] = useState(false);
   const sessionTimeoutRef = useRef(null);
   const refreshIntervalRef = useRef(null);
-  const lastRefreshRef = useRef(Date.now() - 1000 * 60 * 5); // Inicializar con tiempo pasado para permitir primer refresco
+  const lastActivityRef = useRef(Date.now());
   const { toast } = useToast();
-  const minTimeBetweenRefreshes = 1 * 60 * 1000; // Mínimo 1 minuto entre refrescos para evitar problemas
-
+  
+  // CAMBIO CRÍTICO: Configurar timeout de 20 minutos
+  const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutos
+  const WARNING_TIME_MS = 18 * 60 * 1000; // Avisar a los 18 minutos
+  
   // Ref for the initial refresh timer and a flag for setup completion
   const initialRefreshTimerRef = useRef(null);
   const initialSetupCompletedRef = useRef(false);
 
-  // Función para refrescar el token
+  // CAMBIO CRÍTICO: Función para refrescar el token solo cuando sea necesario
   const handleRefreshToken = useCallback(async (force = false) => {
-    // Evitar refrescos demasiado frecuentes a menos que sea forzado
-    const now = Date.now();
-    if (!force && now - lastRefreshRef.current < minTimeBetweenRefreshes) {
-      console.log('Refresco de token ignorado (demasiado reciente)');
-      return true; // Asumimos éxito para no disparar alertas innecesarias
-    }
-
     try {
-      console.log('Intentando refrescar token...');
-      
-      // Actualizar el tiempo de último refresco ANTES de intentarlo
-      // para evitar múltiples intentos simultáneos si hay retrasos
-      lastRefreshRef.current = now;
+      console.log('SessionManager: Intentando refrescar token...');
       
       const refreshSuccessful = await refreshToken();
       
       if (refreshSuccessful) {
-        console.log('Token refrescado exitosamente');
+        console.log('SessionManager: Token refrescado exitosamente');
         
-        // Actualizar estado de autenticación solo si es necesario (para reducir ciclos)
+        // Actualizar tiempo de última actividad
+        lastActivityRef.current = Date.now();
+        
+        // Solo verificar estado de autenticación si es forzado
         if (force) {
-          console.log('Verificando estado de autenticación después del refresco forzado');
-          setTimeout(() => checkAuthStatus(true), 500); // Pequeño retraso para evitar problemas
+          console.log('SessionManager: Verificando estado de autenticación después del refresco forzado');
+          setTimeout(() => checkAuthStatus(true), 1000);
         }
         
         return true;
       }
       
-      console.warn('Falló el refresco de token');
+      console.warn('SessionManager: Falló el refresco de token');
       if (force) {
-        // Si fue forzado por el usuario y falló, mostrar toast
         toast({
           title: "Error de renovación",
           description: "No se pudo renovar la sesión automáticamente",
@@ -62,18 +59,36 @@ function SessionManager({ children }) {
       
       return false;
     } catch (error) {
-      console.error('Error al refrescar token:', error);
-      
-      // Reiniciar el contador para permitir nuevo intento pronto
-      lastRefreshRef.current = now - (minTimeBetweenRefreshes / 2);
-      
+      console.error('SessionManager: Error al refrescar token:', error);
       return false;
     }
-  }, [checkAuthStatus, lastRefreshRef, minTimeBetweenRefreshes, toast]);
+  }, [checkAuthStatus, toast]);
 
-  // Control de refresco de token automático
+  // CAMBIO CRÍTICO: Detectar actividad del usuario para resetear el timer
+  const resetActivityTimer = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    
+    // Reiniciar el timer de timeout de sesión
+    if (sessionTimeoutRef.current) {
+      clearTimeout(sessionTimeoutRef.current);
+    }
+    
+    // Configurar nuevo timeout de 20 minutos
+    sessionTimeoutRef.current = setTimeout(() => {
+      if (isAuthenticated) {
+        console.log('SessionManager: 20 minutos de inactividad, refrescando sesión');
+        handleRefreshToken(true);
+      }
+    }, SESSION_TIMEOUT_MS);
+    
+    // Ocultar alerta si estaba visible
+    if (showSessionAlert) {
+      setShowSessionAlert(false);
+    }
+  }, [isAuthenticated, handleRefreshToken, showSessionAlert]);
+
+  // CAMBIO CRÍTICO: Control de timeout de sesión basado en actividad real
   useEffect(() => {
-    // Function to clear all timers
     const clearAllTimers = () => {
       if (initialRefreshTimerRef.current) {
         clearTimeout(initialRefreshTimerRef.current);
@@ -87,106 +102,117 @@ function SessionManager({ children }) {
         clearTimeout(sessionTimeoutRef.current);
         sessionTimeoutRef.current = null;
       }
-      console.log('SessionManager: All active timers have been cleared.');
+      console.log('SessionManager: All timers cleared.');
     };
 
-    if (isAuthenticated) {
-      if (!isLoading) {
-        // Authenticated and not loading
-        if (!initialSetupCompletedRef.current) {
-          // This is the first time we're authenticated and not loading since last logout,
-          // or initial component load.
-          clearAllTimers(); // Ensure a clean slate before setting up new timers
+    if (isAuthenticated && !isLoading) {
+      if (!initialSetupCompletedRef.current) {
+        clearAllTimers();
 
-          const refreshIntervalMs = 30 * 60 * 1000; // 30 minutes
-          const randomDelay = Math.floor(Math.random() * 15000) + 5000; // 5-20 seconds
-          
-          console.log(`SessionManager: Initializing timers. Refresh interval: ${refreshIntervalMs/60000}min, Initial delay: ${randomDelay/1000}s`);
+        console.log('SessionManager: Configurando timeout de sesión de 20 minutos');
+        
+        // Configurar timeout inicial de 20 minutos
+        resetActivityTimer();
+        
+        // Configurar aviso de expiración a los 18 minutos
+        const warningTimer = setTimeout(() => {
+          if (isAuthenticated) {
+            const timeSinceLastActivity = Date.now() - lastActivityRef.current;
+            if (timeSinceLastActivity >= WARNING_TIME_MS) {
+              setShowSessionAlert(true);
+              toast({
+                title: "Sesión por expirar",
+                description: "Tu sesión expirará en 2 minutos por inactividad. Haz clic en cualquier parte para mantenerla activa.",
+                variant: "warning",
+                duration: 10000,
+              });
+            }
+          }
+        }, WARNING_TIME_MS);
 
-          initialRefreshTimerRef.current = setTimeout(() => {
-            console.log('SessionManager: Executing initial token refresh.');
-            handleRefreshToken(); // Initial, non-forced call
-
-            // Setup the regular interval *after* the initial refresh
-            if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current); // ensure clean state
-            refreshIntervalRef.current = setInterval(() => {
-              console.log('SessionManager: Executing scheduled token refresh.');
-              handleRefreshToken();
-            }, refreshIntervalMs);
-            
-            initialRefreshTimerRef.current = null; // This timer's job is done
-          }, randomDelay);
-
-          // Setup session timeout alert
-          // Clear existing one first before setting a new one
-          if (sessionTimeoutRef.current) clearTimeout(sessionTimeoutRef.current);
-          sessionTimeoutRef.current = setTimeout(() => {
-            setShowSessionAlert(true);
-            toast({
-              title: "Sesión por expirar",
-              description: "Tu sesión está por expirar. Haz clic en cualquier parte para mantenerla activa.",
-              variant: "warning",
-              duration: 10000,
-            });
-          }, 4 * 60 * 1000); // 4 minutes
-
-          initialSetupCompletedRef.current = true; // Mark that initial setup for this authenticated session is done
-        }
-        // If initialSetupCompletedRef.current is true, timers are presumed to be running; do nothing.
+        initialSetupCompletedRef.current = true;
       }
-      // If (isAuthenticated && isLoading), do nothing here. Timers might be running from a previous
-      // state where isLoading was false. They will be cleared by the cleanup if isAuthenticated becomes false.
     } else {
-      // Not Authenticated
       clearAllTimers();
-      initialSetupCompletedRef.current = false; // Reset flag when not authenticated
-      console.log('SessionManager: Not authenticated. Timers cleared and setup flag reset.');
+      initialSetupCompletedRef.current = false;
+      console.log('SessionManager: Not authenticated. Timers cleared.');
     }
 
-    // Cleanup function for the useEffect
     return () => {
-      // This cleanup runs when dependencies change or on component unmount.
-      // If isAuthenticated becomes false, the main `else` block above handles clearing timers and resetting the flag.
-      // This cleanup primarily handles component unmounting gracefully.
-      // For safety, we can clear all timers here too, as it's idempotent.
       clearAllTimers();
-      console.log('SessionManager: useEffect cleanup (clearAllTimers) executed.');
     };
-  }, [isAuthenticated, isLoading, handleRefreshToken, toast]); // Dependencies
+  }, [isAuthenticated, isLoading, resetActivityTimer, toast]);
 
-  // Manejar interacción del usuario para renovar sesión (usando debounce)
+  // CAMBIO CRÍTICO: Detectar actividad del usuario con debounce mejorado
   useEffect(() => {
     if (!isAuthenticated) return;
     
     let activityTimeout = null;
-    const debounceMs = 5000; // 5 segundos de debounce
+    const debounceMs = 1000; // 1 segundo de debounce para evitar demasiadas actualizaciones
 
     const handleUserActivity = () => {
-      // Solo configurar un nuevo timeout si no hay uno en curso
-      if (!activityTimeout && showSessionAlert) {
-        activityTimeout = setTimeout(() => {
-          console.log('Actividad del usuario detectada, refrescando sesión');
-          setShowSessionAlert(false);
-          handleRefreshToken(true);
-          activityTimeout = null;
-        }, debounceMs);
+      if (activityTimeout) {
+        clearTimeout(activityTimeout);
       }
+      
+      activityTimeout = setTimeout(() => {
+        resetActivityTimer();
+        activityTimeout = null;
+      }, debounceMs);
     };
 
-    // Eventos para detectar actividad del usuario (menos frecuentes)
-    window.addEventListener('click', handleUserActivity);
-    // Solo usamos click, no mousemove ni keydown para reducir frecuencia
+    // CAMBIO CRÍTICO: Eventos más específicos para detectar actividad real
+    const events = ['click', 'keydown', 'scroll', 'mousemove', 'touchstart'];
+    
+    events.forEach(event => {
+      window.addEventListener(event, handleUserActivity, { passive: true });
+    });
 
     return () => {
-      window.removeEventListener('click', handleUserActivity);
+      events.forEach(event => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+      
       if (activityTimeout) {
         clearTimeout(activityTimeout);
       }
     };
-  }, [isAuthenticated, showSessionAlert]);
+  }, [isAuthenticated, resetActivityTimer]);
+
+  // Función para extender sesión manualmente
+  const extendSession = useCallback(() => {
+    if (isAuthenticated) {
+      console.log('SessionManager: Extendiendo sesión manualmente');
+      resetActivityTimer();
+      setShowSessionAlert(false);
+      toast({
+        title: "Sesión extendida",
+        description: "Tu sesión ha sido extendida por 20 minutos más.",
+        variant: "default",
+      });
+    }
+  }, [isAuthenticated, resetActivityTimer, toast]);
 
   return (
     <>
+      {/* Mostrar alerta de sesión si es necesario */}
+      {showSessionAlert && (
+        <div className="fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="text-sm font-medium">Sesión por expirar</p>
+              <p className="text-xs">Tu sesión expirará en 2 minutos por inactividad.</p>
+            </div>
+            <button
+              onClick={extendSession}
+              className="ml-4 bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600 transition-colors"
+            >
+              Extender
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Renderizar los componentes secundarios */}
       {children}
     </>

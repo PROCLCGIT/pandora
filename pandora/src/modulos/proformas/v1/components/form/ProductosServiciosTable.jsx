@@ -22,7 +22,7 @@ import {
   Check,
 } from 'lucide-react';
 
-const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesChange }) => {
+const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesChange, productosConErrores = [], onErrorClear }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingItem, setEditingItem] = useState({});
@@ -56,6 +56,7 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
       codigo: '',
       descripcion: '',
       unidad: 'UND',
+      unidad_id: 1, // Add default unit ID
       cantidad: 1,
       precioUnitario: 0,
       descuento: 0,
@@ -103,6 +104,10 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
   // Actualizar campo en edición
   const handleEditChange = (field, value) => {
     setEditingItem({ ...editingItem, [field]: value });
+    // Clear error when user starts editing
+    if (onErrorClear && productosConErrores.length > 0) {
+      onErrorClear();
+    }
   };
 
   // Filtrar productos
@@ -158,13 +163,17 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
             <TableBody>
               {filteredProductos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-8">
-                    No hay productos agregados. Haga clic en "Agregar ítem en blanco" para comenzar.
+                  <TableCell colSpan={8} className={`text-center py-8 ${productosConErrores.length > 0 || productos.length === 0 && searchTerm === '' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                    {productosConErrores.length > 0 || productos.length === 0 && searchTerm === '' ? 
+                      '⚠️ Debe agregar al menos un producto. Haga clic en "Agregar ítem en blanco" o use las herramientas arriba.' : 
+                      'No hay productos agregados. Haga clic en "Agregar ítem en blanco" para comenzar.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProductos.map((item) => (
-                  <TableRow key={item.id}>
+                filteredProductos.map((item, index) => {
+                  const hasError = productosConErrores.includes(index);
+                  return (
+                  <TableRow key={item.id} className={hasError ? 'bg-red-50' : ''}>
                     {editingId === item.id ? (
                       // Modo edición
                       <>
@@ -279,7 +288,8 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
                       </>
                     )}
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

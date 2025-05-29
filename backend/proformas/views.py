@@ -9,6 +9,8 @@ from drf_yasg import openapi
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.db.models import Sum, Count, Q
+from django.http import HttpResponse
+# PDF generator will be imported in the method to handle potential import errors
 
 from .models import (
     Proforma, ProformaItem, ProformaHistorial, 
@@ -387,6 +389,106 @@ class ProformaViewSet(viewsets.ModelViewSet):
         resumen['Total'] = Proforma.objects.count()
         
         return Response(resumen)
+    
+    @swagger_auto_schema(
+        operation_description="Genera un PDF de la proforma",
+        manual_parameters=[
+            openapi.Parameter(
+                'template', openapi.IN_QUERY,
+                description="Plantilla de PDF a usar (classic, modern). Default: classic",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+        ],
+        responses={
+            200: "PDF generado exitosamente",
+            400: "Plantilla no válida",
+            401: "No autenticado",
+            403: "Permiso denegado",
+            404: "Proforma no encontrada"
+        }
+    )
+    @action(detail=True, methods=['get'])
+    def generar_pdf(self, request, pk=None):
+        """
+        Genera y devuelve un PDF de la proforma.
+        Permite seleccionar entre diferentes plantillas: classic, modern.
+        """
+        try:
+            proforma = self.get_object()
+            
+            # Obtener la plantilla solicitada (default: classic)
+            template_name = request.query_params.get('template', 'classic').lower()
+            
+            # Validar plantilla
+            templates_disponibles = ['classic', 'modern']
+            if template_name not in templates_disponibles:
+                return Response({
+                    "error": f"Plantilla '{template_name}' no válida. Plantillas disponibles: {', '.join(templates_disponibles)}"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Importar las plantillas
+            if template_name == 'classic':
+                from .pdf_templates.classic_template import ClassicTemplate
+                pdf_generator = ClassicTemplate(proforma)
+            elif template_name == 'modern':
+                from .pdf_templates.modern_template import ModernTemplate
+                pdf_generator = ModernTemplate(proforma)
+            
+            # Generar el PDF
+            pdf_buffer = pdf_generator.generate()
+            
+            # Preparar la respuesta
+            response = HttpResponse(
+                pdf_buffer.getvalue(),
+                content_type='application/pdf'
+            )
+            
+            # Establecer el nombre del archivo incluyendo la plantilla
+            filename = f"proforma_{proforma.numero}_{template_name}_{proforma.fecha_emision.strftime('%Y%m%d')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except ImportError as e:
+            return Response({
+                "error": "Error: reportlab no está instalado. Por favor instale la dependencia."
+            }, status=status.HTTP_501_NOT_IMPLEMENTED)
+        except Exception as e:
+            return Response({
+                "error": f"Error generando PDF: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @swagger_auto_schema(
+        operation_description="Obtiene las plantillas de PDF disponibles",
+        responses={
+            200: "Lista de plantillas disponibles",
+            401: "No autenticado",
+            403: "Permiso denegado"
+        }
+    )
+    @action(detail=False, methods=['get'])
+    def plantillas_pdf(self, request):
+        """
+        Devuelve la lista de plantillas de PDF disponibles.
+        """
+        plantillas = [
+            {
+                'nombre': 'classic',
+                'descripcion': 'Plantilla clásica profesional con colores azules',
+                'preview': 'Diseño conservador y formal'
+            },
+            {
+                'nombre': 'modern',
+                'descripcion': 'Plantilla moderna minimalista con colores verdes',
+                'preview': 'Diseño contemporáneo y limpio'
+            }
+        ]
+        
+        return Response({
+            'plantillas_disponibles': plantillas,
+            'plantilla_default': 'classic'
+        })
 
 
 class ProformaItemViewSet(viewsets.ModelViewSet):
@@ -399,7 +501,7 @@ class ProformaItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProformaItemSerializer
     pagination_class = BasicStandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['proforma', 'tipo_item', 'producto_ofertado', 'producto_disponible', 'inventario']
+    filterset_fields = ['proforma', 'tipo_item', 'producto_ofertado', 'producto_disponible']
     search_fields = ['codigo', 'descripcion']
     ordering_fields = ['orden', 'codigo', 'precio_unitario', 'total']
     permission_classes = [permissions.IsAuthenticated]
@@ -410,8 +512,26 @@ class ProformaItemViewSet(viewsets.ModelViewSet):
             return ProformaItemDetalladoSerializer
         return ProformaItemSerializer
     
+    def create(self, request, *args, **kwargs):
+        """Override create para debugging"""
+        print(f"[DEBUG] ProformaItemViewSet.create - Request data: {request.data}")
+        print(f"[DEBUG] Request user: {request.user}")
+        print(f"[DEBUG] Request headers: {request.headers}")
+        
+        try:
+            response = super().create(request, *args, **kwargs)
+            print(f"[DEBUG] Item created successfully: {response.data}")
+            return response
+        except Exception as e:
+            print(f"[DEBUG] Error creating item: {str(e)}")
+            print(f"[DEBUG] Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
     def perform_create(self, serializer):
         """Guardar ítem y actualizar la proforma relacionada"""
+        print(f"[DEBUG] perform_create - Validated data: {serializer.validated_data}")
         item = serializer.save()
         # Actualizar totales de la proforma
         item.proforma.save()

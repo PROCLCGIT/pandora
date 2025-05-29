@@ -4,3 +4,6 @@ sqlparse==0.5.3
 pandas==2.2.1
 openpyxl==3.1.2
 djangorestframework==3.15.1
+reportlab==4.1.0
+WeasyPrint==60.2
+Pillow==10.2.0

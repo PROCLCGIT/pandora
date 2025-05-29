@@ -1,3 +1,5 @@
+// /Users/clc/Ws/Appclc/pandora/src/utils/checkBackend.js
+
 import axios from 'axios'
 
 // Cache para evitar demasiadas verificaciones de conexión
@@ -9,8 +11,8 @@ let connectionCache = {
   url: null
 };
 
-// Tiempo mínimo entre verificaciones (30 segundos)
-const CONNECTION_CHECK_THROTTLE_MS = 30000;
+// CAMBIO CRÍTICO: Aumentar tiempo entre verificaciones a 20 minutos
+const CONNECTION_CHECK_THROTTLE_MS = 20 * 60 * 1000; // 20 minutos
 
 // Función de log mejorada
 const logBackend = (message, ...args) => {
@@ -37,7 +39,7 @@ export async function isBackendAvailable() {
       logBackend(`Verificando endpoint de debug en: ${url}`);
       
       const response = await axios.get(url, { 
-        timeout: 3000,
+        timeout: 5000, // Aumentar timeout para evitar falsos negativos
         withCredentials: true
       });
       
@@ -78,7 +80,7 @@ export async function isBackendAvailable() {
         logBackend(`Verificando endpoint en: ${url}`);
         
         const response = await axios.get(url, { 
-          timeout: 2500,
+          timeout: 3000,
           withCredentials: true
         });
         
@@ -129,7 +131,7 @@ export async function isBackendAvailable() {
         logBackend(`Verificando endpoint en producción: ${url}`);
         
         const response = await axios.get(url, { 
-          timeout: 3500,
+          timeout: 5000,
           withCredentials: true
         });
         
@@ -142,8 +144,8 @@ export async function isBackendAvailable() {
         if (error.response?.status === 403) {
           // Si recibimos 403, significa que el servidor está activo
           backendUrl = baseUrl;
-          logBackend(`Backend encontrado en producción: ${backendUrl} (requiere autenticación)`);
-          return { available: true, url: backendUrl, source: 'auto' };
+          logBackend(`Backend encontrado en producción: ${baseUrl} (requiere autenticación)`);
+          return { available: true, url: baseUrl, source: 'auto' };
         }
         
         logBackend(`Error al verificar ${baseUrl}:`, error.message || 'Error desconocido');
@@ -162,7 +164,7 @@ export async function isBackendAvailable() {
 
 /**
  * Función para verificar la conexión al backend con manejo de caché
- * Evita dependencias circulares con auth.js
+ * CAMBIO CRÍTICO: Solo verificar cuando es absolutamente necesario
  */
 export async function checkConnectionStatus(force = false) {
   const now = Date.now();
@@ -171,7 +173,7 @@ export async function checkConnectionStatus(force = false) {
   if (!force && 
       connectionCache.lastChecked && 
       now - connectionCache.lastChecked < CONNECTION_CHECK_THROTTLE_MS) {
-    logBackend('Connection check throttled, using cached result:', connectionCache);
+    logBackend('Connection check throttled (20min), using cached result:', connectionCache);
     return {
       connected: connectionCache.connected,
       message: connectionCache.message,
@@ -289,7 +291,7 @@ export function getCurrentBackendUrl() {
  * @param {number} delayMs - Tiempo entre reintentos en milisegundos
  * @returns {Promise<Object>} - Resultado de la verificación
  */
-export async function waitForBackend(maxRetries = 5, delayMs = 2000) {
+export async function waitForBackend(maxRetries = 3, delayMs = 5000) {
   for (let i = 0; i < maxRetries; i++) {
     const result = await isBackendAvailable()
     
@@ -307,14 +309,12 @@ export async function waitForBackend(maxRetries = 5, delayMs = 2000) {
   }
 }
 
-// Ejecutar verificación inicial al cargar (si estamos en el navegador)
+// CAMBIO CRÍTICO: Eliminar verificación automática al cargar
+// Esta verificación puede causar recargas no deseadas
 if (typeof window !== 'undefined') {
-  logBackend('Verificando disponibilidad del backend al cargar...');
+  logBackend('✅ Módulo checkBackend cargado - verificación manual habilitada');
   
-  // Pequeño retraso para dejar que la aplicación se inicie primero
-  setTimeout(() => {
-    isBackendAvailable().then(result => {
-      logBackend('Resultado de verificación inicial del backend:', result);
-    });
-  }, 1500);
-} 
+  // Solo ejecutar verificación si es solicitada explícitamente
+  // No más verificaciones automáticas al cargar la página
+  logBackend('🔄 Verificación automática DESHABILITADA para evitar recargas');
+}

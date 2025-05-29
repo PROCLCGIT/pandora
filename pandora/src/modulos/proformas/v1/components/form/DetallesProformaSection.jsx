@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { proformaService } from '../../api/proformaService';
 import { toast } from '@/hooks/use-toast';
 
-const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
+const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors = {}, onFieldErrorClear }) => {
   const [isEditing, setIsEditing] = useState({
     fechaEmision: false,
     fechaVencimiento: false,
@@ -79,6 +79,10 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
     if (onDetallesChange) {
       onDetallesChange({ ...detalles, [field]: value });
     }
+    // Clear field error when user starts typing/changing
+    if (onFieldErrorClear && fieldErrors[field]) {
+      onFieldErrorClear(field);
+    }
   };
 
   const handleDateChange = (field, date) => {
@@ -122,7 +126,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
         <div className="space-y-3">
           {/* Fecha emisión */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
-            <span className="text-sm text-gray-600 font-medium">Fecha emisión:</span>
+            <span className="text-sm text-gray-600 font-medium">
+              Fecha emisión: <span className="text-red-500">*</span>
+            </span>
             {isEditing.fechaEmision ? (
               <Popover open={isEditing.fechaEmision} onOpenChange={(open) => setIsEditing({ ...isEditing, fechaEmision: open })}>
                 <PopoverTrigger asChild>
@@ -130,7 +136,8 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
                     variant="outline"
                     className={cn(
                       "h-8 text-sm justify-start text-left font-normal",
-                      !detalles.fechaEmision && "text-muted-foreground"
+                      !detalles.fechaEmision && "text-muted-foreground",
+                      fieldErrors.fechaEmision && "border-red-500"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3 w-3" />
@@ -148,7 +155,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
                 </PopoverContent>
               </Popover>
             ) : (
-              <span className="text-sm text-gray-900">{formatDate(detalles.fechaEmision) || 'No establecida'}</span>
+              <span className={`text-sm ${fieldErrors.fechaEmision ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                {formatDate(detalles.fechaEmision) || (fieldErrors.fechaEmision ? '⚠️ Fecha requerida' : 'No establecida')}
+              </span>
             )}
             <Button 
               size="sm" 
@@ -162,7 +171,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
 
           {/* Válido hasta */}
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
-            <span className="text-sm text-gray-600 font-medium">Válido hasta:</span>
+            <span className="text-sm text-gray-600 font-medium">
+              Válido hasta: <span className="text-red-500">*</span>
+            </span>
             {isEditing.fechaVencimiento ? (
               <Popover open={isEditing.fechaVencimiento} onOpenChange={(open) => setIsEditing({ ...isEditing, fechaVencimiento: open })}>
                 <PopoverTrigger asChild>
@@ -170,7 +181,8 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
                     variant="outline"
                     className={cn(
                       "h-8 text-sm justify-start text-left font-normal",
-                      !detalles.fechaVencimiento && "text-muted-foreground"
+                      !detalles.fechaVencimiento && "text-muted-foreground",
+                      fieldErrors.fechaVencimiento && "border-red-500"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3 w-3" />
@@ -189,7 +201,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange }) => {
                 </PopoverContent>
               </Popover>
             ) : (
-              <span className="text-sm text-gray-900">{formatDate(detalles.fechaVencimiento) || 'No establecida'}</span>
+              <span className={`text-sm ${fieldErrors.fechaVencimiento ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                {formatDate(detalles.fechaVencimiento) || (fieldErrors.fechaVencimiento ? '⚠️ Fecha requerida' : 'No establecida')}
+              </span>
             )}
             <Button 
               size="sm" 

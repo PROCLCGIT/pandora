@@ -6,6 +6,7 @@ import { Suspense, lazy } from 'react';
 const AddProformaPage = lazy(() => import('../pages/addProformaPage.jsx'));
 const DetalleProforma = lazy(() => import('../pages/detalleProforma.jsx'));
 const ProformasDashPage = lazy(() => import('../pages/ProformasDashPage.jsx'));
+const TestEditPage = lazy(() => import('../pages/TestEditPage.jsx'));
 
 
 

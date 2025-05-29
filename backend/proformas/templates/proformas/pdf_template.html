@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Proforma {{ proforma.numero }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { text-align: center; background: #f0f0f0; padding: 20px; }
+        .client-info { margin: 20px 0; }
+        .products-table { width: 100%; border-collapse: collapse; }
+        .products-table th, .products-table td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        .totals { text-align: right; margin-top: 20px; }
+        /* Más estilos CSS aquí */
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PROFORMA</h1>
+        <h2>{{ proforma.numero }}</h2>
+    </div>
+    
+    <div class="client-info">
+        <h3>Información del Cliente</h3>
+        <p><strong>Empresa:</strong> {{ proforma.cliente.nombre }}</p>
+        <p><strong>RUC:</strong> {{ proforma.cliente.ruc }}</p>
+        <!-- Más campos del cliente -->
+    </div>
+    
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Precio Unit.</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in proforma.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.codigo }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>${{ item.precio_unitario }}</td>
+                <td>${{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <p><strong>Subtotal: ${{ proforma.subtotal }}</strong></p>
+        <p><strong>IVA: ${{ proforma.impuesto }}</strong></p>
+        <p><strong>TOTAL: ${{ proforma.total }}</strong></p>
+    </div>
+</body>
+</html>

@@ -12,7 +12,7 @@ import {
 import ClientSelectionModal from '../modals/ClientSelectionModal';
 import AddClientModal from '../modals/AddClientModal';
 
-const ClienteSection = ({ cliente = {}, onClienteChange }) => {
+const ClienteSection = ({ cliente = {}, onClienteChange, hasError = false, onErrorClear }) => {
   const [showClientModal, setShowClientModal] = useState(false);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
 
@@ -40,6 +40,11 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
     if (onClienteChange) {
       onClienteChange(clienteData);
     }
+    
+    // Clear error if exists
+    if (onErrorClear) {
+      onErrorClear();
+    }
   };
   
   const handleClientCreated = (newClient) => {
@@ -49,22 +54,22 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
   };
   
   return (
-    <Card>
+    <Card className={hasError ? 'border-red-500' : ''}>
       <CardHeader className="py-3 px-4 bg-blue-300/20">
         <div className="flex justify-between items-center min-h-[32px]">
           <CardTitle className="flex items-center text-base font-bold">
             <User className="mr-2 h-4 w-4 text-blue-600" />
-            Cliente
+            Cliente <span className="text-red-500">*</span>
           </CardTitle>
           <div className="flex space-x-1">
             <Button 
               size="sm" 
-              variant="ghost" 
-              className="h-7 w-7 p-0"
+              variant={!cliente.id ? "default" : "ghost"}
+              className={`h-7 w-7 p-0 ${!cliente.id ? 'animate-pulse bg-blue-500 hover:bg-blue-600' : ''}`}
               onClick={() => setShowClientModal(true)}
               title="Buscar cliente"
             >
-              <Search className="h-3.5 w-3.5 text-gray-500" />
+              <Search className={`h-3.5 w-3.5 ${!cliente.id ? 'text-white' : 'text-gray-500'}`} />
             </Button>
             <Button 
               size="sm" 
@@ -88,7 +93,9 @@ const ClienteSection = ({ cliente = {}, onClienteChange }) => {
         <div className="space-y-4">
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Empresa:</span>
-            <span className="text-sm text-gray-900">{cliente.empresa || 'No seleccionado'}</span>
+            <span className={`text-sm ${cliente.empresa ? 'text-gray-900' : (hasError ? 'text-red-600 font-medium' : 'text-red-500 font-medium')}`}>
+              {cliente.empresa || (hasError ? '⚠️ Cliente requerido - Haga clic en 🔍' : 'Por favor seleccione un cliente →')}
+            </span>
           </div>
           <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">RUC:</span>

@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'directorio',
     'productos',
     'proformas',
+    'brief.apps.BriefConfig',  # Módulo de gestión de briefs
     'docmanager',
     'fastinfo',
     'inventario',

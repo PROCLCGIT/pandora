@@ -1,8 +1,21 @@
-// Debug script para verificar la autenticación
+// /Users/clc/Ws/Appclc/pandora/public/debug-auth.js
+
+// CAMBIO CRÍTICO: Script de debug optimizado que NO causa recargas automáticas
 (function() {
-  console.log('==== DEBUG AUTENTICACIÓN ====');
+  console.log('==== DEBUG AUTENTICACIÓN OPTIMIZADO ====');
   
-  // Verificar tokens almacenados
+  // Flag para controlar el debug
+  let debugEnabled = localStorage.getItem('authDebugEnabled') === 'true';
+  
+  if (!debugEnabled) {
+    console.log('🔒 Debug de autenticación DESHABILITADO por defecto');
+    console.log('Para habilitar: localStorage.setItem("authDebugEnabled", "true"); y recarga la página');
+    return;
+  }
+  
+  console.log('🔍 Debug de autenticación HABILITADO');
+  
+  // Verificar tokens almacenados solo si debug está habilitado
   const accessToken = localStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken');
   
@@ -32,96 +45,68 @@
     }
   }
   
-  // Verificar formato de Authorization header
-  const checkAuthHeader = () => {
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function() {
-      this.addEventListener('load', function() {
-        console.log(`${this.responseURL} - Status: ${this.status}`);
-      });
-      originalXHROpen.apply(this, arguments);
-    };
-    
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-      const promise = originalFetch.apply(this, arguments);
-      promise.then(response => {
-        console.log(`${response.url} - Status: ${response.status}`);
-      });
-      return promise;
-    };
-    
-    console.log('✅ Instalados interceptores para monitorear peticiones HTTP');
-  };
+  // CAMBIO CRÍTICO: NO instalar interceptores automáticos
+  // Esto evita monitoring constante que puede causar recargas
   
-  // Añadir función para arreglar la autenticación
+  // Función para arreglar la autenticación (solo para desarrollo)
   window.fixAuth = function() {
     console.log('🔧 Arreglando tokens de autenticación...');
     
-    // Token JWT de ejemplo - con fecha de expiración extendida para el desarrollo
-    localStorage.setItem('accessToken', 
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE5OTk5OTk5OTl9.demo-signature-very-secure-fixed');
-    localStorage.setItem('refreshToken', 
-      'refresh-token-example-very-secure-fixed');
+    // CAMBIO CRÍTICO: Token con expiración de 24 horas para desarrollo
+    const tomorrow = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
+    const tokenPayload = {
+      user_id: 1,
+      exp: tomorrow
+    };
+    
+    const header = btoa(JSON.stringify({alg: "HS256", typ: "JWT"}));
+    const payload = btoa(JSON.stringify(tokenPayload));
+    const signature = "demo-signature-very-secure-fixed";
+    
+    const token = `${header}.${payload}.${signature}`;
+    
+    localStorage.setItem('accessToken', token);
+    localStorage.setItem('refreshToken', 'refresh-token-example-very-secure-fixed');
     
     console.log('✅ Tokens generados y guardados en localStorage');
     console.log('👉 Recarga la página para aplicar los cambios');
   };
   
-  // Función para hacer una petición de prueba
+  // Función para hacer una petición de prueba (solo manual)
   window.testAuth = function() {
     console.log('🧪 Probando autenticación con fetch...');
     
     const token = localStorage.getItem('accessToken');
+    console.log('Token para prueba:', token ? 'Presente' : 'No encontrado');
     
-    console.log('Token para prueba:', token);
+    if (!token) {
+      console.log('❌ No hay token disponible. Ejecuta window.fixAuth() primero');
+      return;
+    }
     
-    // Intentar petición con diferentes formatos de Authorization header
-    const testHeaders = [
-      { name: 'Standard Bearer', header: { 'Authorization': 'Bearer ' + token } },
-      { name: 'No Space', header: { 'Authorization': 'Bearer' + token } },
-      { name: 'Lower Case', header: { 'Authorization': 'bearer ' + token } },
-      { name: 'Token Only', header: { 'Authorization': token } }
-    ];
+    const testUrl = 'http://localhost:8000/api/basic/categorias/?page=1&page_size=1';
     
-    // Probar múltiples formatos para identificar cuál funciona
-    testHeaders.forEach(test => {
-      console.log(`🔍 Probando formato "${test.name}"...`);
-      
-      fetch('http://localhost:8000/api/basic/categorias/?page=1&page_size=1', {
-        headers: test.header
-      })
-      .then(response => {
-        console.log(`Respuesta [${test.name}]: ${response.status} ${response.statusText}`);
-        if (response.status === 200) {
-          return response.json().then(data => {
-            console.log(`✅ ÉXITO con formato "${test.name}":`, data);
-          });
-        }
-      })
-      .catch(error => {
-        console.error(`Error con formato "${test.name}":`, error);
-      });
-    });
+    console.log(`🔍 Probando petición a: ${testUrl}`);
     
-    // Para referencia, también probamos con XMLHttpRequest
-    console.log('🧪 Probando con XMLHttpRequest...');
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://localhost:8000/api/basic/categorias/?page=1&page_size=1');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-    xhr.onload = function() {
-      console.log(`XHR Respuesta: ${xhr.status}`);
-      if (xhr.status === 200) {
-        console.log('XHR Datos:', JSON.parse(xhr.responseText));
+    fetch(testUrl, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(response => {
+      console.log(`✅ Respuesta: ${response.status} ${response.statusText}`);
+      if (response.status === 200) {
+        return response.json().then(data => {
+          console.log('✅ ÉXITO - Datos recibidos:', data);
+        });
+      } else {
+        console.log('⚠️ Error en la respuesta');
       }
-    };
-    xhr.onerror = function() {
-      console.error('XHR Error');
-    };
-    xhr.send();
+    })
+    .catch(error => {
+      console.error('❌ Error en la petición:', error);
+    });
   };
   
-  // Añadir función para ver el contenido del localStorage
+  // Función para ver el contenido del localStorage (solo manual)
   window.showLocalStorage = function() {
     console.log('==== CONTENIDO DE LOCALSTORAGE ====');
     for (let i = 0; i < localStorage.length; i++) {
@@ -131,9 +116,7 @@
     }
   };
   
-  checkAuthHeader();
-  
-  // Función para obtener un nuevo token del servidor
+  // Función para obtener un nuevo token del servidor (solo manual)
   window.getNewToken = function() {
     console.log('🔑 Solicitando nuevo token al servidor...');
     
@@ -156,8 +139,7 @@
         console.log('✅ Token recibido correctamente');
         localStorage.setItem('accessToken', data.access);
         localStorage.setItem('refreshToken', data.refresh);
-        console.log('Token guardado:', data.access);
-        console.log('Refresca la página para aplicar');
+        console.log('Token guardado, refresca la página para aplicar');
       } else {
         console.error('Error, no se recibió token:', data);
       }
@@ -166,13 +148,22 @@
       console.error('Error obteniendo token:', error);
     });
   };
+  
+  // Función para habilitar/deshabilitar debug
+  window.toggleAuthDebug = function() {
+    const current = localStorage.getItem('authDebugEnabled') === 'true';
+    localStorage.setItem('authDebugEnabled', (!current).toString());
+    console.log(`Debug de autenticación ${!current ? 'HABILITADO' : 'DESHABILITADO'}`);
+    console.log('Recarga la página para aplicar el cambio');
+  };
 
-  console.log('🛠️ Herramientas de Debug:');
+  console.log('🛠️ Herramientas de Debug Disponibles:');
   console.log('- window.fixAuth() - Arregla los tokens de autenticación');
   console.log('- window.testAuth() - Prueba una petición con autenticación');
   console.log('- window.getNewToken() - Solicita un token nuevo al servidor');
   console.log('- window.showLocalStorage() - Muestra el contenido de localStorage');
-  console.log('📄 MODO DESARROLLO: Probar diferentes formatos de autenticación');
+  console.log('- window.toggleAuthDebug() - Habilita/deshabilita el debug');
+  console.log('📄 MODO DESARROLLO: Herramientas manuales - NO automáticas');
   
   console.log('============================');
 })();

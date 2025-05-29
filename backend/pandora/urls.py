@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/importexport/', include('importexport.urls')),
     path('api/docmanager/', include('docmanager.urls')),  # Añadida esta línea
     path('api/proformas/', include('proformas.urls')),
+    path('api/brief/', include('brief.urls')),  # Módulo de gestión de briefs
     path('api/inventario/', include('inventario.urls')),
     
     # URLs para autenticación JWT con cookies (nuevas)

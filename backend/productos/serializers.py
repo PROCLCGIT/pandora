@@ -86,6 +86,9 @@ class ProductoOfertadoSerializer(serializers.ModelSerializer):
     especialidad_nombre = serializers.SerializerMethodField()
     especialidad_data = serializers.SerializerMethodField()
     imagenes = ImagenReferenciaProductoOfertadoSerializer(many=True, read_only=True)
+    # Add default unit fields for ProductoOfertado
+    unidad_presentacion = serializers.SerializerMethodField()
+    unidad_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductoOfertado
@@ -114,6 +117,19 @@ class ProductoOfertadoSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error al obtener datos de especialidad: {e}")
             return None
+    
+    def get_unidad_presentacion(self, obj):
+        """Retorna un objeto unidad por defecto para ProductoOfertado"""
+        # ProductoOfertado no tiene unidad, retornamos un valor por defecto
+        return {
+            'id': 1,
+            'nombre': 'UNIDAD',
+            'code': 'UND'
+        }
+    
+    def get_unidad_nombre(self, obj):
+        """Retorna el nombre de unidad por defecto para ProductoOfertado"""
+        return 'UNIDAD'
             
     def validate_especialidad(self, value):
         """Valida que la especialidad exista en la base de datos"""
@@ -225,6 +241,8 @@ class ProductoDisponibleSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.CharField(source='unidad_presentacion.nombre', read_only=True)
     procedencia_nombre = serializers.CharField(source='procedencia.nombre', read_only=True)
     imagenes = ImagenProductoDisponibleSerializer(many=True, read_only=True)
+    # Add nested unidad_presentacion object
+    unidad_presentacion = UnidadSerializer(read_only=True)
     
     class Meta:
         model = ProductoDisponible

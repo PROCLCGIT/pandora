@@ -14,6 +14,42 @@ class ProformaItemSerializer(serializers.ModelSerializer):
         model = ProformaItem
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'total')
+    
+    def validate(self, data):
+        """Validación personalizada para debugging"""
+        print(f"[DEBUG] ProformaItemSerializer - Validating data: {data}")
+        
+        # Verificar que la unidad existe
+        if 'unidad' in data:
+            from basic.models import Unidad
+            try:
+                unidad = Unidad.objects.get(pk=data['unidad'].pk if hasattr(data['unidad'], 'pk') else data['unidad'])
+                print(f"[DEBUG] Unidad encontrada: {unidad}")
+            except Unidad.DoesNotExist:
+                raise serializers.ValidationError({'unidad': 'La unidad especificada no existe'})
+        
+        # Validar que las referencias a productos existen si se especifican
+        if data.get('producto_disponible'):
+            from productos.models import ProductoDisponible
+            try:
+                pd_id = data['producto_disponible'].pk if hasattr(data['producto_disponible'], 'pk') else data['producto_disponible']
+                producto = ProductoDisponible.objects.get(pk=pd_id)
+                print(f"[DEBUG] ProductoDisponible encontrado: {producto}")
+            except ProductoDisponible.DoesNotExist:
+                print(f"[DEBUG] ProductoDisponible con ID {pd_id} no existe")
+                raise serializers.ValidationError({'producto_disponible': f'ProductoDisponible con ID {pd_id} no existe'})
+        
+        if data.get('producto_ofertado'):
+            from productos.models import ProductoOfertado
+            try:
+                po_id = data['producto_ofertado'].pk if hasattr(data['producto_ofertado'], 'pk') else data['producto_ofertado']
+                producto = ProductoOfertado.objects.get(pk=po_id)
+                print(f"[DEBUG] ProductoOfertado encontrado: {producto}")
+            except ProductoOfertado.DoesNotExist:
+                print(f"[DEBUG] ProductoOfertado con ID {po_id} no existe")
+                raise serializers.ValidationError({'producto_ofertado': f'ProductoOfertado con ID {po_id} no existe'})
+        
+        return data
         
     def to_representation(self, instance):
         """Personaliza la representación del objeto"""

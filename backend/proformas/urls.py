@@ -32,6 +32,9 @@ urlpatterns = [
     # Acción para generar reporte
     path('proformas/<int:pk>/reporte/', views.ProformaViewSet.as_view({'get': 'generar_reporte'}), name='proforma-reporte'),
     
+    # Acción para generar PDF
+    path('proformas/<int:pk>/generar_pdf/', views.ProformaViewSet.as_view({'get': 'generar_pdf'}), name='proforma-generar-pdf'),
+    
     # Acción para duplicar proforma
     path('proformas/<int:pk>/duplicar/', views.ProformaViewSet.as_view({'post': 'duplicar'}), name='proforma-duplicar'),
     

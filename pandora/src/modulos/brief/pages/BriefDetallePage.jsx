@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import '../styles/BriefDetallePage.css';
+// Removed CSS import - using inline Tailwind classes instead
 
 const BriefDetallePage = () => {
   const [items, setItems] = useState([
@@ -65,36 +65,36 @@ const BriefDetallePage = () => {
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       {/* Encabezado */}
-      <div className="brief-header">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm p-6 mb-8 border border-blue-100">
         <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <div className="brief-icon">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-5 rounded-xl shadow-md flex items-center justify-center">
             <FileText size={40} strokeWidth={1.5} />
           </div>
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <h1 className="brief-title">Brief</h1>
-              <Badge className="brief-badge">
+              <h1 className="text-3xl font-bold text-gray-800">Brief</h1>
+              <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 hover:from-blue-200 hover:to-indigo-200 px-3 py-1 text-sm rounded-md shadow-sm whitespace-nowrap">
                 <span className="font-mono font-bold">BF-202506</span>
               </Badge>
-              <Badge className="brief-status-badge">Activo</Badge>
+              <Badge className="bg-green-100 text-green-700 px-3 py-1 text-sm shadow-sm">Activo</Badge>
             </div>
             <p className="text-gray-600 mt-2 font-medium">Formulario de requerimientos para clientes</p>
-            <div className="brief-meta">
-              <div className="brief-meta-item">
-                <Calendar className="brief-meta-icon" />
+            <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-blue-500" />
                 <span>jueves, 1 de mayo de 2025</span>
               </div>
-              <div className="brief-meta-item">
-                <Clock className="brief-meta-icon" />
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-blue-500" />
                 <span>Creado hace 2 días</span>
               </div>
-              <div className="brief-meta-item">
-                <User className="brief-meta-icon" />
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-2 text-blue-500" />
                 <span>Por: Admin</span>
               </div>
             </div>
           </div>
-          <div className="brief-total-box">
+          <div className="bg-white shadow-md p-5 rounded-xl text-center min-w-[140px] border border-blue-100 flex flex-col justify-center">
             <p className="text-sm text-gray-500 mb-1">Total Items</p>
             <p className="text-3xl font-bold text-blue-700">{totalItems}</p>
             <div className="mt-2 text-xs text-gray-400">Última actualización: hoy</div>
@@ -105,10 +105,10 @@ const BriefDetallePage = () => {
       {/* Información del cliente y detalles del brief */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Info Brief */}
-        <Card className="brief-card">
-          <CardHeader className="brief-card-header">
-            <CardTitle className="brief-card-title">
-              <User className="brief-card-icon" />
+        <Card className="border-blue-100">
+          <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-t-lg">
+            <CardTitle className="flex items-center text-lg font-semibold text-blue-900">
+              <User className="mr-2 h-5 w-5 text-blue-600" />
               Información del Cliente
             </CardTitle>
             <CardDescription>Datos del solicitante y origen</CardDescription>
@@ -154,10 +154,10 @@ const BriefDetallePage = () => {
         </Card>
 
         {/* Detalles de la Proforma */}
-        <Card className="brief-card">
-          <CardHeader className="brief-card-header">
-            <CardTitle className="brief-card-title">
-              <FileText className="brief-card-icon" />
+        <Card className="border-blue-100">
+          <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-t-lg">
+            <CardTitle className="flex items-center text-lg font-semibold text-blue-900">
+              <FileText className="mr-2 h-5 w-5 text-blue-600" />
               Detalles del Brief
             </CardTitle>
             <CardDescription>Información y configuración</CardDescription>
@@ -220,12 +220,12 @@ const BriefDetallePage = () => {
       </div>
 
       {/* Tabla de productos */}
-      <Card className="brief-card overflow-hidden mb-8">
-        <CardHeader className="brief-card-header">
+      <Card className="border-blue-100 overflow-hidden mb-8">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-t-lg">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <CardTitle className="brief-card-title">
-                <Clipboard className="brief-card-icon" />
+              <CardTitle className="flex items-center text-lg font-semibold text-blue-900">
+                <Clipboard className="mr-2 h-5 w-5 text-blue-600" />
                 Listado de Items
               </CardTitle>
               <CardDescription>Productos y cantidades requeridas</CardDescription>
@@ -284,9 +284,9 @@ const BriefDetallePage = () => {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="brief-table">
+            <table className="w-full">
               <thead>
-                <tr className="brief-table-header">
+                <tr className="bg-gradient-to-r from-blue-50 to-transparent border-y border-blue-100">
                   <th className="text-left py-3 px-4 text-sm font-medium text-blue-800 w-16">ID</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-blue-800 w-32">CÓDIGO</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-blue-800">PRODUCTO</th>
@@ -418,7 +418,7 @@ const BriefDetallePage = () => {
                     <Input 
                       type="number"
                       value={newItem.cantidad} 
-                      onChange={(e) => setNewItem({...newItem, cantidad: e.target.value})}
+                      onChange={(e) => setNewItem({...newItem, cantidad: parseInt(e.target.value, 10) || 0})}
                       placeholder="0" 
                       className="h-9 border-blue-200 focus:border-blue-400"
                     />

@@ -34,7 +34,7 @@ const ToolBarSection = ({ onSelectProducts }) => {
               onClick={() => console.log('Agregar servicio')}
               size="sm"
               className="bg-green-600 hover:bg-green-700 text-white h-8 w-8 p-0"
-              title="Agregar Servicio"
+              title="Agregar Serial, imagenes, fecha de vencimiento"
             >
               <Plus className="h-4 w-4" />
             </Button>

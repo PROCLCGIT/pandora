@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Proforma Modal Debugging</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-info { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #fee; border: 1px solid #fcc; }
+        .success { background: #efe; border: 1px solid #cfc; }
+    </style>
+</head>
+<body>
+    <h1>Debug Information - Proforma Modal Issue</h1>
+    
+    <div class="debug-info">
+        <h3>Symptom</h3>
+        <p>When clicking "Visualizar" (View) button in the saved proformas modal, something goes wrong</p>
+    </div>
+
+    <div class="debug-info">
+        <h3>Expected Behavior</h3>
+        <ul>
+            <li>Modal closes</li>
+            <li>Navigation to /proformas/{id} occurs</li>
+            <li>DetalleProforma component loads</li>
+            <li>Proforma details are displayed</li>
+        </ul>
+    </div>
+
+    <div class="debug-info">
+        <h3>Debugging Steps Added</h3>
+        <ul>
+            <li>✅ Enhanced logging in ProformasGuardadasModal.jsx</li>
+            <li>✅ Enhanced logging in DetalleProforma.jsx</li>
+            <li>✅ Added validation for proforma ID</li>
+            <li>✅ Improved error handling with detailed messages</li>
+            <li>✅ Added success toast notifications</li>
+            <li>✅ Enhanced duplicate functionality</li>
+            <li>✅ Added PDF generation to detail page</li>
+        </ul>
+    </div>
+
+    <div class="debug-info">
+        <h3>Routes Verified</h3>
+        <ul>
+            <li>✅ /proformas/* → ProformasModule</li>
+            <li>✅ /proformas/:id → DetalleProforma component</li>
+            <li>✅ Backend URL for items: /items-por-proforma/{id}/</li>
+        </ul>
+    </div>
+
+    <div class="debug-info">
+        <h3>What to Check Next</h3>
+        <ol>
+            <li>Open browser console</li>
+            <li>Click "Guardadas" button</li>
+            <li>Click "Visualizar" on any proforma</li>
+            <li>Check console for the enhanced debug logs</li>
+            <li>Look for any React Router errors</li>
+            <li>Verify the navigation actually occurs</li>
+        </ol>
+    </div>
+
+    <div class="debug-info">
+        <h3>Console Logs to Look For</h3>
+        <ul>
+            <li><strong>=== VIEWING PROFORMA ===</strong> - When clicking visualizar</li>
+            <li><strong>=== LOADING PROFORMA DETAILS ===</strong> - When detail page loads</li>
+            <li>Error messages with detailed status codes</li>
+            <li>Success/error toast notifications</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('Debug page loaded - ready to test proforma modal functionality');
+        console.log('Enhanced logging has been added to:');
+        console.log('- ProformasGuardadasModal.jsx: handleViewProforma() and handleDuplicateProforma()');
+        console.log('- DetalleProforma.jsx: fetchProformaDetails() and new handleGeneratePDF()');
+        console.log('Test steps: Open app → Go to proformas → Click "Guardadas" → Click "Visualizar" on any proforma');
+    </script>
+</body>
+</html>

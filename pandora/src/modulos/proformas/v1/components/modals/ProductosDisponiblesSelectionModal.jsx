@@ -121,27 +121,40 @@ const ProductosDisponiblesSelectionModal = ({
 
     // Transform selected products to the format expected by the proforma
     const formattedProducts = selectedProducts.map(product => {
-      // Determine product type based on properties
-      const isProductoDisponible = product.stock !== undefined || product.precio_venta !== undefined;
-      const precio = isProductoDisponible ? (product.precio_venta || 0) : (product.precio_oferta || 0);
+      // Determine product type based on the active tab and product properties
+      let isProductoDisponible;
+      let precio;
+      
+      if (activeTab === 'disponibles') {
+        isProductoDisponible = true;
+        precio = product.precio_venta || 0;
+      } else if (activeTab === 'ofertados') {
+        isProductoDisponible = false;
+        precio = product.precio_oferta || 0;
+      } else {
+        // Fallback: determine by properties
+        isProductoDisponible = product.stock !== undefined || product.precio_venta !== undefined;
+        precio = isProductoDisponible ? (product.precio_venta || 0) : (product.precio_oferta || 0);
+      }
       
       return {
         id: `temp_${Date.now()}_${product.id}`, // Temporary ID for the proforma table
         producto_disponible_id: isProductoDisponible ? product.id : null,
         producto_ofertado_id: !isProductoDisponible ? product.id : null,
-        codigo: product.codigo || product.code,
+        tipo_item: isProductoDisponible ? 'producto_disponible' : 'producto_ofertado',
+        codigo: product.codigo || product.code || '',
         nombre: product.nombre,
-        descripcion: product.descripcion || '',
-        precioUnitario: precio,  // Changed from precio_unitario to precioUnitario
+        descripcion: product.descripcion || product.nombre || '',
+        precio_unitario: precio,
+        precio: precio, // Also include as 'precio' for compatibility
         cantidad: 1, // Default quantity
-        descuento: 0, // Default discount
+        porcentaje_descuento: 0, // Default discount percentage
         total: precio, // Add total property
-        tipo: isProductoDisponible ? 'producto_disponible' : 'producto_ofertado',
+        unidad_id: product.unidad_presentacion?.id || product.unidad_id || 1, // Include unidad ID, default to 1
+        unidad: product.unidad_presentacion?.nombre || 'UNIDAD',
         // Additional data for reference
         marca: product.marca?.nombre || '',
         especialidad: product.especialidad?.nombre || '',
-        unidad: product.unidad?.nombre || 'unidad',
-        // For ofertados, add additional info
         procedencia: product.procedencia?.nombre || '',
         categoria: product.categoria?.nombre || '',
       };

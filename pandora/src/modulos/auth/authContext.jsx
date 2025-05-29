@@ -1,4 +1,6 @@
-import React, { createContext, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+// /Users/clc/Ws/Appclc/pandora/src/modulos/auth/authContext.jsx
+
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { verifyAuth, login as apiLogin, logout as apiLogout, refreshToken } from '../../utils/auth'
 import { isBackendAvailable } from '../../utils/checkBackend'
 import { profileService } from './api/profileService'
@@ -8,7 +10,8 @@ export const AuthContext = createContext()
 
 // Cache de autenticación en localStorage
 const AUTH_CACHE_KEY = 'authCache'
-const AUTH_CACHE_TTL = 15 * 60 * 1000 // 15 minutos para evitar verificaciones frecuentes
+// CAMBIO CRÍTICO: Aumentar TTL a 20 minutos
+const AUTH_CACHE_TTL = 20 * 60 * 1000 // 20 minutos para reducir verificaciones
 
 // Log de depuración mejorado
 const logAuth = (message, ...args) => {
@@ -71,10 +74,11 @@ const AuthCache = {
 
 // Módulo para verificación de backend - separado para mejor organización
 const BackendService = {
-  MIN_CHECK_INTERVAL: 2 * 60 * 1000, // 2 minutos entre verificaciones
+  // CAMBIO CRÍTICO: Aumentar intervalo a 20 minutos
+  MIN_CHECK_INTERVAL: 20 * 60 * 1000, // 20 minutos entre verificaciones
   lastCheckTime: 0,
   
-  // Comprobar disponibilidad del backend con rate limiting
+  // Comprobar disponibilidad del backend con rate limiting estricto
   checkAvailability: async (force = false) => {
     try {
       // Limitar verificaciones frecuentes si no se fuerza
@@ -82,7 +86,7 @@ const BackendService = {
       const timeSinceLastCheck = now - BackendService.lastCheckTime
       
       if (!force && timeSinceLastCheck < BackendService.MIN_CHECK_INTERVAL) {
-        logAuth(`Verificación de backend throttled (última hace ${Math.round(timeSinceLastCheck/1000)}s)`);
+        logAuth(`Verificación de backend throttled (última hace ${Math.round(timeSinceLastCheck/60000)}min)`);
         return null // Null indica que no se verificó por throttling
       }
       
@@ -99,7 +103,7 @@ const BackendService = {
   }
 }
 
-// Proveedor de autenticación con carga lazy de componentes pesados
+// Proveedor de autenticación con verificaciones optimizadas
 export function AuthProvider({ children }) {
   // Estado principal de autenticación
   const [isLoading, setIsLoading] = useState(true)
@@ -130,7 +134,7 @@ export function AuthProvider({ children }) {
     return true
   }, [backendAvailable])
 
-  // Función para verificar estado de autenticación con mejor gestión de concurrencia
+  // CAMBIO CRÍTICO: Función para verificar estado de autenticación con throttling estricto
   const checkAuthStatus = useCallback(async (force = false) => {
     // Evitar verificaciones simultáneas
     if (checkInProgressRef.current && !force) {
@@ -138,12 +142,12 @@ export function AuthProvider({ children }) {
       return
     }
     
-    // Verificar throttling
+    // CAMBIO CRÍTICO: Verificar throttling estricto (20 minutos)
     const now = Date.now()
     const timeSinceLastCheck = now - lastCheckTimeRef.current
     
     if (!force && timeSinceLastCheck < BackendService.MIN_CHECK_INTERVAL) {
-      logAuth(`Verificación de autenticación throttled (última hace ${Math.round(timeSinceLastCheck/1000)}s)`);
+      logAuth(`Verificación de autenticación throttled (última hace ${Math.round(timeSinceLastCheck/60000)}min)`);
       return
     }
     
@@ -267,7 +271,7 @@ export function AuthProvider({ children }) {
           AuthCache.save({
             isValid: true,
             userId: response.user_id,
-            expiresIn: 15 // 15 minutos
+            expiresIn: 20 // 20 minutos
           })
         }
         
@@ -327,13 +331,13 @@ export function AuthProvider({ children }) {
     }
   }
   
-  // Cargar estado inicial desde caché al montar el componente - con carga rápida
+  // CAMBIO CRÍTICO: Cargar estado inicial desde caché sin verificaciones automáticas
   useEffect(() => {
     const initAuth = () => {
-      // CAMBIO CRÍTICO: Deshabilitar la carga inmediatamente para mostrar login
+      // Mostrar login inmediatamente sin bloquear
       setIsLoading(false);
       
-      // Verificar si hay una sesión en caché válida en segundo plano
+      // Verificar si hay una sesión en caché válida
       if (AuthCache.hasValidSession()) {
         logAuth('Inicializando con estado de autenticación en caché');
         const cachedAuth = AuthCache.get();
@@ -353,30 +357,31 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
-  // Verificar autenticación con backend con retraso adaptativo
+  // CAMBIO CRÍTICO: Verificar autenticación solo cada 20 minutos
   useEffect(() => {
     // Limpiar timeouts previos
     if (checkTimeoutRef.current) clearTimeout(checkTimeoutRef.current);
     if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
     
-    // Si ya estaba autenticado por caché, esperar más para verificar
-    // Si no, verificar más pronto
-    const initialDelay = isAuthenticated ? 60000 : 15000; // Aumentamos delay inicial a 1 minuto si está autenticado
-    
-    logAuth(`Programando verificación inicial de autenticación en ${initialDelay/1000}s`);
-    checkTimeoutRef.current = setTimeout(() => {
-      // Solo verificar si estamos autenticados
-      if (isAuthenticated) {
-        checkAuthStatus();
-        
-        // Configurar verificación periódica (10 minutos)
-        checkIntervalRef.current = setInterval(() => {
-          if (isAuthenticated) {
-            checkAuthStatus();
-          }
-        }, 10 * 60 * 1000); // Aumentamos a 10 minutos para reducir verificaciones
-      }
-    }, initialDelay);
+    // Solo verificar si estamos autenticados
+    if (isAuthenticated) {
+      // CAMBIO CRÍTICO: Verificación inicial después de 20 minutos
+      const initialDelay = 20 * 60 * 1000; // 20 minutos
+      
+      logAuth(`Programando verificación inicial de autenticación en ${initialDelay/60000}min`);
+      checkTimeoutRef.current = setTimeout(() => {
+        if (isAuthenticated) {
+          checkAuthStatus();
+          
+          // CAMBIO CRÍTICO: Configurar verificación periódica cada 20 minutos
+          checkIntervalRef.current = setInterval(() => {
+            if (isAuthenticated) {
+              checkAuthStatus();
+            }
+          }, 20 * 60 * 1000); // 20 minutos
+        }
+      }, initialDelay);
+    }
     
     // Limpieza al desmontar
     return () => {
