@@ -32,10 +32,19 @@ const BriefDashboard = () => {
   const [isLoadingBriefs, setIsLoadingBriefs] = useState(true);
   const [briefStats, setBriefStats] = useState({
     total: 0,
-    pending: 0,
-    approved: 0,
-    completed: 0,
-    cancelled: 0
+    by_status: {
+      draft: 0,
+      pending: 0,
+      approved: 0,
+      processing: 0,
+      completed: 0,
+      cancelled: 0
+    },
+    by_priority: {},
+    by_origin: {},
+    vencidos: 0,
+    sin_presupuesto: 0,
+    total_presupuesto: 0
   });
   const [recentBriefs, setRecentBriefs] = useState([]);
   const [filteredBriefs, setFilteredBriefs] = useState([]);
@@ -53,16 +62,8 @@ const BriefDashboard = () => {
   const fetchStats = async () => {
     try {
       setIsLoadingStats(true);
-      const response = await briefService.getBriefStats();
-      // Handle different possible response structures
-      const stats = response.data || response;
-      setBriefStats({
-        total: stats.total || 0,
-        pending: stats.pending || 0,
-        approved: stats.approved || 0,
-        completed: stats.completed || 0,
-        cancelled: stats.cancelled || 0
-      });
+      const stats = await briefService.getBriefStats();
+      setBriefStats(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast({
@@ -79,9 +80,11 @@ const BriefDashboard = () => {
   const fetchRecentBriefs = async () => {
     try {
       setIsLoadingBriefs(true);
-      const response = await briefService.getRecentBriefs(10);
-      // Handle different possible response structures
-      const briefs = Array.isArray(response) ? response : (response.data || response.results || []);
+      const response = await briefService.getBriefs({ 
+        ordering: '-fecha_emision',
+        page_size: 10 
+      });
+      const briefs = response.results || [];
       setRecentBriefs(briefs);
       setFilteredBriefs(briefs);
     } catch (error) {
@@ -102,11 +105,15 @@ const BriefDashboard = () => {
       setIsLoadingBriefs(true);
       const params = {
         search: debouncedSearchTerm,
-        ...filters
+        estado: filters.status,
+        priority: filters.priority,
+        client: filters.client,
+        fecha_desde: filters.dateFrom,
+        fecha_hasta: filters.dateTo,
+        ordering: '-fecha_emision'
       };
-      const response = await briefService.searchBriefs(debouncedSearchTerm, filters);
-      // Handle different possible response structures
-      const briefs = Array.isArray(response) ? response : (response.data || response.results || []);
+      const response = await briefService.getBriefs(params);
+      const briefs = response.results || [];
       setFilteredBriefs(briefs);
     } catch (error) {
       console.error('Error searching briefs:', error);
@@ -224,7 +231,7 @@ const BriefDashboard = () => {
                   {isLoadingStats ? (
                     <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
                   ) : (
-                    <p className="text-2xl font-bold text-yellow-600">{briefStats.pending}</p>
+                    <p className="text-2xl font-bold text-yellow-600">{briefStats.by_status?.pending || 0}</p>
                   )}
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
@@ -240,7 +247,7 @@ const BriefDashboard = () => {
                   {isLoadingStats ? (
                     <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
                   ) : (
-                    <p className="text-2xl font-bold text-green-600">{briefStats.approved}</p>
+                    <p className="text-2xl font-bold text-green-600">{briefStats.by_status?.approved || 0}</p>
                   )}
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -256,7 +263,7 @@ const BriefDashboard = () => {
                   {isLoadingStats ? (
                     <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
                   ) : (
-                    <p className="text-2xl font-bold text-blue-600">{briefStats.completed}</p>
+                    <p className="text-2xl font-bold text-blue-600">{briefStats.by_status?.completed || 0}</p>
                   )}
                 </div>
                 <TrendingUp className="h-8 w-8 text-blue-600" />
@@ -272,7 +279,7 @@ const BriefDashboard = () => {
                   {isLoadingStats ? (
                     <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
                   ) : (
-                    <p className="text-2xl font-bold text-red-600">{briefStats.cancelled}</p>
+                    <p className="text-2xl font-bold text-red-600">{briefStats.by_status?.cancelled || 0}</p>
                   )}
                 </div>
                 <XCircle className="h-8 w-8 text-red-600" />
@@ -350,31 +357,31 @@ const BriefDashboard = () => {
                       <tr key={brief.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <Badge variant="outline" className="font-mono bg-blue-50 text-blue-800 border-blue-200">
-                            {brief.code || brief.codigo || `BRF-${brief.id}`}
+                            {brief.code}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 font-medium text-gray-900">{brief.title || brief.titulo || 'Sin título'}</td>
-                        <td className="py-3 px-4 text-gray-600">{brief.client || brief.cliente || brief.cliente_nombre || 'Sin cliente'}</td>
+                        <td className="py-3 px-4 font-medium text-gray-900">{brief.title}</td>
+                        <td className="py-3 px-4 text-gray-600">{brief.client_display || 'Sin cliente'}</td>
                         <td className="py-3 px-4">
-                          <Badge className={getPriorityColor(brief.priority || brief.prioridad || 'media')}>
-                            {(brief.priority || brief.prioridad || 'media').toUpperCase()}
+                          <Badge className={getPriorityColor(brief.priority)}>
+                            {brief.priority.toUpperCase()}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            {getStatusIcon(brief.status || brief.estado || 'pending')}
-                            <Badge className={getStatusColor(brief.status || brief.estado || 'pending')}>
-                              {(brief.status || brief.estado || 'pending').toUpperCase()}
+                            {getStatusIcon(brief.estado)}
+                            <Badge className={getStatusColor(brief.estado)}>
+                              {brief.estado.toUpperCase()}
                             </Badge>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          {brief.operator || brief.operador || brief.usuario_nombre || 'Sin asignar'}
+                          {brief.operador_display || 'Sin asignar'}
                         </td>
                         <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {new Date(brief.createdAt || brief.created_at || brief.fecha_creacion).toLocaleDateString('es-ES')}
+                          {new Date(brief.fecha_emision).toLocaleDateString('es-ES')}
                         </td>
                         <td className="py-3 px-4 text-center">
                           <Button 

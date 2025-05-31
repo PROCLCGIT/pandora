@@ -283,7 +283,7 @@ export default function ConfiguracionPage() {
                           <SelectItem value="-">Guión (-)</SelectItem>
                           <SelectItem value="_">Guión bajo (_)</SelectItem>
                           <SelectItem value=".">Punto (.)</SelectItem>
-                          <SelectItem value="">(Sin separador)</SelectItem>
+                          <SelectItem value="none">(Sin separador)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -359,7 +359,7 @@ export default function ConfiguracionPage() {
                           <SelectItem value="-">Guión (-)</SelectItem>
                           <SelectItem value="_">Guión bajo (_)</SelectItem>
                           <SelectItem value=".">Punto (.)</SelectItem>
-                          <SelectItem value="">(Sin separador)</SelectItem>
+                          <SelectItem value="none">(Sin separador)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

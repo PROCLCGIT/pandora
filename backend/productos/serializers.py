@@ -240,6 +240,7 @@ class ProductoDisponibleSerializer(serializers.ModelSerializer):
     marca_nombre = serializers.CharField(source='id_marca.nombre', read_only=True)
     unidad_nombre = serializers.CharField(source='unidad_presentacion.nombre', read_only=True)
     procedencia_nombre = serializers.CharField(source='procedencia.nombre', read_only=True)
+    especialidad_nombre = serializers.CharField(source='id_especialidad.nombre', read_only=True)
     imagenes = ImagenProductoDisponibleSerializer(many=True, read_only=True)
     # Add nested unidad_presentacion object
     unidad_presentacion = UnidadSerializer(read_only=True)

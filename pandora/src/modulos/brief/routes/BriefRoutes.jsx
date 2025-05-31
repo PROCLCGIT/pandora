@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import BriefDashboard from '../pages/BriefDashboard';
 import BriefDetailPage from '../pages/BriefDetailPage';
 import NuevoBriefPage from '../pages/NuevoBriefPage';
+import TestNuevoBriefDebug from '../pages/TestNuevoBriefDebug';
 
 // Componente de loading
 const PageLoader = () => (
@@ -32,6 +33,9 @@ const BriefRoutes = () => {
         
         {/* Ruta para crear nuevo brief */}
         <Route path="/nuevo" element={<NuevoBriefPage />} />
+        
+        {/* Ruta de debug temporal */}
+        <Route path="/debug" element={<TestNuevoBriefDebug />} />
         
         {/* Ruta de edición de brief */}
         <Route path="/editar/:briefId" element={<NuevoBriefPage />} />

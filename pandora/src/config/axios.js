@@ -1,19 +1,23 @@
 // /Users/clc/Ws/Appclc/pandora/src/config/axios.js
 
 import axios from 'axios';
+import { getAuthConfig, authLogger, AUTH_EVENTS } from './auth';
+
+// Obtener configuración de autenticación
+const authConfig = getAuthConfig();
 
 // Constantes para configuración global
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const TOKEN_REFRESH_URL = '/auth/refresh/';  // Nuevo endpoint para refrescar token con cookies
-const TOKEN_VERIFY_URL = '/auth/verify/';    // Endpoint para verificar token
-const TOKEN_LOGOUT_URL = '/auth/logout/';    // Endpoint para cerrar sesión
-const LOGOUT_PATH = '/login';
+const TOKEN_REFRESH_URL = authConfig.REFRESH_ENDPOINT;
+const TOKEN_VERIFY_URL = authConfig.VERIFY_ENDPOINT;
+const TOKEN_LOGOUT_URL = authConfig.LOGOUT_ENDPOINT;
+const LOGOUT_PATH = authConfig.LOGIN_ROUTE;
 
 // Variables para control de refresco de tokens
 let isRefreshing = false;
 let failedQueue = [];
 let lastRefreshAttempt = 0;
-const REFRESH_THROTTLE_MS = 10000; // 10 segundos entre intentos de refresh
+const REFRESH_THROTTLE_MS = authConfig.TOKEN_REFRESH_INTERVAL / 2; // Throttle basado en configuración
 
 // Función para procesar la cola de peticiones pendientes
 const processQueue = (error, token = null) => {
@@ -91,7 +95,9 @@ axiosInstance.interceptors.request.use(
     config.headers = config.headers || {};
     
     // DEBUG: Log para todas las peticiones
-    console.debug(`🔄 Request to ${config.url}`)
+    if (authConfig.LOG_AUTH_EVENTS) {
+      authLogger.log('api:request', { url: config.url, method: config.method });
+    }
 
     // Si enviamos FormData, eliminamos Content-Type 'application/json'
     // para que el navegador establezca multipart/form-data con boundary
@@ -162,7 +168,7 @@ axiosInstance.interceptors.response.use(
       
       try {
         // Intentar refrescar el token
-        console.log('Intentando refrescar token tras error 401...');
+        authLogger.log(AUTH_EVENTS.TOKEN_REFRESH, { trigger: 'unauthorized_request' });
         const refreshResponse = await refreshToken();
         
         if (refreshResponse.status === 200) {
@@ -173,13 +179,13 @@ axiosInstance.interceptors.response.use(
           processQueue(null, 'Token refrescado');
           
           // Reintentar la solicitud original
-          console.log('Token refrescado exitosamente, reintentando solicitud original');
+          authLogger.log(AUTH_EVENTS.TOKEN_REFRESH, { status: 'success', retry: 'pending' });
           return axiosInstance(originalRequest);
         } else {
           throw new Error('Fallo al refrescar token');
         }
       } catch (refreshError) {
-        console.error('Error al refrescar token:', refreshError);
+        authLogger.error(AUTH_EVENTS.TOKEN_EXPIRED, refreshError);
         
         // Notificar a las solicitudes en cola
         processQueue(refreshError, null);

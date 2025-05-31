@@ -528,7 +528,8 @@ class ProductoDisponible(models.Model):
         ordering = ['nombre']
 
     def __str__(self):
-        return f"{self.code} - {self.nombre} ({self.id_marca.nombre})"
+        marca_nombre = self.id_marca.nombre if self.id_marca else "Sin marca"
+        return f"{self.code} - {self.nombre} ({marca_nombre})"
 
 class ImagenProductoDisponible(models.Model):
     """

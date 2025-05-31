@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Clientes API</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test de API de Clientes</h1>
+    <button onclick="testDirectFetch()">Test Fetch Directo</button>
+    <button onclick="testAxios()">Test con Axios</button>
+    <button onclick="testWithAuth()">Test con Auth</button>
+    
+    <div id="results" style="margin-top: 20px; padding: 20px; background: #f0f0f0;">
+        <h3>Resultados:</h3>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const output = document.getElementById('output');
+        
+        async function testDirectFetch() {
+            output.textContent = 'Probando fetch directo...\n';
+            try {
+                const response = await fetch(`${API_BASE}/directorio/clientes/`, {
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+                output.textContent += `Status: ${response.status}\n`;
+                output.textContent += `Response: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                output.textContent += `Error: ${error.message}\n`;
+                output.textContent += `Detalle: ${JSON.stringify(error, null, 2)}`;
+            }
+        }
+        
+        async function testAxios() {
+            output.textContent = 'Probando con axios...\n';
+            try {
+                const response = await axios.get(`${API_BASE}/directorio/clientes/`, {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                output.textContent += `Status: ${response.status}\n`;
+                output.textContent += `Response: ${JSON.stringify(response.data, null, 2)}`;
+            } catch (error) {
+                output.textContent += `Error: ${error.message}\n`;
+                if (error.response) {
+                    output.textContent += `Response Status: ${error.response.status}\n`;
+                    output.textContent += `Response Data: ${JSON.stringify(error.response.data, null, 2)}`;
+                }
+            }
+        }
+        
+        async function testWithAuth() {
+            output.textContent = 'Probando con autenticación...\n';
+            
+            // Primero obtener token de autenticación si es necesario
+            // Esto depende de cómo esté configurada tu autenticación
+            
+            try {
+                // Verificar si ya hay una sesión activa
+                const verifyResponse = await axios.post(`${API_BASE}/auth/verify/`, {}, {
+                    withCredentials: true
+                });
+                
+                output.textContent += `Auth verificada: ${verifyResponse.status}\n\n`;
+                
+                // Ahora intentar obtener clientes
+                const clientesResponse = await axios.get(`${API_BASE}/directorio/clientes/`, {
+                    withCredentials: true,
+                    params: {
+                        page_size: 10,
+                        activo: true
+                    }
+                });
+                
+                output.textContent += `Clientes Status: ${clientesResponse.status}\n`;
+                output.textContent += `Total clientes: ${clientesResponse.data.count || clientesResponse.data.length}\n`;
+                output.textContent += `Clientes: ${JSON.stringify(clientesResponse.data, null, 2)}`;
+                
+            } catch (error) {
+                output.textContent += `Error: ${error.message}\n`;
+                if (error.response) {
+                    output.textContent += `Response Status: ${error.response.status}\n`;
+                    output.textContent += `Response Data: ${JSON.stringify(error.response.data, null, 2)}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

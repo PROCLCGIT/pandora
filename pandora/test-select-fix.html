@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Select Component Fix</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+        .select { width: 100%; padding: 8px; margin: 10px 0; }
+        .log { background: #333; color: #fff; padding: 10px; border-radius: 5px; margin-top: 20px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Simulated choices data
+        const mockChoices = {
+            origin: [
+                { value: "telefono", label: "Telefónico" },
+                { value: "email", label: "Correo Electrónico" },
+                { value: "presencial", label: "Visita Presencial" },
+                { value: "whatsapp", label: "WhatsApp" }
+            ],
+            priority: [
+                { value: "baja", label: "Baja" },
+                { value: "media", label: "Media" },
+                { value: "alta", label: "Alta" },
+                { value: "urgente", label: "Urgente" }
+            ],
+            forma_pago: [
+                { value: "contado", label: "Contado" },
+                { value: "credito_30", label: "Crédito 30 días" },
+                { value: "transferencia", label: "Transferencia" }
+            ]
+        };
+
+        function TestApp() {
+            const [choices, setChoices] = useState({});
+            const [selectedValues, setSelectedValues] = useState({
+                origin: '',
+                priority: 'media', // Default value like in NuevoBriefPage
+                forma_pago: ''
+            });
+            const [logs, setLogs] = useState([]);
+
+            const addLog = (message, type = 'info') => {
+                const timestamp = new Date().toLocaleTimeString();
+                setLogs(prev => [...prev, { timestamp, message, type }]);
+                console.log(`[${timestamp}] ${message}`);
+            };
+
+            useEffect(() => {
+                addLog('Component mounted', 'success');
+                loadChoices();
+            }, []);
+
+            const loadChoices = () => {
+                addLog('Loading choices...', 'info');
+                
+                // Simulate async loading
+                setTimeout(() => {
+                    addLog('Choices received from API', 'success');
+                    addLog(`Origin choices: ${mockChoices.origin.length} items`, 'info');
+                    addLog(`Priority choices: ${mockChoices.priority.length} items`, 'info');
+                    addLog(`Forma pago choices: ${mockChoices.forma_pago.length} items`, 'info');
+                    
+                    setChoices(mockChoices);
+                    addLog('Choices set in state', 'success');
+                }, 500);
+            };
+
+            const handleChange = (field, value) => {
+                addLog(`${field} changed to: "${value}"`, 'warning');
+                setSelectedValues(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            return (
+                <div>
+                    <h1>Test Select Component Fix</h1>
+                    
+                    <div className="section">
+                        <h3>Current State</h3>
+                        <p><strong>Choices loaded:</strong> {Object.keys(choices).length > 0 ? 'Yes' : 'No'}</p>
+                        <p><strong>Selected values:</strong> {JSON.stringify(selectedValues)}</p>
+                    </div>
+
+                    <div className="section">
+                        <h3>Select Components</h3>
+                        
+                        <label>Origin (should show {choices.origin?.length || 0} options):</label>
+                        <select 
+                            className="select" 
+                            value={selectedValues.origin}
+                            onChange={(e) => handleChange('origin', e.target.value)}
+                        >
+                            <option value="">¿Cómo nos contactó?</option>
+                            {choices.origin?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            )) || <option disabled>Loading...</option>}
+                        </select>
+
+                        <label>Priority (should show {choices.priority?.length || 0} options):</label>
+                        <select 
+                            className="select" 
+                            value={selectedValues.priority}
+                            onChange={(e) => handleChange('priority', e.target.value)}
+                        >
+                            <option value="">Seleccionar prioridad</option>
+                            {choices.priority?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            )) || <option disabled>Loading...</option>}
+                        </select>
+
+                        <label>Forma de Pago (should show {choices.forma_pago?.length || 0} options):</label>
+                        <select 
+                            className="select" 
+                            value={selectedValues.forma_pago}
+                            onChange={(e) => handleChange('forma_pago', e.target.value)}
+                        >
+                            <option value="">Seleccionar forma de pago</option>
+                            {choices.forma_pago?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            )) || <option disabled>Loading...</option>}
+                        </select>
+                    </div>
+
+                    <div className="section">
+                        <h3>Debug Info</h3>
+                        <div>
+                            <h4>Choices Structure:</h4>
+                            <pre style={{background: '#f0f0f0', padding: '10px', borderRadius: '5px'}}>
+                                {JSON.stringify(choices, null, 2)}
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div className="log">
+                        <h4>Event Log:</h4>
+                        {logs.map((log, index) => (
+                            <div key={index} className={log.type}>
+                                [{log.timestamp}] {log.message}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<TestApp />);
+    </script>
+</body>
+</html>

@@ -80,7 +80,7 @@ class DocumentoProductoOfertadoAdmin(admin.ModelAdmin):
 
 @admin.register(ProductoDisponible)
 class ProductoDisponibleAdmin(admin.ModelAdmin):
-    list_display = ('code', 'nombre', 'id_marca', 'modelo', 'is_active', 'created_at', 'updated_at')
+    list_display = ('code', 'nombre', 'get_marca_nombre', 'modelo', 'is_active', 'created_at', 'updated_at')
     search_fields = ('code', 'nombre', 'modelo', 'referencia')
     list_filter = ('is_active', 'id_marca', 'procedencia', 'created_at')
     readonly_fields = ('created_at', 'updated_at', 'created_by', 'updated_by')
@@ -100,6 +100,12 @@ class ProductoDisponibleAdmin(admin.ModelAdmin):
             'fields': ('created_by', 'updated_by', 'created_at', 'updated_at')
         }),
     )
+
+    def get_marca_nombre(self, obj):
+        """Safely display marca name, handling None values"""
+        return obj.id_marca.nombre if obj.id_marca else "Sin marca"
+    get_marca_nombre.short_description = 'Marca'
+    get_marca_nombre.admin_order_field = 'id_marca__nombre'
 
     def save_model(self, request, obj, form, change):
         if not obj.pk:

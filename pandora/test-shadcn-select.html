@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Shadcn Select Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+        .code { background: #333; color: #fff; padding: 10px; border-radius: 5px; font-family: monospace; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Debug Shadcn Select Component Issue</h1>
+    
+    <div class="test-section">
+        <h2>Issue Summary</h2>
+        <p>The Select components in NuevoBriefPage are not showing the dropdown options even though:</p>
+        <ul>
+            <li class="success">✓ API returns correct data (7 origin options, 5 priority options, etc.)</li>
+            <li class="success">✓ Data is correctly stored in state</li>
+            <li class="success">✓ Console logs show the data is available during render</li>
+            <li class="error">✗ Dropdown options are not visible when clicking the Select</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Possible Causes</h2>
+        <ol>
+            <li><strong>React State Update Issue:</strong> The Select component might not be re-rendering when choices update</li>
+            <li><strong>Radix UI Portal Issue:</strong> The SelectContent uses a Portal which might have z-index or rendering issues</li>
+            <li><strong>Initial Empty State:</strong> Starting with empty arrays might cause the Select to not update properly</li>
+            <li><strong>Component Key Issue:</strong> The Select might need a key prop to force re-render when data changes</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Solution Attempts</h2>
+        <div class="code">
+// Solution 1: Add key prop to force re-render
+&lt;Select 
+  key={choices.origin?.length || 'empty'} 
+  value={watch('origin')} 
+  onValueChange={(value) => setValue('origin', value)}
+&gt;
+
+// Solution 2: Conditional rendering
+{choices.origin && choices.origin.length > 0 && (
+  &lt;Select ...&gt;
+    ...
+  &lt;/Select&gt;
+)}
+
+// Solution 3: Use separate component with proper props
+&lt;OriginSelect 
+  choices={choices.origin || []}
+  value={watch('origin')}
+  onChange={(value) => setValue('origin', value)}
+/&gt;
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Recommended Fix</h2>
+        <p>The most reliable solution is to add a key prop to the Select component that changes when the choices data updates:</p>
+        <div class="code">
+&lt;Select 
+  key={`origin-${choices.origin?.length || 0}`}
+  value={watch('origin')}
+  onValueChange={(value) => setValue('origin', value)}
+&gt;
+  &lt;SelectTrigger&gt;
+    &lt;SelectValue placeholder="¿Cómo nos contactó?" /&gt;
+  &lt;/SelectTrigger&gt;
+  &lt;SelectContent&gt;
+    {choices.origin?.map((option) => (
+      &lt;SelectItem key={option.value} value={option.value}&gt;
+        {option.label}
+      &lt;/SelectItem&gt;
+    ))}
+  &lt;/SelectContent&gt;
+&lt;/Select&gt;
+        </div>
+    </div>
+</body>
+</html>

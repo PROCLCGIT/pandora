@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Brief Form - Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+        .dropdown { width: 100%; padding: 8px; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #333; color: #fff; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Brief Form - Choices Loading</h1>
+    
+    <div class="section">
+        <h3>1. Test Direct API Call</h3>
+        <button onclick="testDirectAPI()">Test Choices API</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Test Form Dropdowns</h3>
+        
+        <label>Origen:</label>
+        <select id="origin-select" class="dropdown">
+            <option value="">Cargando...</option>
+        </select>
+        
+        <label>Prioridad:</label>
+        <select id="priority-select" class="dropdown">
+            <option value="">Cargando...</option>
+        </select>
+        
+        <label>Forma de Pago:</label>
+        <select id="forma-pago-select" class="dropdown">
+            <option value="">Cargando...</option>
+        </select>
+        
+        <label>Tiempo de Entrega (días):</label>
+        <input type="number" id="tiempo-entrega" class="dropdown" value="30">
+    </div>
+
+    <div class="section">
+        <h3>3. Debug Console</h3>
+        <pre id="debug-console"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const debugLog = document.getElementById('debug-console');
+        
+        // Helper para log
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            debugLog.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            console.log(message);
+        }
+        
+        // Test directo de API
+        async function testDirectAPI() {
+            log('Iniciando test de API...', 'info');
+            const resultDiv = document.getElementById('api-result');
+            
+            try {
+                const response = await axios.get(`${API_BASE}/brief/briefs/choices/`);
+                
+                log(`Status: ${response.status}`, 'success');
+                log(`Datos recibidos: ${JSON.stringify(response.data, null, 2)}`, 'info');
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API funcionando correctamente</p>
+                    <ul>
+                        <li>Orígenes: ${response.data.origin?.length || 0} opciones</li>
+                        <li>Prioridades: ${response.data.priority?.length || 0} opciones</li>
+                        <li>Formas de pago: ${response.data.forma_pago?.length || 0} opciones</li>
+                        <li>Destinos: ${response.data.destino?.length || 0} opciones</li>
+                        <li>Estados: ${response.data.status?.length || 0} opciones</li>
+                    </ul>
+                `;
+                
+                // Poblar dropdowns
+                populateDropdowns(response.data);
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Poblar dropdowns
+        function populateDropdowns(choices) {
+            log('Poblando dropdowns...', 'info');
+            
+            // Origen
+            const originSelect = document.getElementById('origin-select');
+            originSelect.innerHTML = '<option value="">Seleccionar...</option>';
+            if (choices.origin) {
+                choices.origin.forEach(opt => {
+                    originSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+                });
+                log(`✅ Origen: ${choices.origin.length} opciones cargadas`, 'success');
+            } else {
+                log('❌ No se encontraron opciones de origen', 'error');
+            }
+            
+            // Prioridad
+            const prioritySelect = document.getElementById('priority-select');
+            prioritySelect.innerHTML = '<option value="">Seleccionar...</option>';
+            if (choices.priority) {
+                choices.priority.forEach(opt => {
+                    prioritySelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+                });
+                log(`✅ Prioridad: ${choices.priority.length} opciones cargadas`, 'success');
+            } else {
+                log('❌ No se encontraron opciones de prioridad', 'error');
+            }
+            
+            // Forma de pago
+            const formaSelect = document.getElementById('forma-pago-select');
+            formaSelect.innerHTML = '<option value="">Seleccionar...</option>';
+            if (choices.forma_pago) {
+                choices.forma_pago.forEach(opt => {
+                    formaSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+                });
+                log(`✅ Forma de pago: ${choices.forma_pago.length} opciones cargadas`, 'success');
+            } else {
+                log('❌ No se encontraron opciones de forma de pago', 'error');
+            }
+        }
+        
+        // Test con axios configurado como en React
+        async function testWithAxiosConfig() {
+            log('Testing con configuración axios similar a React...', 'info');
+            
+            // Simular configuración de axios de React
+            const axiosInstance = axios.create({
+                baseURL: API_BASE,
+                timeout: 30000,
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }
+            });
+            
+            try {
+                const response = await axiosInstance.get('/brief/briefs/choices/');
+                log('✅ Axios configurado funciona correctamente', 'success');
+                return response.data;
+            } catch (error) {
+                log(`❌ Error con axios configurado: ${error.message}`, 'error');
+                if (error.response) {
+                    log(`Status: ${error.response.status}`, 'error');
+                    log(`Data: ${JSON.stringify(error.response.data)}`, 'error');
+                }
+                throw error;
+            }
+        }
+        
+        // Simular carga como en React
+        async function simulateReactLoad() {
+            log('=== Simulando carga como en React ===', 'info');
+            
+            const choices = {};
+            
+            try {
+                log('1. Llamando briefService.getBriefChoices()...', 'info');
+                const choicesRes = await testWithAxiosConfig();
+                log('Choices cargados:', 'success');
+                log(JSON.stringify(choicesRes, null, 2), 'info');
+                
+                // Verificar estructura
+                if (choicesRes.origin) {
+                    log(`✅ origin está presente con ${choicesRes.origin.length} items`, 'success');
+                } else {
+                    log('❌ origin NO está presente', 'error');
+                }
+                
+                if (choicesRes.priority) {
+                    log(`✅ priority está presente con ${choicesRes.priority.length} items`, 'success');
+                } else {
+                    log('❌ priority NO está presente', 'error');
+                }
+                
+                // Simular setChoices
+                Object.assign(choices, choicesRes);
+                log('2. Choices guardados en estado', 'success');
+                
+                // Verificar que se puede acceder
+                log(`3. Accediendo a choices.origin: ${choices.origin ? 'OK' : 'NULL'}`, 'info');
+                log(`4. Accediendo a choices.priority: ${choices.priority ? 'OK' : 'NULL'}`, 'info');
+                
+            } catch (error) {
+                log(`Error en simulación: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-cargar al inicio
+        window.onload = async function() {
+            log('=== Iniciando debug de Brief Form ===', 'info');
+            await testDirectAPI();
+            await simulateReactLoad();
+        };
+        
+        // Listeners para cambios
+        document.getElementById('origin-select').addEventListener('change', function(e) {
+            log(`Origen seleccionado: ${e.target.value}`, 'info');
+        });
+        
+        document.getElementById('priority-select').addEventListener('change', function(e) {
+            log(`Prioridad seleccionada: ${e.target.value}`, 'info');
+        });
+        
+        document.getElementById('forma-pago-select').addEventListener('change', function(e) {
+            log(`Forma de pago seleccionada: ${e.target.value}`, 'info');
+        });
+    </script>
+</body>
+</html>

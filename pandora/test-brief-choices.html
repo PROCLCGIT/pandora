@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Brief Choices</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test de Brief Choices API</h1>
+    
+    <div id="login-section">
+        <h3>1. Login (Necesario para cargar choices)</h3>
+        <input type="text" id="username" placeholder="Username" value="test_brief">
+        <input type="password" id="password" placeholder="Password" value="test123">
+        <button onclick="login()">Login</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div id="choices-section" style="margin-top: 20px;">
+        <h3>2. Cargar Brief Choices</h3>
+        <button onclick="loadChoices()">Cargar Choices</button>
+        <div id="choices-result"></div>
+    </div>
+
+    <div id="output" style="margin-top: 20px; padding: 20px; background: #f0f0f0;">
+        <h3>Resultados:</h3>
+        <pre id="output-text"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let authToken = null;
+        
+        // Configurar axios para usar cookies
+        axios.defaults.withCredentials = true;
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginResult = document.getElementById('login-result');
+            const output = document.getElementById('output-text');
+            
+            try {
+                output.textContent += 'Intentando login...\n';
+                
+                const response = await axios.post(`${API_BASE}/auth/login/`, {
+                    username: username,
+                    password: password
+                });
+                
+                loginResult.innerHTML = '<span style="color: green;">✓ Login exitoso</span>';
+                output.textContent += `Login exitoso: ${JSON.stringify(response.data, null, 2)}\n\n`;
+                
+            } catch (error) {
+                loginResult.innerHTML = '<span style="color: red;">✗ Error en login</span>';
+                output.textContent += `Error de login: ${error.message}\n`;
+                if (error.response) {
+                    output.textContent += `Response: ${JSON.stringify(error.response.data, null, 2)}\n\n`;
+                }
+            }
+        }
+        
+        async function loadChoices() {
+            const choicesResult = document.getElementById('choices-result');
+            const output = document.getElementById('output-text');
+            
+            try {
+                output.textContent += 'Cargando brief choices...\n';
+                
+                const response = await axios.get(`${API_BASE}/brief/briefs/choices/`);
+                
+                choicesResult.innerHTML = '<span style="color: green;">✓ Choices cargados</span>';
+                output.textContent += `Choices cargados exitosamente:\n${JSON.stringify(response.data, null, 2)}\n\n`;
+                
+                // Mostrar información específica
+                const choices = response.data;
+                output.textContent += `RESUMEN DE CHOICES:\n`;
+                output.textContent += `- Orígenes: ${choices.origin?.length || 0} opciones\n`;
+                output.textContent += `- Prioridades: ${choices.priority?.length || 0} opciones\n`;
+                output.textContent += `- Formas de pago: ${choices.forma_pago?.length || 0} opciones\n`;
+                output.textContent += `- Destinos: ${choices.destino?.length || 0} opciones\n`;
+                output.textContent += `- Estados: ${choices.status?.length || 0} opciones\n\n`;
+                
+            } catch (error) {
+                choicesResult.innerHTML = '<span style="color: red;">✗ Error cargando choices</span>';
+                output.textContent += `Error cargando choices: ${error.message}\n`;
+                if (error.response) {
+                    output.textContent += `Status: ${error.response.status}\n`;
+                    output.textContent += `Response: ${JSON.stringify(error.response.data, null, 2)}\n\n`;
+                }
+            }
+        }
+        
+        // Auto-test
+        window.onload = function() {
+            document.getElementById('output-text').textContent = 'Página cargada. Haz click en Login primero, luego en Cargar Choices.\n\n';
+        }
+    </script>
+</body>
+</html>

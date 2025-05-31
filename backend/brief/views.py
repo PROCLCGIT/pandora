@@ -6,7 +6,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django.db import transaction
-from .models import Brief, BriefItem, BriefHistory
+from .models import (
+    Brief, BriefItem, BriefHistory,
+    BriefOrigin, BriefPriority, BriefFormaPago, BriefDestino, BriefStatus
+)
 from .serializers import (
     BriefListSerializer,
     BriefDetailSerializer,
@@ -56,15 +59,15 @@ class BriefViewSet(viewsets.ModelViewSet):
             
         return queryset
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[])
     def choices(self, request):
         """Obtener las opciones disponibles para los campos choice"""
         return Response({
-            'origin': [{'value': k, 'label': v} for k, v in Brief.BriefOrigin.choices],
-            'priority': [{'value': k, 'label': v} for k, v in Brief.BriefPriority.choices],
-            'forma_pago': [{'value': k, 'label': v} for k, v in Brief.BriefFormaPago.choices],
-            'destino': [{'value': k, 'label': v} for k, v in Brief.BriefDestino.choices],
-            'status': [{'value': k, 'label': v} for k, v in Brief.BriefStatus.choices],
+            'origin': [{'value': k, 'label': v} for k, v in BriefOrigin.choices],
+            'priority': [{'value': k, 'label': v} for k, v in BriefPriority.choices],
+            'forma_pago': [{'value': k, 'label': v} for k, v in BriefFormaPago.choices],
+            'destino': [{'value': k, 'label': v} for k, v in BriefDestino.choices],
+            'status': [{'value': k, 'label': v} for k, v in BriefStatus.choices],
         })
     
     @action(detail=False, methods=['get'])
@@ -84,15 +87,15 @@ class BriefViewSet(viewsets.ModelViewSet):
         }
         
         # Por estado
-        for estado, _ in Brief.BriefStatus.choices:
+        for estado, _ in BriefStatus.choices:
             stats['by_status'][estado] = queryset.filter(estado=estado).count()
             
         # Por prioridad
-        for priority, _ in Brief.BriefPriority.choices:
+        for priority, _ in BriefPriority.choices:
             stats['by_priority'][priority] = queryset.filter(priority=priority).count()
             
         # Por origen
-        for origin, _ in Brief.BriefOrigin.choices:
+        for origin, _ in BriefOrigin.choices:
             stats['by_origin'][origin] = queryset.filter(origin=origin).count()
             
         # Briefs vencidos
@@ -119,7 +122,7 @@ class BriefViewSet(viewsets.ModelViewSet):
         new_status = request.data.get('status')
         reason = request.data.get('reason', '')
         
-        if new_status not in dict(Brief.BriefStatus.choices):
+        if new_status not in dict(BriefStatus.choices):
             return Response(
                 {'error': 'Estado inválido'},
                 status=status.HTTP_400_BAD_REQUEST

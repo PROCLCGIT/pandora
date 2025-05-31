@@ -85,7 +85,7 @@ export const deleteBrief = async (id) => {
 // Get brief statistics
 export const getBriefStats = async (params = {}) => {
   const queryString = buildQueryString(params);
-  const url = queryString ? `${API_BASE_URL}/stats/?${queryString}` : `${API_BASE_URL}/stats/`;
+  const url = queryString ? `${API_BASE_URL}/briefs/stats/?${queryString}` : `${API_BASE_URL}/briefs/stats/`;
   
   try {
     const response = await axios.get(url);
@@ -97,11 +97,11 @@ export const getBriefStats = async (params = {}) => {
 };
 
 // Change brief status
-export const changeBriefStatus = async (id, status, notes = '') => {
+export const changeBriefStatus = async (id, status, reason = '') => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/change-status/`, {
+    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/change_status/`, {
       status,
-      notes
+      reason
     });
     return response.data;
   } catch (error) {
@@ -136,7 +136,7 @@ export const getBriefHistory = async (id) => {
 // Get all items for a brief
 export const getBriefItems = async (briefId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/${briefId}/items/`);
+    const response = await axios.get(`${API_BASE_URL}/brief-items/?brief=${briefId}`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching items for brief ${briefId}:`, error);
@@ -145,66 +145,54 @@ export const getBriefItems = async (briefId) => {
 };
 
 // Get specific item
-export const getBriefItem = async (briefId, itemId) => {
+export const getBriefItem = async (itemId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/${briefId}/items/${itemId}/`);
+    const response = await axios.get(`${API_BASE_URL}/brief-items/${itemId}/`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching item ${itemId} for brief ${briefId}:`, error);
+    console.error(`Error fetching item ${itemId}:`, error);
     throw error;
   }
 };
 
 // Add item to brief
-export const addBriefItem = async (briefId, itemData) => {
+export const addBriefItem = async (itemData) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${briefId}/items/`, itemData);
+    const response = await axios.post(`${API_BASE_URL}/brief-items/`, itemData);
     return response.data;
   } catch (error) {
-    console.error(`Error adding item to brief ${briefId}:`, error);
+    console.error(`Error adding item to brief:`, error);
     throw error;
   }
 };
 
 // Update brief item
-export const updateBriefItem = async (briefId, itemId, itemData) => {
+export const updateBriefItem = async (itemId, itemData) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/briefs/${briefId}/items/${itemId}/`, itemData);
+    const response = await axios.put(`${API_BASE_URL}/brief-items/${itemId}/`, itemData);
     return response.data;
   } catch (error) {
-    console.error(`Error updating item ${itemId} for brief ${briefId}:`, error);
+    console.error(`Error updating item ${itemId}:`, error);
     throw error;
   }
 };
 
 // Delete brief item
-export const deleteBriefItem = async (briefId, itemId) => {
+export const deleteBriefItem = async (itemId) => {
   try {
-    const response = await axios.delete(`${API_BASE_URL}/briefs/${briefId}/items/${itemId}/`);
+    const response = await axios.delete(`${API_BASE_URL}/brief-items/${itemId}/`);
     return response.data;
   } catch (error) {
-    console.error(`Error deleting item ${itemId} from brief ${briefId}:`, error);
+    console.error(`Error deleting item ${itemId}:`, error);
     throw error;
   }
 };
 
-// Batch update brief items
-export const batchUpdateBriefItems = async (briefId, items) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${briefId}/items/batch-update/`, {
-      items
-    });
-    return response.data;
-  } catch (error) {
-    console.error(`Error batch updating items for brief ${briefId}:`, error);
-    throw error;
-  }
-};
 
 // Get choices for dropdowns
 export const getBriefChoices = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/choices/`);
+    const response = await axios.get(`${API_BASE_URL}/briefs/choices/`);
     return response.data;
   } catch (error) {
     console.error('Error fetching brief choices:', error);
@@ -212,198 +200,7 @@ export const getBriefChoices = async () => {
   }
 };
 
-// Get status choices
-export const getBriefStatusChoices = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/status-choices/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching brief status choices:', error);
-    throw error;
-  }
-};
 
-// Get priority choices
-export const getBriefPriorityChoices = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/priority-choices/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching brief priority choices:', error);
-    throw error;
-  }
-};
-
-// Export brief to PDF
-export const exportBriefToPDF = async (id) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/${id}/export-pdf/`, {
-      responseType: 'blob'
-    });
-    
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `brief-${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-    
-    return true;
-  } catch (error) {
-    console.error(`Error exporting brief ${id} to PDF:`, error);
-    throw error;
-  }
-};
-
-// Send brief by email
-export const sendBriefByEmail = async (id, emailData) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/send-email/`, emailData);
-    return response.data;
-  } catch (error) {
-    console.error(`Error sending brief ${id} by email:`, error);
-    throw error;
-  }
-};
-
-// Get brief templates
-export const getBriefTemplates = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/templates/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching brief templates:', error);
-    throw error;
-  }
-};
-
-// Create brief from template
-export const createBriefFromTemplate = async (templateId, briefData) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/templates/${templateId}/create-brief/`, briefData);
-    return response.data;
-  } catch (error) {
-    console.error(`Error creating brief from template ${templateId}:`, error);
-    throw error;
-  }
-};
-
-// Search briefs
-export const searchBriefs = async (searchTerm, filters = {}) => {
-  const params = {
-    search: searchTerm,
-    ...filters
-  };
-  
-  try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/search/`, { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error searching briefs:', error);
-    throw error;
-  }
-};
-
-// Get recent briefs
-export const getRecentBriefs = async (limit = 10) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/recent/`, {
-      params: { limit }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching recent briefs:', error);
-    throw error;
-  }
-};
-
-// Archive brief
-export const archiveBrief = async (id) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/archive/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error archiving brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Unarchive brief
-export const unarchiveBrief = async (id) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/unarchive/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error unarchiving brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Get brief comments
-export const getBriefComments = async (id) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/${id}/comments/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching comments for brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Add comment to brief
-export const addBriefComment = async (id, comment) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/comments/`, { comment });
-    return response.data;
-  } catch (error) {
-    console.error(`Error adding comment to brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Get brief attachments
-export const getBriefAttachments = async (id) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/briefs/${id}/attachments/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching attachments for brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Upload attachment to brief
-export const uploadBriefAttachment = async (id, file, description = '') => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('description', description);
-  
-  try {
-    const response = await axios.post(`${API_BASE_URL}/briefs/${id}/attachments/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error(`Error uploading attachment to brief ${id}:`, error);
-    throw error;
-  }
-};
-
-// Delete brief attachment
-export const deleteBriefAttachment = async (briefId, attachmentId) => {
-  try {
-    const response = await axios.delete(`${API_BASE_URL}/briefs/${briefId}/attachments/${attachmentId}/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error deleting attachment ${attachmentId} from brief ${briefId}:`, error);
-    throw error;
-  }
-};
 
 // Export all functions as default object for convenience
 export default {
@@ -422,21 +219,5 @@ export default {
   addBriefItem,
   updateBriefItem,
   deleteBriefItem,
-  batchUpdateBriefItems,
-  getBriefChoices,
-  getBriefStatusChoices,
-  getBriefPriorityChoices,
-  exportBriefToPDF,
-  sendBriefByEmail,
-  getBriefTemplates,
-  createBriefFromTemplate,
-  searchBriefs,
-  getRecentBriefs,
-  archiveBrief,
-  unarchiveBrief,
-  getBriefComments,
-  addBriefComment,
-  getBriefAttachments,
-  uploadBriefAttachment,
-  deleteBriefAttachment
+  getBriefChoices
 };

@@ -171,23 +171,61 @@ export default function AddProductoDisponiblePage() {
 
   // Manejar el envío del formulario
   const onSubmit = async (data) => {
+    console.log('🎯 onSubmit function called!');
+    console.log('🎯 isSubmitting state:', isSubmitting);
+    console.log('🎯 createMutation state:', {
+      isLoading: createMutation.isLoading,
+      isError: createMutation.isError,
+      error: createMutation.error
+    });
+    
     try {
+      console.log('=== SUBMIT PRODUCTO DISPONIBLE ===');
+      console.log('Form data received:', data);
+      console.log('Imagenes:', imagenes);
+      console.log('Documentos:', documentos);
+      
       // Preparar datos para API incluyendo imágenes y documentos
       const formData = new FormData();
       
       // Añadir campos básicos
       Object.keys(data).forEach(key => {
-        // No enviar campos null, undefined o vacíos
-        if (data[key] === null || data[key] === undefined || data[key] === '') {
-          return;
-        }
+        const value = data[key];
         
-        // Caso especial para id_producto_ofertado: no enviar si está vacío
-        if (key === 'id_producto_ofertado' && (data[key] === '' || data[key] === null)) {
-          return;
-        }
+        // Campos requeridos: siempre enviar aunque estén vacíos (el backend dará error de validación)
+        const requiredFields = ['code', 'nombre', 'id_categoria', 'modelo'];
         
-        formData.append(key, data[key]);
+        // Campos que pueden ser null pero deben enviarse si están definidos
+        const nullableFields = ['id_producto_ofertado', 'id_marca', 'unidad_presentacion', 'procedencia', 'id_especialidad'];
+        
+        if (requiredFields.includes(key)) {
+          // Campos requeridos: enviar siempre
+          const finalValue = value || '';
+          formData.append(key, finalValue);
+          console.log(`✓ Campo requerido añadido: ${key} = "${finalValue}"`);
+        } else if (nullableFields.includes(key)) {
+          // Campos nullable: enviar solo si tienen valor válido
+          // Tratar "none" como valor vacío (usado para evitar warnings en SelectItem)
+          if (value !== null && value !== undefined && value !== '' && value !== 'none') {
+            formData.append(key, value);
+            console.log(`✓ Campo nullable añadido: ${key} = "${value}"`);
+          } else {
+            console.log(`⚪ Campo nullable omitido: ${key} (valor: ${value})`);
+          }
+        } else {
+          // Otros campos: enviar si tienen valor
+          // Tratar "none" como valor vacío (usado para evitar warnings en SelectItem)
+          if (value !== null && value !== undefined && value !== '' && value !== 'none') {
+            formData.append(key, value);
+            console.log(`✓ Campo opcional añadido: ${key} = "${value}"`);
+          } else if (typeof value === 'number' || typeof value === 'boolean') {
+            // Números y booleanos siempre se envían
+            formData.append(key, value);
+            console.log(`✓ Campo numérico/booleano añadido: ${key} = ${value}`);
+          } else {
+            console.log(`⚪ Campo opcional omitido: ${key} (valor: ${value})`);
+          }
+        }
       });
       
       // Añadir imágenes en el formato esperado por el backend
@@ -227,14 +265,33 @@ export default function AddProductoDisponiblePage() {
         }
       }
       
+      // Log del FormData antes del envío
+      console.log('📤 FormData entries antes del envío:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+      
       // Enviar datos al servidor
+      console.log(`🚀 Enviando ${isEditing ? 'UPDATE' : 'CREATE'} request...`);
       if (isEditing) {
         await updateMutation.mutateAsync({ id, data: formData });
       } else {
         await createMutation.mutateAsync(formData);
       }
+      
+      console.log('✅ Producto guardado exitosamente');
+      
     } catch (error) {
-      console.error('Error en el formulario:', error);
+      console.error('❌ Error en el formulario:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
     }
   };
 
@@ -440,7 +497,6 @@ export default function AddProductoDisponiblePage() {
             imagenes={imagenes}
             documentos={documentos}
             onCancel={handleCancel}
-            onSubmit={handleSubmit(onSubmit)}
           />
         </form>
       </div>

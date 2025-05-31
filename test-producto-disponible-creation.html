@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Producto Disponible Creation</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 5px; }
+        button { padding: 10px 20px; margin: 10px 5px; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Test Producto Disponible Creation</h1>
+    
+    <form id="productoForm">
+        <div class="form-group">
+            <label>Código:</label>
+            <input type="text" id="code" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" id="nombre" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Modelo:</label>
+            <input type="text" id="modelo">
+        </div>
+        
+        <div class="form-group">
+            <label>Categoría ID:</label>
+            <input type="number" id="id_categoria" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Producto Ofertado ID (opcional):</label>
+            <input type="number" id="id_producto_ofertado">
+        </div>
+        
+        <div class="form-group">
+            <label>Marca ID (opcional):</label>
+            <input type="number" id="id_marca">
+        </div>
+        
+        <div class="form-group">
+            <label>Precio Venta Privado:</label>
+            <input type="number" step="0.01" id="precio_venta_privado" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label>Imagen (opcional):</label>
+            <input type="file" id="imagen" accept="image/*">
+        </div>
+        
+        <button type="button" onclick="testCreate()">Crear Producto Disponible</button>
+        <button type="button" onclick="clearLog()">Limpiar Log</button>
+    </form>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const logElement = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span><br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+
+        async function testCreate() {
+            try {
+                log('=== Iniciando test de creación de producto disponible ===', 'info');
+                
+                // Recopilar datos del formulario
+                const formData = new FormData();
+                
+                // Campos básicos
+                const code = document.getElementById('code').value;
+                const nombre = document.getElementById('nombre').value;
+                const modelo = document.getElementById('modelo').value;
+                const id_categoria = document.getElementById('id_categoria').value;
+                const id_producto_ofertado = document.getElementById('id_producto_ofertado').value;
+                const id_marca = document.getElementById('id_marca').value;
+                const precio_venta_privado = document.getElementById('precio_venta_privado').value;
+                
+                // Validar campos requeridos
+                if (!code || !nombre || !id_categoria) {
+                    log('Error: Faltan campos requeridos (código, nombre, categoría)', 'error');
+                    return;
+                }
+                
+                // Añadir datos al FormData
+                formData.append('code', code);
+                formData.append('nombre', nombre);
+                formData.append('id_categoria', id_categoria);
+                formData.append('precio_venta_privado', precio_venta_privado || '0');
+                formData.append('is_active', 'true');
+                
+                if (modelo) formData.append('modelo', modelo);
+                if (id_producto_ofertado) formData.append('id_producto_ofertado', id_producto_ofertado);
+                if (id_marca) formData.append('id_marca', id_marca);
+                
+                // Añadir imagen si existe
+                const imagenFile = document.getElementById('imagen').files[0];
+                if (imagenFile) {
+                    formData.append('uploaded_images', imagenFile);
+                    formData.append('image_descriptions', 'Imagen de prueba');
+                    formData.append('image_is_primary', 'true');
+                    formData.append('image_orden', '0');
+                    log(`Imagen añadida: ${imagenFile.name}`, 'info');
+                }
+                
+                // Log de datos que se enviarán
+                log('Datos que se enviarán:', 'info');
+                for (let [key, value] of formData.entries()) {
+                    if (value instanceof File) {
+                        log(`  ${key}: [File] ${value.name} (${value.size} bytes)`, 'info');
+                    } else {
+                        log(`  ${key}: ${value}`, 'info');
+                    }
+                }
+                
+                // Configurar axios
+                const axiosConfig = {
+                    headers: {
+                        // No establecer Content-Type, que axios lo haga automáticamente
+                    },
+                    withCredentials: true
+                };
+                
+                log('Enviando request POST a /api/productos/productos-disponibles/', 'info');
+                
+                // Enviar request
+                const response = await axios.post(
+                    `${API_BASE}/productos/productos-disponibles/`,
+                    formData,
+                    axiosConfig
+                );
+                
+                log(`✅ Producto creado exitosamente!`, 'success');
+                log(`Status: ${response.status}`, 'success');
+                log(`ID del producto: ${response.data.id}`, 'success');
+                log(`Datos del producto:`, 'success');
+                log(JSON.stringify(response.data, null, 2), 'success');
+                
+            } catch (error) {
+                log(`❌ Error al crear producto:`, 'error');
+                log(`Status: ${error.response?.status || 'No status'}`, 'error');
+                log(`Message: ${error.message}`, 'error');
+                
+                if (error.response?.data) {
+                    log(`Error data:`, 'error');
+                    log(JSON.stringify(error.response.data, null, 2), 'error');
+                }
+                
+                if (error.response?.headers) {
+                    log(`Response headers:`, 'error');
+                    log(JSON.stringify(error.response.headers, null, 2), 'error');
+                }
+                
+                console.error('Error completo:', error);
+            }
+        }
+
+        // Auto-llenar algunos campos para testing
+        window.onload = function() {
+            document.getElementById('code').value = 'TEST-' + Date.now();
+            document.getElementById('nombre').value = 'Producto de Prueba';
+            document.getElementById('modelo').value = 'Modelo Test';
+            document.getElementById('id_categoria').value = '1'; // Asumiendo que existe categoría ID 1
+            document.getElementById('precio_venta_privado').value = '100.00';
+            
+            log('Formulario auto-llenado para testing', 'info');
+            log('Modifica los valores según tu base de datos', 'info');
+        };
+    </script>
+</body>
+</html>

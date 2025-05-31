@@ -840,7 +840,8 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
     
     def get_serializer_class(self):
         """Retorna el serializer apropiado según la acción"""
-        if self.action == 'retrieve' or self.action == 'listado_detallado':
+        action = getattr(self, 'action', None)
+        if action == 'retrieve' or action == 'listado_detallado':
             return ProductoDisponibleDetalladoSerializer
         return ProductoDisponibleSerializer
     
@@ -873,6 +874,31 @@ class ProductoDisponibleViewSet(ProductsBaseCrudViewSet):
         try:
             print(f"🔄 CREATE PRODUCTO DISPONIBLE REQUEST RECEIVED")
             print(f"🔄 REQUEST CONTENT TYPE: {request.content_type}")
+            
+            # Asegurar que request.data esté disponible
+            # En algunos casos (especialmente con multipart/form-data), request.data puede no existir
+            if not hasattr(request, 'data'):
+                print("⚠️ request.data no disponible, creando desde request.POST")
+                # Convertir QueryDict a dict normal extrayendo solo el primer valor de cada lista
+                # Esto es necesario porque request.POST retorna listas para cada campo
+                data_dict = {}
+                for key, value_list in request.POST.lists():
+                    if value_list:
+                        data_dict[key] = value_list[0]  # Tomar solo el primer valor
+                    else:
+                        data_dict[key] = ''
+                request.data = data_dict
+            
+            # Helper function to safely update request.data
+            def update_request_data(key, value):
+                if hasattr(request.data, '_mutable'):
+                    original_mutable = request.data._mutable
+                    request.data._mutable = True
+                    request.data[key] = value
+                    request.data._mutable = original_mutable
+                else:
+                    request.data[key] = value
+            
             print(f"🔄 REQUEST DATA KEYS: {request.data.keys()}")
             print(f"🔄 REQUEST FILES KEYS: {request.FILES.keys()}")
             

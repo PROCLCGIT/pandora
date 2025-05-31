@@ -122,7 +122,7 @@ export function GeneralInfoSection({
                 <SelectValue placeholder="Selecciona un producto ofertado" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                <SelectItem value="">
+                <SelectItem value="none">
                   <span className="text-gray-500">Sin relación</span>
                 </SelectItem>
                 {productosOfertadosData?.results?.map(producto => (
@@ -330,7 +330,7 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona una unidad" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="">
+                    <SelectItem value="none">
                       <span className="text-gray-500">Unidad no definida</span>
                     </SelectItem>
                     {unidadesData?.results?.map(unidad => (
@@ -388,7 +388,7 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona una marca" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="">
+                    <SelectItem value="none">
                       <span className="text-gray-500">Marca no definida</span>
                     </SelectItem>
                     {marcasData?.results?.map(marca => (
@@ -465,7 +465,7 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona la procedencia" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="">
+                    <SelectItem value="none">
                       <span className="text-gray-500">Procedencia no definida</span>
                     </SelectItem>
                     {procedenciasData?.results?.map(procedencia => (
@@ -523,7 +523,7 @@ export function GeneralInfoSection({
                     <SelectValue placeholder="Selecciona una especialidad" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="">
+                    <SelectItem value="none">
                       <span className="text-gray-500">Especialidad no definida</span>
                     </SelectItem>
                     {especialidadesData?.results?.map(especialidad => (

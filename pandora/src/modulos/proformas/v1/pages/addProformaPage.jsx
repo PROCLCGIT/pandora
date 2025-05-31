@@ -35,6 +35,7 @@ import {
   Save,
   Loader2,
   Eye,
+  RotateCcw,
 } from 'lucide-react';
 
 // Importar componentes factorizados
@@ -46,6 +47,7 @@ import ProductosDisponiblesSelectionModal from '../components/modals/ProductosDi
 import ProformasGuardadasModal from '../components/modals/ProformasGuardadasModal';
 import TemplateSelector from '../components/TemplateSelector';
 import ToolBarSection from '../components/form/ToolBarSection';
+import InfoBaseSection from '../components/form/InfoBaseSection';
 import { proformaService } from '../api/proformaService';
 import axios from '@/config/axios';
 import { toast } from '@/hooks/use-toast';
@@ -468,6 +470,31 @@ export default function AddProformaPage() {
     } finally {
       setLoadingPreview(false);
     }
+  };
+
+  const handleResetForm = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setCliente({});
+    setDetallesProforma({
+      nombre: '',
+      empresa: '',
+      tipoContratacion: '',
+      fechaEmision: new Date(),
+      fechaVencimiento: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      formaPago: '50% anticipo, 50% contra entrega',
+      tiempoEntrega: '5 días hábiles',
+      atencion: '',
+      porcentajeImpuesto: 12
+    });
+    setProductos([]);
+    setNotas('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
+    setFieldErrors({});
+    setSavedProformaId(null); // Also reset the saved proforma ID if one was loaded/saved
+    toast({
+      title: 'Formulario Reseteado',
+      description: 'Los campos han sido limpiados y el borrador local eliminado.',
+      variant: 'info',
+    });
   };
 
   const handleSaveProforma = async () => {
@@ -972,16 +999,15 @@ export default function AddProformaPage() {
                     ? "Debe seleccionar un cliente"
                     : "Exportar proforma a PDF"
             }
+            className="h-8 w-8 p-0"
           >
             {loadingPDF ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generando PDF...
+                <Loader2 className="h-4 w-4 animate-spin" />
               </>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
-                Exportar PDF
+                <Download className="h-4 w-4" />
               </>
             )}
           </Button>
@@ -998,58 +1024,57 @@ export default function AddProformaPage() {
                     ? "Debe seleccionar un cliente"
                     : "Ver vista previa del PDF"
             }
+            className="h-8 w-8 p-0"
           >
             {loadingPreview ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Cargando...
+                <Loader2 className="h-4 w-4 animate-spin" />
               </>
             ) : (
               <>
-                <Eye className="mr-2 h-4 w-4" />
-                Vista Previa
+                <Eye className="h-4 w-4" />
               </>
             )}
           </Button>
-          <Button variant="outline">
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
+          <Button variant="outline" title="Imprimir" className="h-8 w-8 p-0">
+            <Printer className="h-4 w-4" />
           </Button>
-          <Button variant="outline">
-            <Share2 className="mr-2 h-4 w-4" />
-            Compartir
+          <Button variant="outline" title="Compartir" className="h-8 w-8 p-0">
+            <Share2 className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setShowConfigForm(true)}>
-            <Settings2 className="mr-2 h-4 w-4" />
-            Configurar
+          <Button variant="outline" onClick={() => setShowConfigForm(true)} title="Configurar" className="h-8 w-8 p-0">
+            <Settings2 className="h-4 w-4" />
           </Button>
-          <Button variant="outline">
-            <CheckSquare className="mr-2 h-4 w-4" />
-            Generar
+          <Button variant="outline" title="Generar" className="h-8 w-8 p-0">
+            <CheckSquare className="h-4 w-4" />
           </Button>
           <Button 
             variant="outline"
             onClick={() => setShowProformasGuardadas(true)}
+            title="Guardadas"
+            className="h-8 w-8 p-0"
           >
-            <Eye className="mr-2 h-4 w-4" />
-            Guardadas
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleResetForm}
+            title="Resetear Formulario"
+            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
+            disabled={loading || loadingPDF || loadingPreview} // Disable if any loading is active
+          >
+            <RotateCcw className="h-4 w-4" />
           </Button>
           <Button 
             onClick={handleSaveProforma}
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium"
-            title="Guardar proforma en el servidor"
+            className="bg-green-600 hover:bg-green-700 text-white font-medium h-8 w-8 p-0"
+            title={loading ? "Guardando proforma..." : "Guardar proforma"}
           >
             {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Guardar
-              </>
+              <Save className="h-4 w-4" />
             )}
           </Button>
         </div>
@@ -1064,83 +1089,14 @@ export default function AddProformaPage() {
       </div>
 
       {/* Información Base */}
-      <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="h-5 w-5 text-blue-700" />
-          <h2 className="text-lg font-semibold text-blue-900">Información Base</h2>
-        </div>
-        
-        {/* Empresa, Tipo Contrato y Nombre de Proforma con layout alineado */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Empresa */}
-            <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-              <label className="text-sm font-medium text-blue-800">
-                Empresa: <span className="text-red-500">*</span>
-              </label>
-              <Select 
-                value={detallesProforma.empresa?.toString() || ''}
-                onValueChange={(value) => {
-                  setDetallesProforma({...detallesProforma, empresa: value});
-                  setFieldErrors(prev => ({...prev, empresa: false}));
-                }}
-              >
-                <SelectTrigger className={`w-full bg-white h-8 text-sm ${fieldErrors.empresa ? 'border-red-500 focus:border-red-500' : 'border-blue-300'}`}>
-                  <SelectValue placeholder="Seleccione una empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {empresas.map((empresa) => (
-                    <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                      {empresa.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Tipo de Contrato */}
-            <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-              <label className="text-sm font-medium text-blue-800">
-                Tipo de Contrato: <span className="text-red-500">*</span>
-              </label>
-              <Select 
-                value={detallesProforma.tipoContratacion?.toString() || ''}
-                onValueChange={(value) => {
-                  setDetallesProforma({...detallesProforma, tipoContratacion: parseInt(value)});
-                  setFieldErrors(prev => ({...prev, tipoContratacion: false}));
-                }}
-              >
-                <SelectTrigger className={`w-full bg-white h-8 text-sm ${fieldErrors.tipoContratacion ? 'border-red-500 focus:border-red-500' : 'border-blue-300'}`}>
-                  <SelectValue placeholder="Seleccione tipo de contrato" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposContratacion.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                      {tipo.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          {/* Nombre de Proforma */}
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-            <label className="text-sm font-medium text-blue-800">
-              Nombre de Proforma: <span className="text-red-500">*</span>
-            </label>
-            <Input
-              value={detallesProforma.nombre || ''}
-              onChange={(e) => {
-                setDetallesProforma({...detallesProforma, nombre: e.target.value});
-                setFieldErrors(prev => ({...prev, nombre: false}));
-              }}
-              placeholder="Ingrese un nombre descriptivo para la proforma"
-              className={`bg-white h-8 text-sm ${fieldErrors.nombre ? 'border-red-500 focus:border-red-500' : 'border-blue-300'}`}
-            />
-          </div>
-        </div>
-      </div>
+      <InfoBaseSection
+        detallesProforma={detallesProforma}
+        setDetallesProforma={setDetallesProforma}
+        empresas={empresas}
+        tiposContratacion={tiposContratacion}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+      />
 
       {/* Cliente + Detalles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -117,8 +117,8 @@ const BriefDetailPage = () => {
   // Fetch status choices
   const fetchStatusChoices = async () => {
     try {
-      const choices = await briefService.getBriefStatusChoices();
-      setStatusChoices(choices);
+      const choices = await briefService.getBriefChoices();
+      setStatusChoices(choices.status || []);
     } catch (error) {
       console.error('Error fetching status choices:', error);
     }
@@ -126,7 +126,7 @@ const BriefDetailPage = () => {
 
   // Handle edit brief navigation
   const handleEditBrief = () => {
-    navigate(`/briefs/editar/${briefId}`);
+    navigate(`/brief/editar/${briefId}`);
   };
 
   // Handle duplicate brief
@@ -142,7 +142,7 @@ const BriefDetailPage = () => {
       });
       
       // Navigate to new brief
-      navigate(`/briefs/${duplicatedBrief.id}`);
+      navigate(`/brief/${duplicatedBrief.id}`);
     } catch (error) {
       console.error('Error duplicating brief:', error);
       toast({
@@ -198,10 +198,11 @@ const BriefDetailPage = () => {
   // Handle export PDF
   const handleExportPDF = async () => {
     try {
-      await briefService.exportBriefToPDF(briefId);
+      // Por ahora mostrar mensaje de funcionalidad no disponible
       toast({
-        title: "PDF exportado",
-        description: "El archivo PDF se ha descargado correctamente",
+        title: "Funcionalidad no disponible",
+        description: "La exportación a PDF estará disponible próximamente",
+        variant: "default"
       });
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -226,7 +227,17 @@ const BriefDetailPage = () => {
 
     setAddingItem(true);
     try {
-      const addedItem = await briefService.addBriefItem(briefId, newItem);
+      const itemData = {
+        brief: briefId,
+        product: newItem.producto,
+        quantity: parseFloat(newItem.cantidad),
+        unit: 1, // Por defecto, debe obtenerse de una lista de unidades
+        specifications: newItem.descripcion || '',
+        notes: '',
+        precio_estimado: null,
+        orden: items.length + 1
+      };
+      const addedItem = await briefService.addBriefItem(itemData);
       setItems([...items, addedItem]);
       
       // Reset form
@@ -271,7 +282,15 @@ const BriefDetailPage = () => {
     }
 
     try {
-      const updatedItem = await briefService.updateBriefItem(briefId, editingItem.id, editingItem);
+      const itemData = {
+        product: editingItem.producto || editingItem.product,
+        quantity: parseFloat(editingItem.cantidad || editingItem.quantity),
+        unit: editingItem.unit || 1,
+        specifications: editingItem.descripcion || editingItem.specifications || '',
+        notes: editingItem.notes || '',
+        precio_estimado: editingItem.precio_estimado || null
+      };
+      const updatedItem = await briefService.updateBriefItem(editingItem.id, itemData);
       setItems(items.map(item => item.id === updatedItem.id ? updatedItem : item));
       setEditingItem(null);
       
@@ -293,7 +312,7 @@ const BriefDetailPage = () => {
   const handleDeleteItem = async (itemId) => {
     setDeletingItemId(itemId);
     try {
-      await briefService.deleteBriefItem(briefId, itemId);
+      await briefService.deleteBriefItem(itemId);
       setItems(items.filter(item => item.id !== itemId));
       
       toast({
@@ -346,17 +365,18 @@ const BriefDetailPage = () => {
   // Get status badge color
   const getStatusColor = (status) => {
     const colors = {
-      'activo': 'bg-green-100 text-green-700',
-      'pendiente': 'bg-yellow-100 text-yellow-700',
-      'completado': 'bg-blue-100 text-blue-700',
-      'cancelado': 'bg-red-100 text-red-700',
-      'archivado': 'bg-gray-100 text-gray-700'
+      'draft': 'bg-gray-100 text-gray-700',
+      'pending': 'bg-yellow-100 text-yellow-700',
+      'approved': 'bg-green-100 text-green-700',
+      'processing': 'bg-blue-100 text-blue-700',
+      'completed': 'bg-blue-200 text-blue-800',
+      'cancelled': 'bg-red-100 text-red-700'
     };
     return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700';
   };
 
   // Calculate total items
-  const totalItems = items.reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+  const totalItems = items.reduce((sum, item) => sum + Number(item.quantity || item.cantidad || 0), 0);
 
   if (loading) {
     return (
@@ -375,7 +395,7 @@ const BriefDetailPage = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Brief no encontrado</h2>
           <p className="text-gray-600 mb-4">El brief que buscas no existe o fue eliminado</p>
-          <Button onClick={() => navigate('/briefs')}>
+          <Button onClick={() => navigate('/brief')}>
             Volver al listado
           </Button>
         </div>
@@ -397,17 +417,17 @@ const BriefDetailPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <h1 className="text-3xl font-bold text-gray-800">Brief</h1>
               <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 hover:from-blue-200 hover:to-indigo-200 px-3 py-1 text-sm rounded-md shadow-sm whitespace-nowrap">
-                <span className="font-mono font-bold">{brief.codigo}</span>
+                <span className="font-mono font-bold">{brief.code}</span>
               </Badge>
               <Badge className={`${getStatusColor(brief.estado)} px-3 py-1 text-sm shadow-sm`}>
                 {brief.estado}
               </Badge>
             </div>
-            <p className="text-gray-600 mt-2 font-medium">{brief.titulo || 'Formulario de requerimientos para clientes'}</p>
+            <p className="text-gray-600 mt-2 font-medium">{brief.title || 'Formulario de requerimientos para clientes'}</p>
             <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-blue-500" />
-                <span>{formatDate(brief.fecha_emision)}</span>
+                <span>{formatDate(brief.fecha_emision || brief.created_at)}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-blue-500" />
@@ -502,26 +522,26 @@ const BriefDetailPage = () => {
               <div className="flex items-center">
                 <span className="font-medium w-28 text-gray-700">Código:</span>
                 <span className="bg-blue-50 px-2 py-1 rounded-md font-mono text-blue-800">
-                  {brief.codigo}
+                  {brief.code}
                 </span>
               </div>
               <div className="flex items-center">
                 <span className="font-medium w-28 text-gray-700">Cliente:</span>
-                <span className={brief.cliente ? "text-gray-800" : "text-gray-500 italic"}>
-                  {brief.cliente?.nombre || 'No asignado'}
+                <span className={brief.client_display ? "text-gray-800" : "text-gray-500 italic"}>
+                  {brief.client_display || 'No asignado'}
                 </span>
               </div>
               <div className="flex items-center">
                 <span className="font-medium w-28 text-gray-700">Contacto:</span>
-                <span className={brief.contacto ? "text-gray-800" : "text-gray-500 italic"}>
-                  {brief.contacto?.nombre || 'No especificado'}
+                <span className="text-gray-500 italic">
+                  No especificado
                 </span>
               </div>
               <div className="flex items-center">
                 <span className="font-medium w-28 text-gray-700">Dirección:</span>
-                <span className={brief.direccion ? "text-gray-800 flex items-center" : "text-gray-500 italic flex items-center"}>
+                <span className={brief.client ? "text-gray-800 flex items-center" : "text-gray-500 italic flex items-center"}>
                   <MapPin className="h-3 w-3 mr-1 text-gray-400" /> 
-                  {brief.direccion || 'No especificada'}
+                  {brief.client ? 'Ver en cliente' : 'No especificada'}
                 </span>
               </div>
             </div>
@@ -742,13 +762,13 @@ const BriefDetailPage = () => {
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant="outline" className="font-mono">
-                            {item.codigo || '-'}
+                            {item.product_reference || '-'}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 font-medium text-gray-800">{item.producto}</td>
-                        <td className="py-3 px-4 text-gray-600">{item.descripcion || '-'}</td>
-                        <td className="py-3 px-4">{item.unidad}</td>
-                        <td className="py-3 px-4 font-medium text-blue-800">{item.cantidad}</td>
+                        <td className="py-3 px-4 font-medium text-gray-800">{item.product}</td>
+                        <td className="py-3 px-4 text-gray-600">{item.specifications || '-'}</td>
+                        <td className="py-3 px-4">{item.unit_nombre || item.unit || '-'}</td>
+                        <td className="py-3 px-4 font-medium text-blue-800">{item.quantity}</td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-center gap-1">
                             <TooltipProvider>
@@ -963,7 +983,7 @@ const BriefDetailPage = () => {
           <DialogHeader>
             <DialogTitle>Cambiar estado del brief</DialogTitle>
             <DialogDescription>
-              Selecciona el nuevo estado para el brief {brief.codigo}
+              Selecciona el nuevo estado para el brief {brief.code}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

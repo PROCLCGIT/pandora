@@ -51,6 +51,11 @@ const navigationItems = [
     title: 'Brief',
     icon: <Briefcase size={20} />,
     path: '/brief',
+    submenu: [
+      { title: 'Dashboard', path: '/brief/dashboard', icon: <Home size={16} /> },
+      { title: 'Nuevo Brief', path: '/brief/nuevo', icon: <FilePlus size={16} /> },
+      { title: 'Reportes', path: '/brief/reportes', icon: <FileText size={16} /> },
+    ],
   },
   {
     title: 'Directorio',

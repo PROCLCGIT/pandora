@@ -13,8 +13,7 @@ export function ActionBar({
   isDirty,
   imagenes,
   documentos,
-  onCancel,
-  onSubmit
+  onCancel
 }) {
   return (
     <div className="sticky bottom-4 py-4 z-10">
@@ -56,8 +55,8 @@ export function ActionBar({
           <Button
             type="submit"
             className="rounded-lg px-8 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto shadow-md transition-all duration-300 hover:shadow-lg"
-            disabled={isSubmitting || (!isDirty && !imagenes.length && !documentos.length)}
-            onClick={onSubmit}
+            disabled={isSubmitting}
+            onClick={() => console.log('🔘 Botón Guardar Producto clickeado!')}
           >
             {isSubmitting ? (
               <div className="flex items-center">
