@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import ModernCalendar from '@/components/ui/modern-calendar';
 import {
   Popover,
   PopoverContent,
@@ -22,7 +23,9 @@ import {
   FileCheck,
   Plus,
   Tag,
-  Replace
+  Replace,
+  CalendarDays,
+  Clock
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -58,11 +61,11 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
         onDetallesChange({
           ...detalles,
           empresa: configData.empresa_predeterminada,
-          formaPago: configData.condiciones_pago_predeterminadas || '50% anticipo, 50% contra entrega',
-          tiempoEntrega: configData.tiempo_entrega_predeterminado || '5 días hábiles',
+          formaPago: configData.condiciones_pago_predeterminadas || '100% contra entrega',
+          tiempoEntrega: configData.tiempo_entrega_predeterminado || 'Entrega Inmediata',
           fechaEmision: new Date(),
           fechaVencimiento: addDays(new Date(), configData.dias_validez_predeterminados || 15),
-          porcentajeImpuesto: configData.porcentaje_impuesto_predeterminado || 12
+          porcentajeImpuesto: configData.porcentaje_impuesto_predeterminado || 15
         });
       }
     } catch (error) {
@@ -116,7 +119,26 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
             size="sm" 
             variant="ghost" 
             className="h-7 w-7 p-0"
-            title="Info estandar"
+            title="Restablecer valores predeterminados"
+            onClick={() => {
+              // Reset to default values
+              if (configuracion) {
+                onDetallesChange({
+                  ...detalles,
+                  formaPago: configuracion.condiciones_pago_predeterminadas || '100% contra entrega',
+                  tiempoEntrega: configuracion.tiempo_entrega_predeterminado || 'Entrega Inmediata',
+                  fechaEmision: new Date(),
+                  fechaVencimiento: addDays(new Date(), configuracion.dias_validez_predeterminados || 30),
+                  atencion: '',
+                  porcentajeImpuesto: configuracion.porcentaje_impuesto_predeterminado || 15
+                });
+                toast({
+                  title: 'Valores restablecidos',
+                  description: 'Se han restablecido los valores predeterminados',
+                  variant: 'default'
+                });
+              }
+            }}
           >
             <Replace className="h-3.5 w-3.5 text-orange-500" />
           </Button>
@@ -145,12 +167,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <ModernCalendar
                     selected={detalles.fechaEmision}
                     onSelect={(date) => handleDateChange('fechaEmision', date)}
-                    locale={es}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -170,7 +189,7 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
           </div>
 
           {/* Válido hasta */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px,24px,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">
               Válido hasta: <span className="text-red-500">*</span>
             </span>
@@ -190,12 +209,9 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <ModernCalendar
                     selected={detalles.fechaVencimiento}
                     onSelect={(date) => handleDateChange('fechaVencimiento', date)}
-                    locale={es}
-                    initialFocus
                     disabled={(date) => date < detalles.fechaEmision}
                   />
                 </PopoverContent>
@@ -209,14 +225,57 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
               size="sm" 
               variant="ghost" 
               className="h-6 w-6 p-0"
+              onClick={() => {
+                // Add 30 days to emission date
+                if (detalles.fechaEmision) {
+                  const newDate = addDays(new Date(detalles.fechaEmision), 30);
+                  handleChange('fechaVencimiento', newDate);
+                } else {
+                  toast({
+                    title: 'Información',
+                    description: 'Primero debe establecer la fecha de emisión',
+                    variant: 'default'
+                  });
+                }
+              }}
+              title="Agregar 30 días a fecha de emisión"
+            >
+              <span className="text-xs font-bold text-green-600">30</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                // Add 90 days to emission date
+                if (detalles.fechaEmision) {
+                  const newDate = addDays(new Date(detalles.fechaEmision), 90);
+                  handleChange('fechaVencimiento', newDate);
+                } else {
+                  toast({
+                    title: 'Información',
+                    description: 'Primero debe establecer la fecha de emisión',
+                    variant: 'default'
+                  });
+                }
+              }}
+              title="Agregar 90 días a fecha de emisión"
+            >
+              <span className="text-xs font-bold text-orange-600">90</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
               onClick={() => toggleEdit('fechaVencimiento')}
+              title="Editar fecha manualmente"
             >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
             </Button>
           </div>
 
           {/* Forma de pago */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px,24px,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Forma de pago:</span>
             {isEditing.formaPago ? (
               <Input 
@@ -238,6 +297,30 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
               size="sm" 
               variant="ghost" 
               className="h-6 w-6 p-0"
+              onClick={() => {
+                // Set payment to 30% anticipo, 70% contra entrega
+                handleChange('formaPago', '30% Anticipo 70% contra entrega');
+              }}
+              title="30% Anticipo 70% contra entrega"
+            >
+              <span className="text-xs font-bold text-green-600">30</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                // Set payment to 50% anticipo, 50% contra entrega
+                handleChange('formaPago', '50% Anticipo 50% contra entrega');
+              }}
+              title="50% Anticipo 50% contra entrega"
+            >
+              <span className="text-xs font-bold text-orange-600">50</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
               onClick={() => toggleEdit('formaPago')}
             >
               <Edit3 className="h-3.5 w-3.5 text-blue-500" />
@@ -245,7 +328,7 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
           </div>
 
           {/* Tiempo entrega */}
-          <div className="grid grid-cols-[140px,1fr,24px] items-center gap-3">
+          <div className="grid grid-cols-[140px,1fr,24px,24px,24px] items-center gap-3">
             <span className="text-sm text-gray-600 font-medium">Tiempo entrega:</span>
             {isEditing.tiempoEntrega ? (
               <Input 
@@ -263,6 +346,30 @@ const DetallesProformaSection = ({ detalles = {}, onDetallesChange, fieldErrors 
             ) : (
               <span className="text-sm text-gray-900">{detalles.tiempoEntrega || 'No especificado'}</span>
             )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                // Set delivery time to 3 days
+                handleChange('tiempoEntrega', '3 Días');
+              }}
+              title="3 Días"
+            >
+              <span className="text-xs font-bold text-green-600">3</span>
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                // Set delivery time to 15 days
+                handleChange('tiempoEntrega', '15 Días');
+              }}
+              title="15 Días"
+            >
+              <span className="text-xs font-bold text-orange-600">15</span>
+            </Button>
             <Button 
               size="sm" 
               variant="ghost" 

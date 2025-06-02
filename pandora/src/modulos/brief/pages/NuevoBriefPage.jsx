@@ -32,7 +32,11 @@ import {
   Briefcase,
   Hash,
   PlusCircle,
-  MinusCircle
+  PlusSquare,
+  MinusCircle,
+  Edit2,
+  Filter,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,8 +48,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/custom/useDebounce';
 import * as briefService from '../api/briefService';
+import { testGetChoices } from '../api/testBriefService';
 import clienteService from '@/modulos/directorio/api/clienteService';
 import api from '@/config/axios';
+import ClienteSection from '../components/form/ClienteSection';
+import InformacionGeneralSection from '../components/form/InformacionGeneralSection';
 
 // Esquema de validación
 const briefSchema = yup.object({
@@ -71,13 +78,54 @@ const NuevoBriefPage = () => {
   const [loading, setLoading] = useState(false);
   const [loadingClientes, setLoadingClientes] = useState(true);
   const [choicesLoading, setChoicesLoading] = useState(true);
-  const [choices, setChoices] = useState({
-    origin: [],
-    priority: [],
-    forma_pago: [],
-    destino: [],
-    status: []
-  });
+  
+  // Opciones temporales hardcodeadas mientras se resuelve el problema de la API
+  const fallbackChoices = {
+    origin: [
+      { value: 'telefono', label: 'Telefónico' },
+      { value: 'email', label: 'Correo Electrónico' },
+      { value: 'presencial', label: 'Visita Presencial' },
+      { value: 'whatsapp', label: 'WhatsApp' },
+      { value: 'web', label: 'Sitio Web' },
+      { value: 'referido', label: 'Referido' },
+      { value: 'redes', label: 'Redes Sociales' }
+    ],
+    priority: [
+      { value: 'baja', label: 'Baja' },
+      { value: 'media', label: 'Media' },
+      { value: 'alta', label: 'Alta' },
+      { value: 'urgente', label: 'Urgente' },
+      { value: 'critica', label: 'Crítica' }
+    ],
+    forma_pago: [
+      { value: 'contado', label: 'Contado' },
+      { value: 'credito_15', label: 'Crédito 15 días' },
+      { value: 'credito_30', label: 'Crédito 30 días' },
+      { value: 'credito_45', label: 'Crédito 45 días' },
+      { value: 'credito_60', label: 'Crédito 60 días' },
+      { value: 'credito_90', label: 'Crédito 90 días' },
+      { value: 'transferencia', label: 'Transferencia' },
+      { value: 'cheque', label: 'Cheque' }
+    ],
+    destino: [
+      { value: 'cot_cliente', label: 'Cotización a Cliente' },
+      { value: 'sol_proveedor', label: 'Solicitud a Proveedor' },
+      { value: 'orden_compra', label: 'Orden de Compra' },
+      { value: 'proforma', label: 'Proforma' },
+      { value: 'analisis', label: 'Análisis de Precios' }
+    ],
+    status: [
+      { value: 'draft', label: 'Borrador' },
+      { value: 'pending', label: 'Pendiente' },
+      { value: 'approved', label: 'Aprobado' },
+      { value: 'processing', label: 'En Proceso' },
+      { value: 'completed', label: 'Completado' },
+      { value: 'cancelled', label: 'Cancelado' }
+    ]
+  };
+  
+  // Inicializar con las opciones hardcodeadas para que estén disponibles inmediatamente
+  const [choices, setChoices] = useState(fallbackChoices);
   const [clientes, setClientes] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [unidades, setUnidades] = useState([]);
@@ -85,6 +133,8 @@ const NuevoBriefPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [currentItemIndex, setCurrentItemIndex] = useState(null);
+  const [choicesLoaded, setChoicesLoaded] = useState(false);
+  
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -130,6 +180,13 @@ const NuevoBriefPage = () => {
     }
   }, [briefId]);
 
+  // Agregar item inicial al cargar la página (solo si no está en modo edición)
+  useEffect(() => {
+    if (!isEdit && fields.length === 0 && unidades.length > 0) {
+      addItem();
+    }
+  }, [isEdit, fields.length, unidades]);
+
   // Debug: Monitor choices updates
   useEffect(() => {
     console.log('CHOICES UPDATED IN STATE:', choices);
@@ -148,30 +205,106 @@ const NuevoBriefPage = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      console.log('Iniciando carga de datos...');
+      console.log('=== INICIANDO CARGA DE DATOS ===');
       
-      // Cargar cada recurso por separado para mejor debugging
-      try {
-        setChoicesLoading(true);
-        const choicesRes = await briefService.getBriefChoices();
-        console.log('Choices cargados:', choicesRes);
-        console.log('Estructura de choices:');
-        console.log('- origin:', choicesRes.origin ? `${choicesRes.origin.length} opciones` : 'NO EXISTE');
-        console.log('- priority:', choicesRes.priority ? `${choicesRes.priority.length} opciones` : 'NO EXISTE');
-        console.log('- forma_pago:', choicesRes.forma_pago ? `${choicesRes.forma_pago.length} opciones` : 'NO EXISTE');
-        console.log('- destino:', choicesRes.destino ? `${choicesRes.destino.length} opciones` : 'NO EXISTE');
-        console.log('- status:', choicesRes.status ? `${choicesRes.status.length} opciones` : 'NO EXISTE');
-        setChoices(choicesRes || {});
-        setChoicesLoading(false);
-        console.log('Choices guardados en estado');
-        // Add a small delay to ensure state update
-        setTimeout(() => {
-          console.log('Choices after state update:', choices);
-        }, 100);
-      } catch (error) {
-        console.error('Error cargando choices:', error);
-        console.error('Detalle completo del error:', error.response || error);
-        setChoicesLoading(false);
+      // Si ya se cargaron las opciones, no volver a cargarlas
+      if (choicesLoaded) {
+        console.log('Choices ya cargados, saltando...');
+      } else {
+        // Cargar choices desde la API
+        try {
+          setChoicesLoading(true);
+          console.log('📡 Llamando a getBriefChoices()...');
+          console.log('Service URL base:', '/api/brief');
+          console.log('Endpoint completo:', '/api/brief/briefs/choices/');
+          
+          // Primero hacer una prueba directa
+          console.log('🧪 Ejecutando test directo...');
+          try {
+            const testResult = await testGetChoices();
+            console.log('🧪 Test directo exitoso:', testResult);
+          } catch (testError) {
+            console.error('🧪 Test directo falló:', testError);
+          }
+          
+          const choicesRes = await briefService.getBriefChoices();
+          
+          console.log('✅ Respuesta recibida:', choicesRes);
+          console.log('Tipo de respuesta:', typeof choicesRes);
+          console.log('Es objeto?', choicesRes && typeof choicesRes === 'object');
+          console.log('Claves del objeto:', choicesRes ? Object.keys(choicesRes) : 'null');
+          
+          if (choicesRes && typeof choicesRes === 'object') {
+            // Verificar cada campo individualmente
+            console.log('📊 Analizando campos de choices:');
+            ['origin', 'priority', 'forma_pago', 'destino', 'status'].forEach(field => {
+              const value = choicesRes[field];
+              console.log(`- ${field}:`, {
+                exists: field in choicesRes,
+                value: value,
+                isArray: Array.isArray(value),
+                length: Array.isArray(value) ? value.length : 'N/A',
+                firstItem: Array.isArray(value) && value.length > 0 ? value[0] : 'empty'
+              });
+            });
+            
+            // Usar las opciones de la API si están disponibles
+            const newChoicesData = {
+              origin: Array.isArray(choicesRes.origin) && choicesRes.origin.length > 0 
+                ? choicesRes.origin 
+                : fallbackChoices.origin,
+              priority: Array.isArray(choicesRes.priority) && choicesRes.priority.length > 0 
+                ? choicesRes.priority 
+                : fallbackChoices.priority,
+              forma_pago: Array.isArray(choicesRes.forma_pago) && choicesRes.forma_pago.length > 0 
+                ? choicesRes.forma_pago 
+                : fallbackChoices.forma_pago,
+              destino: Array.isArray(choicesRes.destino) && choicesRes.destino.length > 0 
+                ? choicesRes.destino 
+                : fallbackChoices.destino,
+              status: Array.isArray(choicesRes.status) && choicesRes.status.length > 0 
+                ? choicesRes.status 
+                : fallbackChoices.status,
+            };
+            
+            console.log('💾 Guardando choices en estado:', newChoicesData);
+            setChoices(newChoicesData);
+            setChoicesLoaded(true);
+            
+            // Mostrar si se usó algún fallback
+            const usedFallback = Object.keys(newChoicesData).some(
+              key => newChoicesData[key] === fallbackChoices[key]
+            );
+            if (usedFallback) {
+              console.warn('⚠️ Se usaron algunas opciones hardcodeadas como fallback');
+            } else {
+              console.log('✅ Todas las opciones cargadas desde la API exitosamente');
+            }
+          } else {
+            throw new Error('Respuesta de choices inválida o vacía');
+          }
+          
+          setChoicesLoading(false);
+        } catch (error) {
+          console.error('❌ ERROR CRÍTICO cargando choices:', error);
+          console.error('Detalles del error:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            response: error.response,
+            request: error.request,
+            config: error.config
+          });
+          
+          // Usar las opciones hardcodeadas como fallback
+          console.log('🔄 Usando opciones hardcodeadas como fallback');
+          setChoices(fallbackChoices);
+          setChoicesLoading(false);
+          setChoicesLoaded(true);
+          
+          // No mostrar toast de error para no molestar al usuario
+          // ya que tenemos fallback
+        }
       }
       
       try {
@@ -371,12 +504,11 @@ const NuevoBriefPage = () => {
   const addItem = (producto = null) => {
     const newItem = {
       product: producto?.nombre || '',
-      product_reference: producto?.id || '',
+      product_reference: producto?.codigo || '',
       quantity: 1,
       unit: unidades[0]?.id || '',
       specifications: '',
-      notes: '',
-      precio_estimado: producto ? parseFloat(producto.precio_venta_privado || 0) : 0
+      notes: ''
     };
     append(newItem);
     setIsProductModalOpen(false);
@@ -384,15 +516,13 @@ const NuevoBriefPage = () => {
 
   const selectProduct = (producto) => {
     if (currentItemIndex !== null) {
-      const precio = producto.precio_venta_privado ? parseFloat(producto.precio_venta_privado) : 0;
       update(currentItemIndex, {
         product: producto.nombre,
-        product_reference: producto.id,
+        product_reference: producto.codigo,
         quantity: 1,
         unit: unidades[0]?.id || '',
         specifications: '',
-        notes: '',
-        precio_estimado: precio
+        notes: ''
       });
       setCurrentItemIndex(null);
     } else {
@@ -400,6 +530,8 @@ const NuevoBriefPage = () => {
     }
     setIsProductModalOpen(false);
   };
+
+
 
   const formatPrice = (price) => {
     if (!price || isNaN(price)) return '$0.00';
@@ -470,426 +602,54 @@ const NuevoBriefPage = () => {
         </div>
 
         <form onSubmit={handleSubmit(handleSaveDraft)}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Cliente y Información General lado a lado */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Cliente Section */}
+            <ClienteSection 
+              cliente={watch('client')}
+              clientes={clientes}
+              onClienteChange={(value) => setValue('client', value)}
+              hasError={!!errors.client}
+              watch={watch}
+              setValue={setValue}
+            />
+
             {/* Información General */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <span className="text-lg font-semibold text-gray-800">Información General</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Briefcase className="h-4 w-4 text-gray-400" />
-                      Título del Brief
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Input
-                        {...register('title')}
-                        placeholder="Ej: Suministros médicos para hospital central"
-                        className={`pr-10 transition-all duration-200 ${errors.title ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
-                      />
-                      {watch('title') && !errors.title && (
-                        <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                    {errors.title && (
-                      <p className="flex items-center gap-1 text-sm text-red-600">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.title.message}
-                      </p>
-                    )}
-                  </div>
+            <InformacionGeneralSection
+              watch={watch}
+              setValue={setValue}
+              register={register}
+              errors={errors}
+              choices={choices}
+              usuarios={usuarios}
+            />
+          </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                        Cliente
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        value={watch('client')}
-                        onValueChange={(value) => setValue('client', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.client ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="Seleccionar cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <div className="p-2">
-                            <Input 
-                              placeholder="Buscar cliente..." 
-                              className="mb-2"
-                              onChange={(e) => {
-                                // Add search functionality here
-                              }}
-                            />
-                          </div>
-                          {loadingClientes ? (
-                            <div className="p-4 text-center text-gray-500">
-                              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-                              <p>Cargando clientes...</p>
-                            </div>
-                          ) : clientes.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500">
-                              <AlertCircle className="h-5 w-5 mx-auto mb-2 text-orange-500" />
-                              <p>No se encontraron clientes</p>
-                              <p className="text-xs mt-1">Verifica tu conexión o contacta al administrador</p>
-                            </div>
-                          ) : (
-                            clientes.map((cliente) => (
-                              <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                    {(cliente.nombre || 'C').charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-medium">{cliente.nombre}</p>
-                                    {cliente.alias && <p className="text-xs text-gray-500">{cliente.alias}</p>}
-                                  </div>
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {errors.client && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.client.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        Origen
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        key={`origin-${choices.origin?.length || 0}`}
-                        value={watch('origin')}
-                        onValueChange={(value) => setValue('origin', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.origin ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="¿Cómo nos contactó?" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            console.log('Rendering origin select. choices.origin:', choices.origin);
-                            console.log('Choices loading?', choicesLoading);
-                            if (choicesLoading) {
-                              return <div className="p-2 text-center text-gray-500 text-sm">Cargando opciones...</div>;
-                            }
-                            if (!choices.origin || choices.origin.length === 0) {
-                              return <div className="p-2 text-center text-gray-500 text-sm">No hay opciones disponibles</div>;
-                            }
-                            return choices.origin.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center gap-2">
-                                {option.value === 'telefono' && <Phone className="h-4 w-4 text-blue-500" />}
-                                {option.value === 'email' && <AlertCircle className="h-4 w-4 text-purple-500" />}
-                                {option.value === 'whatsapp' && <AlertCircle className="h-4 w-4 text-green-500" />}
-                                {option.value === 'presencial' && <User className="h-4 w-4 text-orange-500" />}
-                                <span>{option.label}</span>
-                              </div>
-                            </SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                      {errors.origin && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.origin.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <FileText className="h-4 w-4 text-gray-400" />
-                      Descripción
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Textarea
-                        {...register('description')}
-                        placeholder="Describa detalladamente los productos o servicios requeridos..."
-                        rows={4}
-                        className={`resize-none transition-all duration-200 ${errors.description ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
-                      />
-                      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                        {watch('description')?.length || 0} caracteres
-                      </div>
-                    </div>
-                    {errors.description && (
-                      <p className="flex items-center gap-1 text-sm text-red-600">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.description.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <AlertCircle className="h-4 w-4 text-gray-400" />
-                        Prioridad
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        key={`priority-${choices.priority?.length || 0}`}
-                        value={watch('priority')}
-                        onValueChange={(value) => setValue('priority', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.priority ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="Seleccionar prioridad" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            console.log('Rendering priority select. choices.priority:', choices.priority);
-                            if (!choices.priority || choices.priority.length === 0) {
-                              return <div className="p-2 text-center text-gray-500 text-sm">No hay opciones disponibles</div>;
-                            }
-                            return choices.priority.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  option.value === 'baja' ? 'bg-green-500' :
-                                  option.value === 'media' ? 'bg-yellow-500' :
-                                  option.value === 'alta' ? 'bg-orange-500' :
-                                  option.value === 'urgente' ? 'bg-red-500' :
-                                  option.value === 'critica' ? 'bg-purple-500' : 'bg-gray-500'
-                                }`}></div>
-                                <span className="capitalize">{option.label}</span>
-                              </div>
-                            </SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                      {errors.priority && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.priority.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        Tiempo de Entrega
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          {...register('tiempo_entrega')}
-                          placeholder="30"
-                          className={`pl-10 transition-all duration-200 ${errors.tiempo_entrega ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
-                        />
-                        <span className="absolute left-3 top-3 text-gray-400 text-sm">Días</span>
-                      </div>
-                      {errors.tiempo_entrega && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.tiempo_entrega.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <DollarSign className="h-4 w-4 text-gray-400" />
-                        Presupuesto
-                        <span className="text-gray-400 text-xs">(opcional)</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          {...register('presupuesto')}
-                          placeholder="0.00"
-                          className="pl-8 transition-all duration-200 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <CreditCard className="h-4 w-4 text-gray-400" />
-                        Forma de Pago
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        key={`forma_pago-${choices.forma_pago?.length || 0}`}
-                        value={watch('forma_pago')}
-                        onValueChange={(value) => setValue('forma_pago', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.forma_pago ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="Seleccionar forma de pago" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            console.log('Rendering forma_pago select. choices.forma_pago:', choices.forma_pago);
-                            if (!choices.forma_pago || choices.forma_pago.length === 0) {
-                              return <div className="p-2 text-center text-gray-500 text-sm">No hay opciones disponibles</div>;
-                            }
-                            return choices.forma_pago.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center gap-2">
-                                {option.value === 'contado' && <DollarSign className="h-4 w-4 text-green-500" />}
-                                {option.value.includes('credito') && <Clock className="h-4 w-4 text-blue-500" />}
-                                {option.value === 'transferencia' && <TruckIcon className="h-4 w-4 text-purple-500" />}
-                                {option.value === 'cheque' && <FileText className="h-4 w-4 text-gray-500" />}
-                                <span>{option.label}</span>
-                              </div>
-                            </SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                      {errors.forma_pago && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.forma_pago.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Target className="h-4 w-4 text-gray-400" />
-                        Destino
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        key={`destino-${choices.destino?.length || 0}`}
-                        value={watch('destino')}
-                        onValueChange={(value) => setValue('destino', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.destino ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="Seleccionar destino" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            console.log('Rendering destino select. choices.destino:', choices.destino);
-                            if (!choices.destino || choices.destino.length === 0) {
-                              return <div className="p-2 text-center text-gray-500 text-sm">No hay opciones disponibles</div>;
-                            }
-                            return choices.destino.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                              <span className="capitalize">{option.label}</span>
-                            </SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                      {errors.destino && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.destino.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <User className="h-4 w-4 text-gray-400" />
-                        Operador Asignado
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <Select
-                        value={watch('operador')}
-                        onValueChange={(value) => setValue('operador', value)}
-                      >
-                        <SelectTrigger className={`transition-all duration-200 ${errors.operador ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}>
-                          <SelectValue placeholder="Seleccionar operador" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {usuarios.map((usuario) => (
-                            <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                  {usuario.first_name.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium">{usuario.first_name} {usuario.last_name}</p>
-                                  <p className="text-xs text-gray-500">@{usuario.username}</p>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.operador && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.operador.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        Fecha Límite
-                        <span className="text-gray-400 text-xs">(opcional)</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="date"
-                          {...register('due_date')}
-                          className="pl-10 transition-all duration-200 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Info className="h-4 w-4 text-gray-400" />
-                      Observaciones Internas
-                      <span className="text-gray-400 text-xs">(no visible para el cliente)</span>
-                    </label>
-                    <Textarea
-                      {...register('observaciones_internas')}
-                      placeholder="Notas internas sobre este brief..."
-                      rows={3}
-                      className="resize-none transition-all duration-200 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Items Section with Enhanced Design */}
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+          {/* Items Section with Enhanced Design */}
+          <Card className="border shadow-sm bg-white">
+                <CardHeader className="bg-blue-50/50 border-b px-6 py-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-100 rounded-lg">
-                          <ShoppingCart className="h-5 w-5 text-indigo-600" />
-                        </div>
-                        <span className="text-lg font-semibold text-gray-800">Items del Brief</span>
-                      </CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">Agregue los productos requeridos</p>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <span>Productos y Servicios</span>
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Input
+                          placeholder="Buscar en la tabla..."
+                          className="w-64 pr-10 text-sm"
+                          disabled
+                        />
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      </div>
+                      <Button variant="outline" size="sm" disabled>
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filtrar
+                      </Button>
+                      <Button variant="outline" size="sm" disabled>
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        Ordenar
+                      </Button>
                     </div>
                     <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
                       <DialogTrigger asChild>
@@ -990,295 +750,269 @@ const NuevoBriefPage = () => {
                     </Dialog>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6">
-                  {fields.length === 0 ? (
-                    <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
-                        <Package className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-600 font-medium mb-2">No hay items agregados</p>
-                      <p className="text-sm text-gray-500 mb-4">Comience agregando los productos requeridos</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsProductModalOpen(true)}
-                        className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar primer item
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {fields.map((field, index) => (
-                        <div key={field.id} className="group relative bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
-                          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500 rounded-l-xl"></div>
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-full text-indigo-600 font-bold text-sm">
-                                {index + 1}
-                              </div>
-                              <h4 className="font-semibold text-gray-800">Item #{index + 1}</h4>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => remove(index)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="lg:col-span-2">
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <Package className="h-4 w-4 text-gray-400" />
-                                Producto
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <div className="flex gap-2">
-                                <Input
-                                  {...register(`items.${index}.product`)}
-                                  placeholder="Nombre del producto"
-                                  className="flex-1 transition-all duration-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                />
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Descripción
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Unidad
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cantidad
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acciones
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {fields.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="text-center py-8 text-gray-500">
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="text-sm">Complete la información del primer producto</div>
                                 <Button
                                   type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCurrentItemIndex(index);
-                                    setIsProductModalOpen(true);
-                                  }}
-                                  className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                                  variant="ghost"
+                                  onClick={() => addItem()}
+                                  className="text-blue-600 hover:text-blue-700"
                                 >
-                                  <Search className="h-4 w-4" />
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Agregar primer ítem
                                 </Button>
                               </div>
-                            </div>
-                            <div>
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <Hash className="h-4 w-4 text-gray-400" />
-                                Cantidad
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <div className="relative">
+                            </td>
+                          </tr>
+                        ) : (
+                          fields.map((field, index) => (
+                            <tr key={field.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">
+                                <div className="flex gap-2">
+                                  <Input
+                                    {...register(`items.${index}.product`)}
+                                    placeholder="Descripción del producto"
+                                    className="flex-1 text-sm"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setCurrentItemIndex(index);
+                                      setIsProductModalOpen(true);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                  >
+                                    <Search className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <Select
+                                  value={watch(`items.${index}.unit`)}
+                                  onValueChange={(value) => setValue(`items.${index}.unit`, value)}
+                                >
+                                  <SelectTrigger className="w-32 text-sm">
+                                    <SelectValue placeholder="Unidad" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {unidades.map((unidad) => (
+                                      <SelectItem key={unidad.id} value={unidad.id.toString()}>
+                                        {unidad.codigo}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
                                 <Input
                                   type="number"
                                   step="0.01"
                                   {...register(`items.${index}.quantity`)}
                                   placeholder="1"
-                                  className="transition-all duration-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                  className="w-24 text-sm text-right"
                                 />
-                                <div className="absolute right-2 top-1 flex gap-1">
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-indigo-50"
-                                    onClick={() => {
-                                      const currentValue = parseFloat(watch(`items.${index}.quantity`) || 0);
-                                      setValue(`items.${index}.quantity`, currentValue + 1);
-                                    }}
+                                    className="p-1 text-blue-600 hover:text-blue-800"
                                   >
-                                    <PlusCircle className="h-4 w-4 text-indigo-600" />
+                                    <Edit2 className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-indigo-50"
-                                    onClick={() => {
-                                      const currentValue = parseFloat(watch(`items.${index}.quantity`) || 0);
-                                      if (currentValue > 0) {
-                                        setValue(`items.${index}.quantity`, currentValue - 1);
-                                      }
-                                    }}
+                                    onClick={() => remove(index)}
+                                    className="p-1 text-red-500 hover:text-red-700"
                                   >
-                                    <MinusCircle className="h-4 w-4 text-indigo-600" />
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Unidad
-                              </label>
-                              <Select
-                                value={watch(`items.${index}.unit`)}
-                                onValueChange={(value) => setValue(`items.${index}.unit`, value)}
-                              >
-                                <SelectTrigger className="transition-all duration-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                  <SelectValue placeholder="Unidad" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {unidades.map((unidad) => (
-                                    <SelectItem key={unidad.id} value={unidad.id.toString()}>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium">{unidad.codigo}</span>
-                                        <span className="text-sm text-gray-500">{unidad.nombre}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <FileText className="h-4 w-4 text-gray-400" />
-                                Especificaciones
-                              </label>
-                              <Textarea
-                                {...register(`items.${index}.specifications`)}
-                                placeholder="Detalles técnicos, medidas, colores, etc."
-                                rows={2}
-                                className="resize-none transition-all duration-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <DollarSign className="h-4 w-4 text-gray-400" />
-                                Precio Estimado
-                              </label>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  {...register(`items.${index}.precio_estimado`)}
-                                  placeholder="0.00"
-                                  className="pl-8 transition-all duration-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                {watch(`items.${index}.precio_estimado`) && watch(`items.${index}.quantity`) && (
-                                  <div className="absolute right-3 top-3 text-xs text-gray-500">
-                                    Total: {formatPrice(parseFloat(watch(`items.${index}.precio_estimado`)) * parseFloat(watch(`items.${index}.quantity`)))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => addItem()}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <PlusSquare className="h-4 w-4 mr-2" />
+                      Agregar ítem en blanco
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-blue-600"
+                      onClick={() => setIsProductModalOpen(true)}
+                    >
+                      Ver catálogo completo →
+                    </Button>
+                  </div>
+                  
                   {errors.items && (
-                    <p className="text-sm text-red-500 mt-2">{errors.items.message}</p>
+                    <p className="text-sm text-red-500 px-6 pb-4">{errors.items.message}</p>
                   )}
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Enhanced Sidebar */}
-            <div className="space-y-6">
-              {/* Actions Card */}
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm sticky top-6">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Save className="h-5 w-5 text-green-600" />
-                    </div>
-                    <span className="text-lg font-semibold text-gray-800">Acciones</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 p-6">
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 group"
-                  >
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-                    )}
-                    Guardar como Borrador
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSubmit(handleSaveActive)}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 group"
-                  >
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                    )}
-                    Guardar y Activar
-                  </Button>
-                  
-                  <div className="pt-3 border-t border-gray-200">
-                    <p className="text-xs text-gray-500 text-center">
-                      {isEdit ? 'Los cambios se guardarán inmediatamente' : 'Podrás editar el brief después de crearlo'}
-                    </p>
+          {/* Sección Resumen debajo del formulario */}
+          <div className="mt-6">
+            {/* Enhanced Summary Card */}
+            <Card>
+              <CardHeader className="py-3 px-4 bg-blue-300/20">
+                <CardTitle className="flex items-center text-base font-bold">
+                  <Info className="mr-2 h-4 w-4 text-blue-600" />
+                  Resumen
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-6">
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-gray-700">Total de Items:</span>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Enhanced Summary Card */}
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 to-pink-50">
-                <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100 border-b border-purple-200">
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 bg-purple-200 rounded-lg">
-                      <Info className="h-5 w-5 text-purple-700" />
-                    </div>
-                    <span className="text-lg font-semibold text-gray-800">Resumen</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 p-6">
+                  <Badge className="bg-indigo-100 text-indigo-700 px-3 py-1">
+                    {fields.length} {fields.length === 1 ? 'item' : 'items'}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-gray-700">Estado:</span>
+                  </div>
+                  <Badge className={`px-3 py-1 ${watch('estado') === 'draft' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
+                    {watch('estado') === 'draft' ? 'Borrador' : 'Activo'}
+                  </Badge>
+                </div>
+                
+                {watch('presupuesto') && (
                   <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-700">Total de Items:</span>
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-gray-700">Presupuesto:</span>
                     </div>
-                    <Badge className="bg-indigo-100 text-indigo-700 px-3 py-1">
-                      {fields.length} {fields.length === 1 ? 'item' : 'items'}
-                    </Badge>
+                    <span className="font-bold text-green-700">
+                      {formatPrice(watch('presupuesto'))}
+                    </span>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Estado:</span>
-                    </div>
-                    <Badge className={`px-3 py-1 ${watch('estado') === 'draft' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
-                      {watch('estado') === 'draft' ? 'Borrador' : 'Activo'}
-                    </Badge>
-                  </div>
-                  
-                  {watch('presupuesto') && (
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-gray-700">Presupuesto:</span>
-                      </div>
-                      <span className="font-bold text-green-700">
-                        {formatPrice(watch('presupuesto'))}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div className="text-xs text-blue-700">
-                        <p className="font-medium mb-1">Recordatorio:</p>
-                        <ul className="space-y-1">
-                          <li>• Verifique todos los datos antes de activar</li>
-                          <li>• Los items pueden modificarse después</li>
-                          <li>• El cliente recibirá notificación al activar</li>
-                        </ul>
-                      </div>
+                )}
+                
+                <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <div className="text-xs text-blue-700">
+                      <p className="font-medium mb-1">Recordatorio:</p>
+                      <ul className="space-y-1">
+                        <li>• Verifique todos los datos antes de activar</li>
+                        <li>• Los items pueden modificarse después</li>
+                        <li>• El cliente recibirá notificación al activar</li>
+                      </ul>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </form>
+
+        {/* Barra de acciones flotante */}
+        <div className="sticky bottom-4 py-4 z-10">
+          <div className="bg-white backdrop-blur-md bg-opacity-95 p-4 rounded-xl shadow-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-500 hidden md:block">
+              {isEdit ? (
+                <div className="flex items-center">
+                  <span>Actualice los campos necesarios y guarde los cambios.</span>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                  <span>Complete los campos requeridos para crear un nuevo brief.</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-3 w-full sm:w-auto">
+              {/* Guardar como Borrador */}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="rounded-lg px-6 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+                variant="outline"
+                onClick={handleSubmit(handleSaveDraft)}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar Borrador
+                  </>
+                )}
+              </Button>
+
+              {/* Guardar y Activar */}
+              <Button
+                type="button"
+                onClick={handleSubmit(handleSaveActive)}
+                disabled={loading}
+                className="rounded-lg px-8 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-md transition-all duration-300 hover:shadow-lg"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Guardando...
+                  </div>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    {isEdit ? 'Actualizar Brief' : 'Guardar y Activar'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

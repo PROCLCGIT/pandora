@@ -18,7 +18,7 @@ export default function ConfiguracionProformaForm({ onClose, onSave, initialData
   const [formData, setFormData] = useState({
     empresa_predeterminada: initialData.empresa_predeterminada || '', // Debería ser un ID o un objeto empresa
     dias_validez: initialData.dias_validez || 30,
-    porcentaje_impuesto_default: initialData.porcentaje_impuesto_default || 12.00,
+    porcentaje_impuesto_default: initialData.porcentaje_impuesto_default || 15.00,
     texto_condiciones_pago: initialData.texto_condiciones_pago || 'Pago a 30 días de la fecha de emisión',
     texto_tiempo_entrega: initialData.texto_tiempo_entrega || 'Entrega inmediata después de aprobación',
     notas_predeterminadas: initialData.notas_predeterminadas || '',

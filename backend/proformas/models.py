@@ -219,7 +219,7 @@ class ConfiguracionProforma(TimeStampedModel):
                                              verbose_name=_('Empresa predeterminada'))
     dias_validez = models.IntegerField(default=30, 
                                      verbose_name=_('Días de validez predeterminados'))
-    porcentaje_impuesto_default = models.DecimalField(max_digits=5, decimal_places=2, default=12.0,
+    porcentaje_impuesto_default = models.DecimalField(max_digits=5, decimal_places=2, default=15.0,
                                                     verbose_name=_('Porcentaje de impuesto predeterminado'))
     
     # Textos predeterminados

@@ -236,7 +236,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
                 tipo_item=item_original.tipo_item,
                 producto_ofertado=item_original.producto_ofertado,
                 producto_disponible=item_original.producto_disponible,
-                inventario=item_original.inventario,
+                # inventario=item_original.inventario,
                 codigo=item_original.codigo,
                 descripcion=item_original.descripcion,
                 unidad=item_original.unidad,
@@ -429,8 +429,8 @@ class ProformaViewSet(viewsets.ModelViewSet):
             
             # Importar las plantillas
             if template_name == 'classic':
-                from .pdf_templates.classic_template import ClassicTemplate
-                pdf_generator = ClassicTemplate(proforma)
+                from .pdf_templates.classic_template import PremiumTemplate
+                pdf_generator = PremiumTemplate(proforma)
             elif template_name == 'modern':
                 from .pdf_templates.modern_template import ModernTemplate
                 pdf_generator = ModernTemplate(proforma)
@@ -566,13 +566,12 @@ class ProformaItemViewSet(viewsets.ModelViewSet):
             403: "Permiso denegado"
         }
     )
-    @action(detail=False, methods=['get'])
-    def por_proforma(self, request):
+    @action(detail=False, methods=['get'], url_path='por_proforma/(?P<proforma_id>[^/.]+)')
+    def por_proforma(self, request, proforma_id=None):
         """
         Devuelve los ítems asociados a una proforma específica.
-        Requiere el parámetro proforma_id en la URL.
+        El proforma_id se pasa como parte de la URL.
         """
-        proforma_id = request.query_params.get('proforma_id', None)
         if proforma_id:
             items = ProformaItem.objects.filter(proforma_id=proforma_id).order_by('orden')
             page = self.paginate_queryset(items)

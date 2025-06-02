@@ -6,7 +6,7 @@
 
 export const AUTH_CONFIG = {
   // Intervalos de tiempo (en milisegundos)
-  TOKEN_REFRESH_INTERVAL: 5 * 60 * 1000,     // 5 minutos - Intervalo para verificar y refrescar tokens
+  TOKEN_REFRESH_INTERVAL: 480 * 60 * 1000,     // 5 minutos - Intervalo para verificar y refrescar tokens
   SESSION_WARNING_TIME: 2 * 60 * 1000,       // 2 minutos - Mostrar advertencia antes de expiración
   AUTO_LOGOUT_TIME: 60 * 60 * 1000,          // 60 minutos - Logout automático por inactividad
   
@@ -97,7 +97,7 @@ const ENVIRONMENT_CONFIGS = {
   development: {
     TOKEN_REFRESH_INTERVAL: 2 * 60 * 1000,   // 2 minutos en desarrollo
     SESSION_WARNING_TIME: 30 * 1000,         // 30 segundos en desarrollo
-    AUTO_LOGOUT_TIME: 10 * 60 * 1000,        // 10 minutos en desarrollo
+    AUTO_LOGOUT_TIME: 480 * 60 * 1000,        // 8 horas en desarrollo
     LOG_AUTH_EVENTS: true,
     DEBUG_MODE: true
   },

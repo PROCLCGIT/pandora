@@ -22,16 +22,14 @@ import {
   Check,
 } from 'lucide-react';
 
-const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesChange, productosConErrores = [], onErrorClear }) => {
+const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesChange, productosConErrores = [], onErrorClear, porcentajeImpuesto = 15 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingItem, setEditingItem] = useState({});
 
-  // Calcular total por línea
+  // Calcular total por línea (sin descuento por ahora)
   const calculateLineTotal = (item) => {
-    const subtotal = (item.cantidad || 0) * (item.precioUnitario || 0);
-    const descuento = subtotal * ((item.descuento || 0) / 100);
-    return subtotal - descuento;
+    return (item.cantidad || 0) * (item.precioUnitario || 0);
   };
 
   // Calcular totales cuando cambien los productos
@@ -41,13 +39,13 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
       return sum + total;
     }, 0);
 
-    const iva = subtotal * 0.12; // 12% IVA
+    const iva = subtotal * (porcentajeImpuesto / 100); // IVA dinámico
     const total = subtotal + iva;
 
     if (onTotalesChange) {
       onTotalesChange({ subtotal, iva, total });
     }
-  }, [productos, onTotalesChange]);
+  }, [productos, onTotalesChange, porcentajeImpuesto]);
 
   // Agregar producto en blanco
   const handleAddBlankItem = () => {
@@ -59,7 +57,6 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
       unidad_id: 1, // Add default unit ID
       cantidad: 1,
       precioUnitario: 0,
-      descuento: 0,
       total: 0,
     };
     onProductosChange([...productos, newItem]);
@@ -155,7 +152,6 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
                 <TableHead className="w-[100px]">Unidad</TableHead>
                 <TableHead className="w-[100px] text-right">Cantidad</TableHead>
                 <TableHead className="w-[120px] text-right">Precio Unit.</TableHead>
-                <TableHead className="w-[100px] text-right">Desc. %</TableHead>
                 <TableHead className="w-[120px] text-right">Total</TableHead>
                 <TableHead className="w-[100px] text-center">Acciones</TableHead>
               </TableRow>
@@ -163,7 +159,7 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
             <TableBody>
               {filteredProductos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className={`text-center py-8 ${productosConErrores.length > 0 || productos.length === 0 && searchTerm === '' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                  <TableCell colSpan={7} className={`text-center py-8 ${productosConErrores.length > 0 || productos.length === 0 && searchTerm === '' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                     {productosConErrores.length > 0 || productos.length === 0 && searchTerm === '' ? 
                       '⚠️ Debe agregar al menos un producto. Haga clic en "Agregar ítem en blanco" o use las herramientas arriba.' : 
                       'No hay productos agregados. Haga clic en "Agregar ítem en blanco" para comenzar.'}
@@ -218,17 +214,6 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
                             step="0.01"
                           />
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={editingItem.descuento || ''}
-                            onChange={(e) => handleEditChange('descuento', parseFloat(e.target.value) || 0)}
-                            className="h-8 text-right"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                          />
-                        </TableCell>
                         <TableCell className="text-right font-medium">
                           ${calculateLineTotal(editingItem).toFixed(2)}
                         </TableCell>
@@ -261,7 +246,6 @@ const ProductosServiciosTable = ({ productos = [], onProductosChange, onTotalesC
                         <TableCell>{item.unidad}</TableCell>
                         <TableCell className="text-right">{item.cantidad}</TableCell>
                         <TableCell className="text-right">${item.precioUnitario?.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">{item.descuento}%</TableCell>
                         <TableCell className="text-right font-medium">
                           ${calculateLineTotal(item).toFixed(2)}
                         </TableCell>

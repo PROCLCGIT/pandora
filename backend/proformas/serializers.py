@@ -59,8 +59,8 @@ class ProformaItemSerializer(serializers.ModelSerializer):
             ret['producto_nombre'] = instance.producto_ofertado.nombre
         elif instance.tipo_item == ProformaItem.TipoItem.PRODUCTO_DISPONIBLE and instance.producto_disponible:
             ret['producto_nombre'] = instance.producto_disponible.nombre
-        elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
-            ret['producto_nombre'] = instance.inventario.nombre
+        # elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
+        #     ret['producto_nombre'] = instance.inventario.nombre
         return ret
 
 
@@ -187,13 +187,13 @@ class ProformaItemDetalladoSerializer(serializers.ModelSerializer):
                 'codigo': instance.producto_disponible.codigo,
                 # Añadir más campos específicos del producto disponible
             }
-        elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
-            ret['producto_nombre'] = instance.inventario.nombre
-            ret['producto_detalle'] = {
-                'id': instance.inventario.id,
-                'codigo': instance.inventario.codigo,
-                # Añadir más campos específicos del producto de inventario
-            }
+        # elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
+        #     ret['producto_nombre'] = instance.inventario.nombre
+        #     ret['producto_detalle'] = {
+        #         'id': instance.inventario.id,
+        #         'codigo': instance.inventario.codigo,
+        #         # Añadir más campos específicos del producto de inventario
+        #     }
         
         # Cálculos adicionales
         ret['precio_con_descuento'] = instance.precio_unitario * (1 - (instance.porcentaje_descuento / 100))

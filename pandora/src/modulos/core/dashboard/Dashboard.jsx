@@ -141,7 +141,8 @@ const pendingTasks = [
 
 const Dashboard = () => {
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="w-full max-w-none px-6 py-6 space-y-6">
       {/* Tarjetas de estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
@@ -309,6 +310,7 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

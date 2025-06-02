@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Brief API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .error {
+            background: #fee;
+            border-color: #fcc;
+            color: #c00;
+        }
+        .success {
+            background: #efe;
+            border-color: #cfc;
+            color: #060;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Brief API - Choices</h1>
+        <p>Esta página prueba el endpoint de choices del módulo Brief</p>
+        
+        <h2>Pruebas disponibles:</h2>
+        
+        <button onclick="testDirectFetch()">Test Direct Fetch</button>
+        <button onclick="testAxios()">Test con Axios</button>
+        <button onclick="testWithAuth()">Test con Autenticación</button>
+        <button onclick="clearResults()">Limpiar Resultados</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/brief/briefs/choices/';
+        
+        function addResult(title, content, isError = false) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+                <small>Timestamp: ${new Date().toLocaleString()}</small>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testDirectFetch() {
+            try {
+                console.log('Iniciando test Direct Fetch...');
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                addResult('Direct Fetch - Success', data);
+                
+                // Mostrar específicamente las opciones de origin
+                if (data.origin) {
+                    addResult('Origin Choices', data.origin);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addResult('Direct Fetch - Error', {
+                    message: error.message,
+                    stack: error.stack
+                }, true);
+            }
+        }
+        
+        async function testAxios() {
+            try {
+                console.log('Iniciando test con Axios...');
+                
+                // Importar axios si está disponible
+                if (typeof axios === 'undefined') {
+                    addResult('Axios Test', 'Axios no está disponible en esta página de prueba', true);
+                    return;
+                }
+                
+                const response = await axios.get(API_URL);
+                console.log('Axios response:', response);
+                
+                addResult('Axios Test - Success', response.data);
+                
+            } catch (error) {
+                console.error('Axios error:', error);
+                addResult('Axios Test - Error', {
+                    message: error.message,
+                    response: error.response?.data,
+                    status: error.response?.status
+                }, true);
+            }
+        }
+        
+        async function testWithAuth() {
+            try {
+                console.log('Iniciando test con autenticación...');
+                
+                // Primero obtener el token si existe
+                const authToken = localStorage.getItem('access_token');
+                
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+                
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                addResult('With Auth - Success', {
+                    hasToken: !!authToken,
+                    data: data
+                });
+                
+            } catch (error) {
+                console.error('Auth test error:', error);
+                addResult('With Auth - Error', {
+                    message: error.message,
+                    stack: error.stack
+                }, true);
+            }
+        }
+        
+        // Auto-ejecutar el test al cargar la página
+        window.onload = () => {
+            console.log('Página de prueba cargada');
+            console.log('API URL:', API_URL);
+            
+            // Ejecutar test automáticamente
+            testDirectFetch();
+        };
+    </script>
+</body>
+</html>

@@ -7,36 +7,13 @@ import ConfiguracionProformaForm from '../components/ConfiguracionProformaForm';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import {
-  User,
-  Search,
-  PlusSquare,
-  Edit3,
-  Clock,
-  FileText,
-  ChevronDown,
-  Filter,
-  ArrowLeftRight,
-  Download,
-  Printer,
-  AlertCircle,
-  Share2,
-  Settings2,
-  CheckSquare,
-  Save,
-  Loader2,
-  Eye,
-  RotateCcw,
+import { User, Search, PlusSquare, Edit3, Clock, FileText, ChevronDown, Filter,
+  ArrowLeftRight, Download, Printer, AlertCircle, Share2, Settings2,
+  CheckSquare, Save, Loader2, Eye, RotateCcw,
 } from 'lucide-react';
+
 
 // Importar componentes factorizados
 import ClienteSection from '../components/form/ClienteSection';
@@ -64,14 +41,14 @@ export default function AddProformaPage() {
   const [cliente, setCliente] = useState({});
   const [detallesProforma, setDetallesProforma] = useState({
     nombre: '',
-    empresa: '',
-    tipoContratacion: '',
+    empresa: '1', // Valor por defecto: empresa ID 1
+    tipoContratacion: '1', // Valor por defecto: tipo contratación ID 1
     fechaEmision: new Date(),
     fechaVencimiento: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
     formaPago: '50% anticipo, 50% contra entrega',
     tiempoEntrega: '5 días hábiles',
     atencion: '',
-    porcentajeImpuesto: 12
+    porcentajeImpuesto: 15
   });
   const [productos, setProductos] = useState([]);
   const [totales, setTotales] = useState({ subtotal: 0, iva: 0, total: 0 });
@@ -122,7 +99,10 @@ export default function AddProformaPage() {
           if (draft.detallesProforma && Object.keys(draft.detallesProforma).length > 0) {
             setDetallesProforma(prev => ({
               ...prev, // Mantiene los valores predeterminados si no están en el borrador
-              ...draft.detallesProforma
+              ...draft.detallesProforma,
+              // Asegurar que siempre mantenemos valores por defecto para empresa y tipoContratacion
+              empresa: draft.detallesProforma.empresa || '1',
+              tipoContratacion: draft.detallesProforma.tipoContratacion || '1'
             }));
           }
           if (draft.productos && draft.productos.length > 0) {
@@ -177,17 +157,33 @@ export default function AddProformaPage() {
         ]);
         setEmpresas(empresasData.results || []);
         setTiposContratacion(tiposData.results || []);
+        
+        // Verificar si los valores por defecto existen en las lis tas cargadas
+        const empresaExists = empresasData.results?.some(e => e.id === 1 || e.id === '1');
+        const tipoExists = tiposData.results?.some(t => t.id === 1 || t.id === '1');
+        
+        console.log('Datos de empresas:', empresasData.results);
+        console.log('Datos de tipos contratación:', tiposData.results);
+        
+        // Mostrar específicamente el tipo con ID 2
+        const tipoId1 = tiposData.results?.find(t => t.id === 1 || t.id === '1');
+        if (tipoId1) {
+          console.log('📋 Tipo de Contrato con ID 1:', tipoId1.nombre, '- Completo:', tipoId1);
+        }
+        
+        console.log('Empresa con ID 1 existe:', empresaExists);
+        console.log('Tipo contratación con ID 1 existe:', tipoExists);
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
     };
     fetchInitialData();
-  }, []);
+  }, [isEditMode, id]);
 
   // Calculate totals when products change
   useEffect(() => {
     const subtotal = productos.reduce((sum, item) => sum + (item.total || 0), 0);
-    const porcentajeImpuesto = detallesProforma.porcentajeImpuesto || 12;
+    const porcentajeImpuesto = detallesProforma.porcentajeImpuesto || 15;
     const impuesto = subtotal * (porcentajeImpuesto / 100);
     const total = subtotal + impuesto;
     
@@ -285,7 +281,7 @@ export default function AddProformaPage() {
         atencionA: proformaData.atencion_a || '',
         condicionesPago: proformaData.condiciones_pago || '',
         tiempoEntrega: proformaData.tiempo_entrega || '',
-        porcentajeImpuesto: proformaData.porcentaje_impuesto || 12,
+        porcentajeImpuesto: proformaData.porcentaje_impuesto || 15,
       });
 
       // Cargar productos/items
@@ -477,14 +473,14 @@ export default function AddProformaPage() {
     setCliente({});
     setDetallesProforma({
       nombre: '',
-      empresa: '',
-      tipoContratacion: '',
+      empresa: '1', // Mantener valor por defecto
+      tipoContratacion: '1', // Mantener valor por defecto
       fechaEmision: new Date(),
       fechaVencimiento: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       formaPago: '50% anticipo, 50% contra entrega',
       tiempoEntrega: '5 días hábiles',
       atencion: '',
-      porcentajeImpuesto: 12
+      porcentajeImpuesto: 15
     });
     setProductos([]);
     setNotas('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
@@ -664,7 +660,7 @@ export default function AddProformaPage() {
         atencion_a: ensureString(detallesProforma.atencion, 'N/A'), // Ensure it's never empty
         condiciones_pago: ensureString(detallesProforma.formaPago, '50% anticipo, 50% contra entrega'),
         tiempo_entrega: ensureString(detallesProforma.tiempoEntrega, '5 días hábiles'),
-        porcentaje_impuesto: safeParseFloat(detallesProforma.porcentajeImpuesto) || 12,
+        porcentaje_impuesto: safeParseFloat(detallesProforma.porcentajeImpuesto) || 15,
         subtotal: safeParseFloat(totales.subtotal),
         impuesto: safeParseFloat(totales.iva),
         total: safeParseFloat(totales.total),
@@ -943,7 +939,8 @@ export default function AddProformaPage() {
           initialData={configProformaData || {}} // Pasa los datos existentes o un objeto vacío
         />
       )}
-      <div className="space-y-6 p-6 bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
+        <div className="w-full max-w-none px-6 py-6 space-y-6">
       
       {/* Error Alert */}
       {loadError && (
@@ -986,56 +983,6 @@ export default function AddProformaPage() {
           {isEditMode ? 'Editar Proforma' : 'Nueva Proforma'}
         </h1>
         <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline"
-            onClick={handleExportPDF}
-            disabled={loadingPDF || !savedProformaId || !productos?.length || !cliente.id}
-            title={
-              !savedProformaId 
-                ? "Primero debe guardar la proforma" 
-                : !productos?.length 
-                  ? "La proforma debe tener productos/servicios"
-                  : !cliente.id
-                    ? "Debe seleccionar un cliente"
-                    : "Exportar proforma a PDF"
-            }
-            className="h-8 w-8 p-0"
-          >
-            {loadingPDF ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-              </>
-            )}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handlePreviewPDF}
-            disabled={loadingPreview || !savedProformaId || !productos?.length || !cliente.id}
-            title={
-              !savedProformaId 
-                ? "Primero debe guardar la proforma" 
-                : !productos?.length 
-                  ? "La proforma debe tener productos/servicios"
-                  : !cliente.id
-                    ? "Debe seleccionar un cliente"
-                    : "Ver vista previa del PDF"
-            }
-            className="h-8 w-8 p-0"
-          >
-            {loadingPreview ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-              </>
-            )}
-          </Button>
           <Button variant="outline" title="Imprimir" className="h-8 w-8 p-0">
             <Printer className="h-4 w-4" />
           </Button>
@@ -1045,37 +992,22 @@ export default function AddProformaPage() {
           <Button variant="outline" onClick={() => setShowConfigForm(true)} title="Configurar" className="h-8 w-8 p-0">
             <Settings2 className="h-4 w-4" />
           </Button>
-          <Button variant="outline" title="Generar" className="h-8 w-8 p-0">
-            <CheckSquare className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setShowProformasGuardadas(true)}
-            title="Guardadas"
-            className="h-8 w-8 p-0"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
           <Button
             variant="outline"
             onClick={handleResetForm}
             title="Resetear Formulario"
-            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
-            disabled={loading || loadingPDF || loadingPreview} // Disable if any loading is active
+            className="h-8 w-8 p-0"
+            disabled={loading || loadingPDF || loadingPreview}
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
           <Button 
-            onClick={handleSaveProforma}
-            disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium h-8 w-8 p-0"
-            title={loading ? "Guardando proforma..." : "Guardar proforma"}
+            variant="outline"
+            onClick={() => setShowProformasGuardadas(true)}
+            title="Proformas Guardadas"
+            className="h-8 w-8 p-0"
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+            <FileText className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -1130,6 +1062,7 @@ export default function AddProformaPage() {
           onTotalesChange={setTotales}
           productosConErrores={fieldErrors.productosIndices || []}
           onErrorClear={() => setFieldErrors(prev => ({...prev, productos: false, productosIndices: []}))}
+          porcentajeImpuesto={detallesProforma.porcentajeImpuesto || 15}
         />
       </div>
 
@@ -1152,7 +1085,7 @@ export default function AddProformaPage() {
           </CardContent>
         </Card>
 
-        <ResumenSection totales={totales} />
+        <ResumenSection totales={totales} porcentajeImpuesto={detallesProforma.porcentajeImpuesto || 15} />
       </div>
 
       <p className="text-center text-sm text-gray-500">
@@ -1180,7 +1113,111 @@ export default function AddProformaPage() {
         selectedTemplate={selectedTemplate}
         isGenerating={loadingPDF}
       />
-    </div>
+
+      {/* Barra de acciones */}
+      <div className="sticky bottom-4 py-4 z-10">
+        <div className="bg-white backdrop-blur-md bg-opacity-95 p-4 rounded-xl shadow-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-gray-500 hidden md:block">
+            {isEditMode ? (
+              <div className="flex items-center">
+                <span>Actualice los campos necesarios y guarde los cambios.</span>
+                {savedProformaId && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium ml-3">
+                    ID: {savedProformaId}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                <span>Complete los campos requeridos para crear una nueva proforma.</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-3 w-full sm:w-auto">
+            {/* Vista Previa */}
+            <Button 
+              variant="outline"
+              onClick={handlePreviewPDF}
+              disabled={loadingPreview || !savedProformaId || !productos?.length || !cliente.id}
+              title={
+                !savedProformaId 
+                  ? "Primero debe guardar la proforma" 
+                  : !productos?.length 
+                    ? "La proforma debe tener productos/servicios"
+                    : !cliente.id
+                      ? "Debe seleccionar un cliente"
+                      : "Ver vista previa del PDF"
+              }
+              className="rounded-lg px-6 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+            >
+              {loadingPreview ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Cargando...
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Visualizar
+                </>
+              )}
+            </Button>
+
+            {/* Exportar PDF */}
+            <Button 
+              variant="outline"
+              onClick={handleExportPDF}
+              disabled={loadingPDF || !savedProformaId || !productos?.length || !cliente.id}
+              title={
+                !savedProformaId 
+                  ? "Primero debe guardar la proforma" 
+                  : !productos?.length 
+                    ? "La proforma debe tener productos/servicios"
+                    : !cliente.id
+                      ? "Debe seleccionar un cliente"
+                      : "Exportar proforma a PDF"
+              }
+              className="rounded-lg px-6 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+            >
+              {loadingPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </>
+              )}
+            </Button>
+
+            {/* Guardar */}
+            <Button 
+              onClick={handleSaveProforma}
+              disabled={loading}
+              className="rounded-lg px-8 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-md transition-all duration-300 hover:shadow-lg"
+              title={loading ? "Guardando proforma..." : "Guardar proforma"}
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Guardando...
+                </div>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isEditMode ? 'Actualizar Proforma' : 'Guardar Proforma'}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+        </div>
+      </div>
     </>
   );
 }

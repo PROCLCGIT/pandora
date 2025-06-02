@@ -8,7 +8,20 @@ import {
   Edit3,
   Clock,
   Replace,
-} from 'lucide-react';
+  Dice1,
+  Dice2,
+  Dice3,
+  Dice4,
+  Tally1,
+  Tally2,
+  Tally3,
+
+  
+  
+  } 
+from 'lucide-react';
+import Filter1Icon from '@mui/icons-material/Filter1';
+import Filter2Icon from '@mui/icons-material/Filter2';
 import ClientSelectionModal from '../modals/ClientSelectionModal';
 import AddClientModal from '../modals/AddClientModal';
 
@@ -52,6 +65,90 @@ const ClienteSection = ({ cliente = {}, onClienteChange, hasError = false, onErr
     setShowAddClientModal(false);
     handleSelectClient(newClient);
   };
+
+  const handleLoadDefaultClient = async () => {
+    try {
+      // Cargar cliente con ID 4 directamente desde la API
+      const response = await fetch('/api/directorio/clientes/4/');
+      if (response.ok) {
+        const clienteData = await response.json();
+        
+        // Formatear los datos para la proforma
+        const formattedClient = {
+          id: clienteData.id,
+          empresa: clienteData.nombre,
+          ruc: clienteData.ruc,
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          direccion: clienteData.direccion,
+          alias: clienteData.alias,
+          ciudad: clienteData.ciudad,
+          ciudad_nombre: clienteData.ciudad?.nombre,
+          tipo_cliente: clienteData.tipo_cliente,
+          tipo_cliente_nombre: clienteData.tipo_cliente?.nombre,
+          razon_social: clienteData.razon_social,
+          zona: clienteData.zona,
+          zona_nombre: clienteData.zona?.nombre
+        };
+        
+        // Llamar al callback para actualizar el formulario
+        if (onClienteChange) {
+          onClienteChange(formattedClient);
+        }
+        
+        // Limpiar error si existe
+        if (onErrorClear) {
+          onErrorClear();
+        }
+      } else {
+        console.error('Error al cargar cliente ID 4:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error al cargar cliente por defecto:', error);
+    }
+  };
+
+  const handleLoadClienteUno = async () => {
+    try {
+      // Cargar cliente con ID 1 directamente desde la API
+      const response = await fetch('/api/directorio/clientes/1/');
+      if (response.ok) {
+        const clienteData = await response.json();
+        
+        // Formatear los datos para la proforma
+        const formattedClient = {
+          id: clienteData.id,
+          empresa: clienteData.nombre,
+          ruc: clienteData.ruc,
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          direccion: clienteData.direccion,
+          alias: clienteData.alias,
+          ciudad: clienteData.ciudad,
+          ciudad_nombre: clienteData.ciudad?.nombre,
+          tipo_cliente: clienteData.tipo_cliente,
+          tipo_cliente_nombre: clienteData.tipo_cliente?.nombre,
+          razon_social: clienteData.razon_social,
+          zona: clienteData.zona,
+          zona_nombre: clienteData.zona?.nombre
+        };
+        
+        // Llamar al callback para actualizar el formulario
+        if (onClienteChange) {
+          onClienteChange(formattedClient);
+        }
+        
+        // Limpiar error si existe
+        if (onErrorClear) {
+          onErrorClear();
+        }
+      } else {
+        console.error('Error al cargar cliente ID 1:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error al cargar cliente ID 1:', error);
+    }
+  };
   
   return (
     <Card className={hasError ? 'border-red-500' : ''}>
@@ -80,11 +177,23 @@ const ClienteSection = ({ cliente = {}, onClienteChange, hasError = false, onErr
             >
               <PlusSquare className="h-3.5 w-3.5 text-green-500" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-              <Edit3 className="h-3.5 w-3.5 text-blue-500" />
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 w-7 p-0"
+              onClick={handleLoadClienteUno}
+              title="Cargar cliente ID: 1"
+            >
+              <Filter1Icon className="h-3.5 w-3.5 text-blue-500" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-              <Replace className="h-3.5 w-3.5 text-orange-500" />
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 w-7 p-0"
+              onClick={handleLoadDefaultClient}
+              title="Cargar cliente por defecto (ID: 4)"
+            >
+              <Filter2Icon className="h-3.5 w-3.5 text-orange-500" />
             </Button>
           </div>
         </div>
@@ -129,6 +238,7 @@ const ClienteSection = ({ cliente = {}, onClienteChange, hasError = false, onErr
         onClose={() => setShowAddClientModal(false)}
         onClientCreated={handleClientCreated}
       />
+      
     </Card>
   );
 };

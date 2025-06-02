@@ -323,300 +323,125 @@ const DocManagerPremium = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Título fijo al inicio de la página */}
-      <div className="max-w-8xl mx-auto px-6 lg:px-8 pt-8 pb-2">
-        <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
-            <Layers className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              DocManager
-            </h1>
-            <p className="text-xs text-gray-500 font-medium">Enterprise Document Management</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header principal con estilo similar a la imagen */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <h1 className="text-2xl font-semibold">Gestor Documental</h1>
+            <button className="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors">
+              <FileText className="w-5 h-5" />
+              Subir Documento
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-8xl mx-auto px-6 lg:px-8 py-8">
-        {/* Métricas Premium */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6 mb-8">
-          <AdvancedMetricCard
-            title="Total Documentos"
-            value={advancedMetrics.totalDocuments.toLocaleString()}
-            icon={Database}
-            gradient="from-blue-500 to-cyan-500"
-            trend="up"
-            trendValue="+12%"
-          />
-          <AdvancedMetricCard
-            title="Almacenamiento"
-            value={`${advancedMetrics.storageUsed}%`}
-            subtitle={`${advancedMetrics.storageUsed} GB de 100 GB`}
-            icon={HardDrive}
-            gradient="from-green-500 to-emerald-500"
-          />
-          <AdvancedMetricCard
-            title="Colaboradores"
-            value={advancedMetrics.activeCollaborators}
-            subtitle="activos este mes"
-            icon={Users}
-            gradient="from-purple-500 to-indigo-500"
-            trend="up"
-            trendValue="+8%"
-          />
-          <AdvancedMetricCard
-            title="Subidas Hoy"
-            value={advancedMetrics.dailyUploads}
-            icon={Upload}
-            gradient="from-orange-500 to-red-500"
-          />
-          <AdvancedMetricCard
-            title="Descargas"
-            value={`${(advancedMetrics.weeklyDownloads / 1000).toFixed(1)}K`}
-            subtitle="esta semana"
-            icon={Download}
-            gradient="from-teal-500 to-cyan-500"
-            trend="up"
-            trendValue="+15%"
-          />
-          <AdvancedMetricCard
-            title="Seguridad"
-            value={`${advancedMetrics.securityScore}%`}
-            icon={Shield}
-            gradient="from-emerald-500 to-green-500"
-          />
-          <AdvancedMetricCard
-            title="Uptime"
-            value={`${advancedMetrics.systemHealth}%`}
-            icon={Activity}
-            gradient="from-indigo-500 to-blue-500"
-          />
-          <AdvancedMetricCard
-            title="Performance"
-            value="A+"
-            subtitle="sistema optimizado"
-            icon={Zap}
-            gradient="from-yellow-500 to-orange-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
-          {/* Sidebar Premium */}
-          <div className="xl:col-span-1 space-y-6">
-            {/* Acciones Rápidas */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                <Zap className="w-5 h-5 mr-2 text-blue-600" />
-                Acciones Rápidas
-              </h3>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Barra de herramientas */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Barra de búsqueda */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Buscar por título, descripción, tipo de archivo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              />
+            </div>
+            
+            {/* Botones de acción */}
+            <div className="flex items-center gap-3">
+              <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium flex items-center gap-2 transition-colors">
+                <Filter className="w-4 h-4" />
+                Filtros
+                <ChevronDown className="w-4 h-4" />
+              </button>
               
-              <div className="space-y-3">
-                <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl px-6 py-4 text-sm font-semibold hover:from-blue-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center">
-                  <Upload className="w-5 h-5 mr-3" />
-                  Subir Documentos
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded ${
+                    viewMode === 'grid' 
+                      ? 'bg-white shadow-sm text-blue-600' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  } transition-all`}
+                >
+                  <Grid3X3 className="w-5 h-5" />
                 </button>
-                <button className="w-full bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl px-6 py-4 text-sm font-semibold hover:from-gray-200 hover:to-gray-300 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center">
-                  <FolderPlus className="w-5 h-5 mr-3" />
-                  Nueva Carpeta
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${
+                    viewMode === 'list' 
+                      ? 'bg-white shadow-sm text-blue-600' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  } transition-all`}
+                >
+                  <List className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-
-            {/* Categorías Premium */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-              <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                <Folder className="w-5 h-5 mr-2 text-indigo-600" />
-                Categorías
-              </h4>
-              <nav className="space-y-2">
-                {advancedCategories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <button
-                      key={category.name}
-                      onClick={() => setSelectedCategory(category.name)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-sm rounded-xl transition-all ${
-                        selectedCategory === category.name
-                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-md'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br ${category.gradient} mr-3 shadow-sm`}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="font-medium">{category.name}</span>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        selectedCategory === category.name 
-                          ? 'bg-blue-100 text-blue-600' 
-                          : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {category.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Actividad Reciente */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-              <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                <Activity className="w-5 h-5 mr-2 text-green-600" />
-                Actividad Reciente
-              </h4>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {activity.user} {activity.action}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{activity.document}</p>
-                      <p className="text-xs text-gray-400">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors">
+                <Users className="w-4 h-4" />
+                Grupos
+              </button>
+              
+              <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors">
+                <Folder className="w-4 h-4" />
+                Colecciones
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Área Principal Premium */}
-          <div className="xl:col-span-4 space-y-6">
-            {/* Barra de herramientas mejorada */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div className="flex items-center space-x-4 flex-1">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, autor o etiquetas..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-white/50 backdrop-blur-sm transition-all"
-                    />
-                  </div>
-                  <button className="p-3 text-gray-500 hover:text-gray-700 border-2 border-gray-200 rounded-xl hover:bg-white/80 hover:border-gray-300 transition-all">
-                    <Filter className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <select 
-                    value={selectedSort}
-                    onChange={(e) => setSelectedSort(e.target.value)}
-                    className="px-4 py-2 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-white/50 backdrop-blur-sm"
-                  >
-                    <option value="modified">Modificado</option>
-                    <option value="name">Nombre</option>
-                    <option value="size">Tamaño</option>
-                    <option value="author">Autor</option>
-                  </select>
-                  
-                  <div className="flex items-center bg-gray-100/80 rounded-xl p-1 shadow-inner">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-lg transition-all ${
-                        viewMode === 'grid' 
-                          ? 'bg-white shadow-md text-blue-600' 
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <Grid3X3 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-lg transition-all ${
-                        viewMode === 'list' 
-                          ? 'bg-white shadow-md text-blue-600' 
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <List className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Área Principal - Ancho completo */}
+        <div className="space-y-6">
 
-            {/* Vista de documentos mejorada */}
+            {/* Vista de documentos */}
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredDocuments.map((doc) => (
-                  <div key={doc.id} className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden group">
-                    {/* Header del documento */}
-                    <div className="p-6 pb-4">
-                      <div className="flex items-start justify-between mb-4">
+                  <div key={doc.id} className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden group">
+                    {/* Contenido del documento */}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
                         <EnhancedFileIcon type={doc.type} />
-                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {doc.starred && (
-                            <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                          )}
-                          <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
                       </div>
                       
-                      <h4 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors" title={doc.name}>
+                      <h4 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2" title={doc.name}>
                         {doc.name}
                       </h4>
                       
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {doc.tags.slice(0, 2).map((tag, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Información del documento */}
-                    <div className="px-6 pb-4 space-y-3">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span className="font-medium">{doc.size}</span>
-                        <EnhancedStatusBadge status={doc.status} />
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {formatDate(doc.modified)}
-                        </div>
-                        <div className="flex items-center">
-                          <Eye className="w-3 h-3 mr-1" />
-                          {doc.views}
-                        </div>
-                      </div>
+                      <p className="text-xs text-gray-500 mb-3">{doc.size} • {formatDate(doc.modified)}</p>
                       
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                           <UserAvatar name={doc.authorAvatar} size="sm" />
-                          <span className="text-xs font-medium text-gray-600">{doc.author}</span>
+                          <span className="text-xs text-gray-600">{doc.author}</span>
                         </div>
-                        <span className="text-xs text-gray-500">{doc.category}</span>
+                        {doc.starred && (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        )}
                       </div>
                     </div>
                     
-                    {/* Acciones del documento */}
-                    <div className="bg-gray-50/80 backdrop-blur-sm px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-                      <div className="flex items-center space-x-1 text-xs text-gray-500">
-                        <Download className="w-3 h-3 mr-1" />
-                        {doc.downloads} descargas
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                    {/* Barra de acciones */}
+                    <div className="border-t border-gray-100 px-4 py-2 flex items-center justify-between bg-gray-50">
+                      <span className="text-xs text-gray-500">{doc.category}</span>
+                      <div className="flex items-center gap-1">
+                        <button className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all">
+                        <button className="p-1.5 text-gray-400 hover:text-green-600 rounded transition-colors">
                           <Download className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all">
+                        <button className="p-1.5 text-gray-400 hover:text-purple-600 rounded transition-colors">
                           <Share2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -625,10 +450,10 @@ const DocManagerPremium = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl overflow-hidden">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Documento
@@ -712,26 +537,105 @@ const DocManagerPremium = () => {
               </div>
             )}
 
-            {/* Paginación mejorada */}
-            <div className="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-              <div className="text-sm font-medium text-gray-600">
-                Mostrando <span className="font-bold text-gray-900">{filteredDocuments.length}</span> de{' '}
-                <span className="font-bold text-gray-900">{documentsData.length}</span> documentos
+            {/* Paginación */}
+            <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+              <div className="text-sm text-gray-600">
+                Mostrando <span className="font-semibold text-gray-900">{filteredDocuments.length}</span> de{' '}
+                <span className="font-semibold text-gray-900">{documentsData.length}</span> documentos
               </div>
-              <div className="flex items-center space-x-2">
-                <button className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all">
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                   Anterior
                 </button>
-                <button className="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg">
+                <button className="px-3 py-1.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                   1
                 </button>
-                <button className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all">
+                <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                   2
                 </button>
-                <button className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all">
+                <button className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                   Siguiente
                 </button>
               </div>
+            </div>
+        </div>
+
+        {/* Secciones auxiliares debajo de la tabla */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {/* Acciones Rápidas */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Zap className="w-5 h-5 mr-2 text-blue-600" />
+              Acciones Rápidas
+            </h3>
+            
+            <div className="space-y-3">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center">
+                <Upload className="w-5 h-5 mr-2" />
+                Subir Documentos
+              </button>
+              <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center">
+                <FolderPlus className="w-5 h-5 mr-2" />
+                Nueva Carpeta
+              </button>
+            </div>
+          </div>
+
+          {/* Categorías */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Folder className="w-5 h-5 mr-2 text-indigo-600" />
+              Categorías
+            </h4>
+            <nav className="space-y-2">
+              {advancedCategories.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <button
+                    key={category.name}
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all ${
+                      selectedCategory === category.name
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <Icon className="w-4 h-4 mr-2 text-gray-500" />
+                      <span className="font-medium">{category.name}</span>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      selectedCategory === category.name 
+                        ? 'bg-blue-100 text-blue-600' 
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {category.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Actividad Reciente */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Activity className="w-5 h-5 mr-2 text-green-600" />
+              Actividad Reciente
+            </h4>
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {activity.user} {activity.action}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{activity.document}</p>
+                    <p className="text-xs text-gray-400">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

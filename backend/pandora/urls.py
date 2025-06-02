@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/proformas/', include('proformas.urls')),
     path('api/brief/', include('brief.urls')),  # Módulo de gestión de briefs
     path('api/inventario/', include('inventario.urls')),
+    path('api/fastinfo/', include('fastinfo.urls')),  # Módulo de información rápida institucional
     
     # URLs para autenticación JWT con cookies (nuevas)
     path('api/auth/login/', CookieTokenObtainPairView.as_view(), name='token_obtain_pair_cookie'),

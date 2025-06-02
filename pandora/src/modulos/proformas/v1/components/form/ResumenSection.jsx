@@ -3,8 +3,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { FileText } from 'lucide-react';
 
-const ResumenSection = ({ totales = {} }) => {
-  const { subtotal = 0, iva = 0, total = 0 } = totales;
+const ResumenSection = ({ totales = {}, porcentajeImpuesto = 15 }) => {
+  // Asegurar que los valores sean números
+  const subtotal = parseFloat(totales.subtotal) || 0;
+  const iva = parseFloat(totales.iva) || 0;
+  const total = parseFloat(totales.total) || 0;
+  const porcentaje = parseFloat(porcentajeImpuesto) || 15;
 
   return (
     <Card>
@@ -20,7 +24,7 @@ const ResumenSection = ({ totales = {} }) => {
           <span>${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
-          <span>IVA (12%):</span>
+          <span>IVA ({porcentaje}%):</span>
           <span>${iva.toFixed(2)}</span>
         </div>
         <Separator />

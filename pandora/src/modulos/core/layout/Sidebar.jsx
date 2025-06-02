@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Home, Package, FileText, Briefcase, Scale, 
+  Home, Package, FileText, Briefcase, 
   FolderOpen, Settings, ChevronDown, ChevronRight,
   Code, MapPin, Building, Layers, Users, 
   FileArchive, Database, Files, Upload, Tags, FolderTree,
   FileUp, Download, FilePlus, FileSpreadsheet, ShoppingBag,
-  Warehouse, PackageSearch, TruckIcon, AlertCircle
+  Warehouse, PackageSearch, TruckIcon, AlertCircle, Zap
 } from 'lucide-react';
 
 // Estructura de navegación del sidebar
@@ -91,9 +91,16 @@ const navigationItems = [
     path: '/docmanager',
     submenu: [
       { title: 'Gestor de Documentos', path: '/docmanager', icon: <Files size={16} /> },
-      { title: 'Ver Documentos', path: '/docmanager/documentos', icon: <FileText size={16} /> },
-      { title: 'Categorías', path: '/docmanager/categorias', icon: <FolderTree size={16} /> },
-      { title: 'Subir Documento', path: '/docmanager/documentos/add', icon: <Upload size={16} /> },
+    ],
+  },
+  {
+    title: 'FastInfo',
+    icon: <Zap size={20} />,
+    path: '/fastinfo',
+    submenu: [
+      { title: 'Dashboard', path: '/fastinfo', icon: <Home size={16} /> },
+      { title: 'Entidades Institucionales', path: '/fastinfo/dashboard', icon: <Building size={16} /> },
+      { title: 'Tipos de Entidad', path: '/fastinfo/nombres-entidad', icon: <Database size={16} /> },
     ],
   },
   {

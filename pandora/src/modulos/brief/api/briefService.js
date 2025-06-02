@@ -192,10 +192,12 @@ export const deleteBriefItem = async (itemId) => {
 // Get choices for dropdowns
 export const getBriefChoices = async () => {
   try {
+    console.log('[BriefService] Getting choices from:', `${API_BASE_URL}/briefs/choices/`);
     const response = await axios.get(`${API_BASE_URL}/briefs/choices/`);
+    console.log('[BriefService] Choices response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching brief choices:', error);
+    console.error('[BriefService] Error fetching brief choices:', error);
     throw error;
   }
 };
