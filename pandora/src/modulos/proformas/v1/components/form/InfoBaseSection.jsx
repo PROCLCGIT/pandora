@@ -12,7 +12,10 @@ const InfoBaseSection = ({
   tiposContratacion,
   fieldErrors,
   setFieldErrors,
-  numeroProforma
+  numeroProforma,
+  modeloTemplate,
+  onModeloChange,
+  readOnly = false
 }) => {
   // Establecer valores por defecto cuando las listas se cargan
   useEffect(() => {
@@ -138,6 +141,31 @@ const InfoBaseSection = ({
             className={`bg-white h-8 text-sm ${fieldErrors.nombre ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
           />
         </div>
+
+        {/* Modelo de Template */}
+        {!readOnly && (
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              Modelo de Template:
+            </label>
+            <Select 
+              value={modeloTemplate}
+              onValueChange={onModeloChange}
+            >
+              <SelectTrigger className="w-full bg-white h-8 text-sm border-gray-300">
+                <SelectValue placeholder="Seleccione un modelo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basico">Básico (Código + Descripción)</SelectItem>
+                <SelectItem value="cudin">CUDIN</SelectItem>
+                <SelectItem value="cudin_modelo">CUDIN + Modelo</SelectItem>
+                <SelectItem value="cudin_serie">CUDIN + Serie</SelectItem>
+                <SelectItem value="sanitario">Sanitario (CUDIN + Lote + Registro)</SelectItem>
+                <SelectItem value="completo">Completo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       </div>
     </div>

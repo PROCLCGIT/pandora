@@ -9,6 +9,9 @@ from .models import (
 class ProformaItemSerializer(serializers.ModelSerializer):
     """Serializer para el modelo ProformaItem"""
     unidad_nombre = serializers.CharField(source='unidad.nombre', read_only=True)
+    campo_identificador = serializers.CharField(source='get_campo_identificador', read_only=True)
+    precio_con_descuento = serializers.DecimalField(source='precio_con_descuento', max_digits=15, decimal_places=2, read_only=True)
+    valor_descuento = serializers.DecimalField(source='valor_descuento', max_digits=15, decimal_places=2, read_only=True)
     
     class Meta:
         model = ProformaItem
@@ -16,7 +19,7 @@ class ProformaItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at', 'total')
     
     def validate(self, data):
-        """Validación personalizada para debugging"""
+        """Validación personalizada según el modelo de template de la proforma"""
         print(f"[DEBUG] ProformaItemSerializer - Validating data: {data}")
         
         # Verificar que la unidad existe
@@ -49,11 +52,38 @@ class ProformaItemSerializer(serializers.ModelSerializer):
                 print(f"[DEBUG] ProductoOfertado con ID {po_id} no existe")
                 raise serializers.ValidationError({'producto_ofertado': f'ProductoOfertado con ID {po_id} no existe'})
         
+        # Validar campos requeridos según el modelo de template de la proforma
+        if self.instance and self.instance.proforma:
+            self._validar_campos_segun_modelo(data, self.instance.proforma)
+        elif 'proforma' in data:
+            proforma = data['proforma']
+            self._validar_campos_segun_modelo(data, proforma)
+        
         return data
+    
+    def _validar_campos_segun_modelo(self, data, proforma):
+        """Valida campos requeridos según el modelo de template de la proforma"""
+        config = proforma.get_campos_visibles()
+        campos_requeridos = config['requeridos']
+        
+        errores = {}
+        for campo in campos_requeridos:
+            # Verificar si el campo está en los datos o en la instancia existente
+            valor = data.get(campo)
+            if self.instance and not valor:
+                valor = getattr(self.instance, campo, None)
+            
+            if not valor or (isinstance(valor, str) and not valor.strip()):
+                nombre_campo = config['headers'][config['campos'].index(campo)] if campo in config['campos'] else campo
+                errores[campo] = f'El campo {nombre_campo} es requerido para el modelo {proforma.get_titulo_modelo()}'
+        
+        if errores:
+            raise serializers.ValidationError(errores)
         
     def to_representation(self, instance):
         """Personaliza la representación del objeto"""
         ret = super().to_representation(instance)
+        
         # Añadir referencias de productos según el tipo_item
         if instance.tipo_item == ProformaItem.TipoItem.PRODUCTO_OFERTADO and instance.producto_ofertado:
             ret['producto_nombre'] = instance.producto_ofertado.nombre
@@ -61,6 +91,11 @@ class ProformaItemSerializer(serializers.ModelSerializer):
             ret['producto_nombre'] = instance.producto_disponible.nombre
         # elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
         #     ret['producto_nombre'] = instance.inventario.nombre
+        
+        # Formatear fecha de vencimiento para mejor visualización
+        if instance.fecha_vencimiento:
+            ret['fecha_vencimiento_formatted'] = instance.fecha_vencimiento.strftime('%d/%m/%Y')
+        
         return ret
 
 
@@ -102,16 +137,63 @@ class ProformaSerializer(serializers.ModelSerializer):
     empresa_nombre = serializers.CharField(source='empresa.nombre', read_only=True)
     tipo_contratacion_nombre = serializers.CharField(source='tipo_contratacion.nombre', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    modelo_template_display = serializers.CharField(source='get_modelo_template_display', read_only=True)
+    titulo_modelo = serializers.CharField(source='get_titulo_modelo', read_only=True)
+    campos_visibles = serializers.SerializerMethodField()
+    puede_ser_enviada = serializers.BooleanField(source='puede_ser_enviada', read_only=True)
+    esta_vencida = serializers.BooleanField(source='esta_vencida', read_only=True)
+    dias_hasta_vencimiento = serializers.IntegerField(source='dias_hasta_vencimiento', read_only=True)
+    cantidad_items = serializers.IntegerField(source='cantidad_items', read_only=True)
     
     class Meta:
         model = Proforma
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'numero', 'subtotal', 'impuesto', 'total')
+    
+    def get_campos_visibles(self, obj):
+        """Retorna la configuración de campos visibles según el modelo"""
+        return obj.get_campos_visibles()
+    
+    def validate(self, data):
+        """Validación personalizada para la proforma"""
+        # Si se está cambiando el modelo de template, validar que sea compatible con los ítems existentes
+        if self.instance and 'modelo_template' in data:
+            nuevo_modelo = data['modelo_template']
+            if nuevo_modelo != self.instance.modelo_template:
+                # Crear una proforma temporal para obtener la nueva configuración
+                temp_proforma = Proforma(modelo_template=nuevo_modelo)
+                nueva_config = temp_proforma.get_campos_visibles()
+                nuevos_campos_requeridos = nueva_config['requeridos']
+                
+                # Validar que los ítems existentes cumplan con los nuevos requerimientos
+                items_con_errores = []
+                for item in self.instance.items.all():
+                    errores_item = []
+                    for campo in nuevos_campos_requeridos:
+                        valor = getattr(item, campo, None)
+                        if not valor or (isinstance(valor, str) and not valor.strip()):
+                            errores_item.append(campo)
+                    
+                    if errores_item:
+                        items_con_errores.append({
+                            'item_id': item.id,
+                            'descripcion': item.descripcion[:50],
+                            'campos_faltantes': errores_item
+                        })
+                
+                if items_con_errores:
+                    raise serializers.ValidationError({
+                        'modelo_template': f'No se puede cambiar al modelo {temp_proforma.get_titulo_modelo()} '
+                                         f'porque {len(items_con_errores)} ítem(s) no cumplen con los campos requeridos.',
+                        'items_con_errores': items_con_errores
+                    })
+        
+        return data
         
     def to_representation(self, instance):
         """Personaliza la representación del objeto"""
         ret = super().to_representation(instance)
-        # Añadir campos adicionales o transformar datos si es necesario
+        # Añadir información adicional si es necesario
         return ret
 
 
@@ -125,6 +207,13 @@ class ProformaDetalladoSerializer(serializers.ModelSerializer):
     empresa_nombre = serializers.CharField(source='empresa.nombre', read_only=True)
     tipo_contratacion_nombre = serializers.CharField(source='tipo_contratacion.nombre', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    modelo_template_display = serializers.CharField(source='get_modelo_template_display', read_only=True)
+    titulo_modelo = serializers.CharField(source='get_titulo_modelo', read_only=True)
+    campos_visibles = serializers.SerializerMethodField()
+    items_validacion = serializers.SerializerMethodField()
+    puede_ser_enviada = serializers.BooleanField(source='puede_ser_enviada', read_only=True)
+    esta_vencida = serializers.BooleanField(source='esta_vencida', read_only=True)
+    dias_hasta_vencimiento = serializers.IntegerField(source='dias_hasta_vencimiento', read_only=True)
     
     # Datos adicionales del cliente
     cliente_ruc = serializers.CharField(source='cliente.ruc', read_only=True)
@@ -142,6 +231,14 @@ class ProformaDetalladoSerializer(serializers.ModelSerializer):
         model = Proforma
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'numero', 'subtotal', 'impuesto', 'total')
+    
+    def get_campos_visibles(self, obj):
+        """Retorna la configuración de campos visibles según el modelo"""
+        return obj.get_campos_visibles()
+    
+    def get_items_validacion(self, obj):
+        """Retorna la validación de ítems según el modelo seleccionado"""
+        return obj.validar_items_segun_modelo()
     
     def to_representation(self, instance):
         """Personaliza la representación del objeto"""
@@ -162,6 +259,11 @@ class ProformaItemDetalladoSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.CharField(source='unidad.nombre', read_only=True)
     proforma_numero = serializers.CharField(source='proforma.numero', read_only=True)
     proforma_nombre = serializers.CharField(source='proforma.nombre', read_only=True)
+    proforma_modelo_template = serializers.CharField(source='proforma.modelo_template', read_only=True)
+    proforma_titulo_modelo = serializers.CharField(source='proforma.get_titulo_modelo', read_only=True)
+    campo_identificador = serializers.CharField(source='get_campo_identificador', read_only=True)
+    precio_con_descuento = serializers.DecimalField(source='precio_con_descuento', max_digits=15, decimal_places=2, read_only=True)
+    valor_descuento = serializers.DecimalField(source='valor_descuento', max_digits=15, decimal_places=2, read_only=True)
     
     class Meta:
         model = ProformaItem
@@ -178,6 +280,8 @@ class ProformaItemDetalladoSerializer(serializers.ModelSerializer):
             ret['producto_detalle'] = {
                 'id': instance.producto_ofertado.id,
                 'codigo': instance.producto_ofertado.codigo,
+                'nombre': instance.producto_ofertado.nombre,
+                'descripcion': getattr(instance.producto_ofertado, 'descripcion', ''),
                 # Añadir más campos específicos del producto ofertado
             }
         elif instance.tipo_item == ProformaItem.TipoItem.PRODUCTO_DISPONIBLE and instance.producto_disponible:
@@ -185,6 +289,8 @@ class ProformaItemDetalladoSerializer(serializers.ModelSerializer):
             ret['producto_detalle'] = {
                 'id': instance.producto_disponible.id,
                 'codigo': instance.producto_disponible.codigo,
+                'nombre': instance.producto_disponible.nombre,
+                'descripcion': getattr(instance.producto_disponible, 'descripcion', ''),
                 # Añadir más campos específicos del producto disponible
             }
         # elif instance.tipo_item == ProformaItem.TipoItem.INVENTARIO and instance.inventario:
@@ -195,8 +301,13 @@ class ProformaItemDetalladoSerializer(serializers.ModelSerializer):
         #         # Añadir más campos específicos del producto de inventario
         #     }
         
-        # Cálculos adicionales
-        ret['precio_con_descuento'] = instance.precio_unitario * (1 - (instance.porcentaje_descuento / 100))
+        # Formatear fechas para mejor visualización
+        if instance.fecha_vencimiento:
+            ret['fecha_vencimiento_formatted'] = instance.fecha_vencimiento.strftime('%d/%m/%Y')
+        
+        # Añadir información sobre qué campos son visibles para este ítem según el modelo de la proforma
+        if instance.proforma:
+            ret['campos_visibles_config'] = instance.proforma.get_campos_visibles()
         
         return ret
 
@@ -216,8 +327,90 @@ class ProformaReporteSerializer(serializers.ModelSerializer):
     
     tipo_contratacion_nombre = serializers.CharField(source='tipo_contratacion.nombre', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    modelo_template_display = serializers.CharField(source='get_modelo_template_display', read_only=True)
+    titulo_modelo = serializers.CharField(source='get_titulo_modelo', read_only=True)
+    campos_visibles = serializers.SerializerMethodField()
     
     class Meta:
         model = Proforma
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at')
+    
+    def get_campos_visibles(self, obj):
+        """Retorna la configuración de campos visibles según el modelo"""
+        return obj.get_campos_visibles()
+
+
+# Serializer simplificado para selección de modelos de template
+
+class ModeloTemplateChoicesSerializer(serializers.Serializer):
+    """Serializer para obtener las opciones disponibles de modelos de template"""
+    value = serializers.CharField()
+    label = serializers.CharField()
+    description = serializers.CharField()
+    campos = serializers.ListField(child=serializers.CharField())
+    headers = serializers.ListField(child=serializers.CharField())
+    requeridos = serializers.ListField(child=serializers.CharField())
+    
+    @classmethod
+    def get_opciones(cls):
+        """Retorna todas las opciones de modelos de template disponibles"""
+        opciones = []
+        for choice_value, choice_label in Proforma.ModeloTemplate.choices:
+            # Crear una proforma temporal para obtener la configuración
+            temp_proforma = Proforma(modelo_template=choice_value)
+            config = temp_proforma.get_campos_visibles()
+            
+            opciones.append({
+                'value': choice_value,
+                'label': choice_label,
+                'description': choice_label,
+                'campos': config['campos'],
+                'headers': config['headers'],
+                'requeridos': config['requeridos'],
+                'anchos': config['anchos']
+            })
+        
+        return opciones
+
+
+# Serializer para validación masiva de ítems
+
+class ProformaItemsValidacionSerializer(serializers.Serializer):
+    """Serializer para validar múltiples ítems contra un modelo de template específico"""
+    modelo_template = serializers.ChoiceField(choices=Proforma.ModeloTemplate.choices)
+    items = ProformaItemSerializer(many=True)
+    
+    def validate(self, data):
+        """Valida que todos los ítems cumplan con los requerimientos del modelo"""
+        modelo_template = data['modelo_template']
+        items = data['items']
+        
+        # Crear una proforma temporal para obtener la configuración
+        temp_proforma = Proforma(modelo_template=modelo_template)
+        config = temp_proforma.get_campos_visibles()
+        campos_requeridos = config['requeridos']
+        
+        items_con_errores = []
+        
+        for i, item_data in enumerate(items):
+            errores_item = []
+            for campo in campos_requeridos:
+                valor = item_data.get(campo)
+                if not valor or (isinstance(valor, str) and not valor.strip()):
+                    errores_item.append(campo)
+            
+            if errores_item:
+                items_con_errores.append({
+                    'index': i,
+                    'descripcion': item_data.get('descripcion', ''),
+                    'campos_faltantes': errores_item
+                })
+        
+        if items_con_errores:
+            raise serializers.ValidationError({
+                'items_con_errores': items_con_errores,
+                'mensaje': f'Algunos ítems no cumplen con los campos requeridos para el modelo {temp_proforma.get_titulo_modelo()}'
+            })
+        
+        return data

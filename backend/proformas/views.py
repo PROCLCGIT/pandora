@@ -20,7 +20,8 @@ from .serializers import (
     ProformaSerializer, ProformaDetalladoSerializer, ProformaReporteSerializer,
     ProformaItemSerializer, ProformaItemDetalladoSerializer,
     ProformaHistorialSerializer, SecuenciaProformaSerializer,
-    ConfiguracionProformaSerializer
+    ConfiguracionProformaSerializer, ModeloTemplateChoicesSerializer,
+    ProformaItemsValidacionSerializer
 )
 from basic.pagination import BasicStandardResultsSetPagination
 
@@ -35,7 +36,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
     serializer_class = ProformaSerializer
     pagination_class = BasicStandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['cliente', 'empresa', 'tipo_contratacion', 'estado', 'tiene_orden']
+    filterset_fields = ['cliente', 'empresa', 'tipo_contratacion', 'estado', 'tiene_orden', 'modelo_template']
     search_fields = ['numero', 'nombre', 'atencion_a', 'notas']
     ordering_fields = ['fecha_emision', 'fecha_vencimiento', 'cliente__nombre', 'total', 'created_at']
     permission_classes = [permissions.IsAuthenticated]
@@ -57,6 +58,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
             accion=ProformaHistorial.TipoAccion.CREACION,
             estado_anterior='',
             estado_nuevo=proforma.estado,
+            notas=f"Proforma creada con modelo {proforma.get_titulo_modelo()}",
             created_by=self.request.user
         )
     
@@ -64,6 +66,8 @@ class ProformaViewSet(viewsets.ModelViewSet):
         """Guardar proforma actualizada y registrar el cambio"""
         proforma = self.get_object()
         estado_anterior = proforma.estado
+        modelo_anterior = proforma.modelo_template
+        
         proforma_actualizada = serializer.save()
         
         # Si el estado cambió, registrar en el historial
@@ -75,6 +79,212 @@ class ProformaViewSet(viewsets.ModelViewSet):
                 estado_nuevo=proforma_actualizada.estado,
                 created_by=self.request.user
             )
+        
+        # Si el modelo de template cambió, registrar en el historial
+        if modelo_anterior != proforma_actualizada.modelo_template:
+            ProformaHistorial.objects.create(
+                proforma=proforma_actualizada,
+                accion=ProformaHistorial.TipoAccion.CAMBIO_MODELO,
+                estado_anterior=estado_anterior,
+                estado_nuevo=proforma_actualizada.estado,
+                campo_modificado='modelo_template',
+                valor_anterior=dict(Proforma.ModeloTemplate.choices).get(modelo_anterior, modelo_anterior),
+                valor_nuevo=dict(Proforma.ModeloTemplate.choices).get(proforma_actualizada.modelo_template, proforma_actualizada.modelo_template),
+                notas=f"Modelo cambiado de {dict(Proforma.ModeloTemplate.choices).get(modelo_anterior)} a {proforma_actualizada.get_titulo_modelo()}",
+                created_by=self.request.user
+            )
+    
+    @swagger_auto_schema(
+        operation_description="Obtiene las opciones disponibles de modelos de template",
+        responses={
+            200: "Lista de modelos de template disponibles",
+            401: "No autenticado",
+            403: "Permiso denegado"
+        }
+    )
+    @action(detail=False, methods=['get'])
+    def modelos_template(self, request):
+        """
+        Devuelve todas las opciones disponibles de modelos de template con su configuración.
+        """
+        opciones = ModeloTemplateChoicesSerializer.get_opciones()
+        return Response({
+            'modelos_disponibles': opciones,
+            'modelo_default': Proforma.ModeloTemplate.BASICO
+        })
+    
+    @swagger_auto_schema(
+        operation_description="Vista previa de cambio de modelo de template",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['modelo_template'],
+            properties={
+                'modelo_template': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Nuevo modelo de template"
+                ),
+            }
+        ),
+        responses={
+            200: "Vista previa del cambio",
+            400: "Modelo de template inválido",
+            401: "No autenticado",
+            403: "Permiso denegado",
+            404: "Proforma no encontrada"
+        }
+    )
+    @action(detail=True, methods=['post'])
+    def preview_cambio_modelo(self, request, pk=None):
+        """
+        Obtiene una vista previa de cómo quedaría la proforma con un nuevo modelo de template.
+        No realiza cambios, solo muestra qué campos serían requeridos y cuáles ítems tienen problemas.
+        """
+        proforma = self.get_object()
+        nuevo_modelo = request.data.get('modelo_template', None)
+        modelos_validos = [choice[0] for choice in Proforma.ModeloTemplate.choices]
+        
+        if nuevo_modelo not in modelos_validos:
+            return Response(
+                {"error": f"Modelo inválido. Valores permitidos: {', '.join(modelos_validos)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Crear una proforma temporal para obtener la nueva configuración
+        temp_proforma = Proforma(modelo_template=nuevo_modelo)
+        nueva_config = temp_proforma.get_campos_visibles()
+        config_actual = proforma.get_campos_visibles()
+        
+        # Validar que los ítems existentes cumplan con los nuevos requerimientos
+        items_con_errores = []
+        items_validos = []
+        
+        for item in proforma.items.all():
+            errores_item = []
+            for campo in nueva_config['requeridos']:
+                valor = getattr(item, campo, None)
+                if not valor or (isinstance(valor, str) and not valor.strip()):
+                    errores_item.append({
+                        'campo': campo,
+                        'header': nueva_config['headers'][nueva_config['campos'].index(campo)] if campo in nueva_config['campos'] else campo
+                    })
+            
+            if errores_item:
+                items_con_errores.append({
+                    'item_id': item.id,
+                    'descripcion': item.descripcion[:50],
+                    'identificador': item.get_campo_identificador(),
+                    'campos_faltantes': errores_item
+                })
+            else:
+                items_validos.append({
+                    'item_id': item.id,
+                    'descripcion': item.descripcion[:50],
+                    'identificador': item.get_campo_identificador()
+                })
+        
+        return Response({
+            'modelo_actual': {
+                'valor': proforma.modelo_template,
+                'titulo': proforma.get_titulo_modelo(),
+                'config': config_actual
+            },
+            'modelo_nuevo': {
+                'valor': nuevo_modelo,
+                'titulo': temp_proforma.get_titulo_modelo(),
+                'config': nueva_config
+            },
+            'compatibilidad': {
+                'es_compatible': len(items_con_errores) == 0,
+                'total_items': proforma.items.count(),
+                'items_validos': len(items_validos),
+                'items_con_errores': len(items_con_errores)
+            },
+            'items_validos': items_validos,
+            'items_con_errores': items_con_errores,
+            'recomendaciones': self._generar_recomendaciones_cambio_modelo(config_actual, nueva_config, items_con_errores)
+        })
+    
+    def _generar_recomendaciones_cambio_modelo(self, config_actual, nueva_config, items_con_errores):
+        """Genera recomendaciones para el cambio de modelo."""
+        recomendaciones = []
+        
+        if len(items_con_errores) > 0:
+            recomendaciones.append(
+                f"Debe completar {len(items_con_errores)} ítem(s) antes de cambiar al nuevo modelo."
+            )
+            
+            # Agrupar campos faltantes más comunes
+            campos_faltantes = {}
+            for item in items_con_errores:
+                for campo_info in item['campos_faltantes']:
+                    campo = campo_info['header']
+                    if campo not in campos_faltantes:
+                        campos_faltantes[campo] = 0
+                    campos_faltantes[campo] += 1
+            
+            campo_mas_faltante = max(campos_faltantes, key=campos_faltantes.get)
+            recomendaciones.append(
+                f"El campo '{campo_mas_faltante}' es el que más falta en los ítems ({campos_faltantes[campo_mas_faltante]} ítems)."
+            )
+        
+        # Campos nuevos que se vuelven requeridos
+        campos_nuevos_requeridos = set(nueva_config['requeridos']) - set(config_actual['requeridos'])
+        if campos_nuevos_requeridos:
+            headers_nuevos = [nueva_config['headers'][nueva_config['campos'].index(campo)] 
+                             for campo in campos_nuevos_requeridos if campo in nueva_config['campos']]
+            recomendaciones.append(
+                f"El nuevo modelo requiere los siguientes campos adicionales: {', '.join(headers_nuevos)}"
+            )
+        
+        return recomendaciones
+    
+    @swagger_auto_schema(
+        operation_description="Valida todos los ítems de la proforma contra su modelo actual",
+        responses={
+            200: "Resultado de la validación",
+            401: "No autenticado",
+            403: "Permiso denegado",
+            404: "Proforma no encontrada"
+        }
+    )
+    @action(detail=True, methods=['get'])
+    def validar_items_modelo(self, request, pk=None):
+        """
+        Valida que todos los ítems de la proforma cumplan con los campos requeridos del modelo actual.
+        """
+        proforma = self.get_object()
+        items_con_errores = proforma.validar_items_segun_modelo()
+        config = proforma.get_campos_visibles()
+        
+        return Response({
+            'modelo_actual': {
+                'valor': proforma.modelo_template,
+                'titulo': proforma.get_titulo_modelo(),
+                'campos_requeridos': config['requeridos']
+            },
+            'validacion': {
+                'es_valida': len(items_con_errores) == 0,
+                'total_items': proforma.items.count(),
+                'items_validos': proforma.items.count() - len(items_con_errores),
+                'items_con_errores': len(items_con_errores)
+            },
+            'items_con_errores': [
+                {
+                    'item_id': error['item'].id,
+                    'descripcion': error['item'].descripcion[:50],
+                    'identificador': error['item'].get_campo_identificador(),
+                    'campos_faltantes': [
+                        {
+                            'campo': campo,
+                            'header': config['headers'][config['campos'].index(campo)] if campo in config['campos'] else campo
+                        }
+                        for campo in error['campos_faltantes']
+                    ]
+                }
+                for error in items_con_errores
+            ],
+            'puede_ser_enviada': proforma.puede_ser_enviada()
+        })
     
     @swagger_auto_schema(
         operation_description="Obtiene las proformas por estado",
@@ -194,7 +404,60 @@ class ProformaViewSet(viewsets.ModelViewSet):
         return Response({"error": "Se requiere el parámetro cliente_id"}, status=status.HTTP_400_BAD_REQUEST)
     
     @swagger_auto_schema(
+        operation_description="Obtiene estadísticas de uso de modelos de template",
+        responses={
+            200: "Estadísticas de modelos de template",
+            401: "No autenticado",
+            403: "Permiso denegado"
+        }
+    )
+    @action(detail=False, methods=['get'])
+    def estadisticas_modelos(self, request):
+        """
+        Devuelve estadísticas de uso de los diferentes modelos de template.
+        """
+        # Obtener el conteo por modelo de template
+        conteo = Proforma.objects.values('modelo_template').annotate(
+            total=Count('id')
+        ).order_by('modelo_template')
+        
+        # Construir el resumen con nombres de modelo legibles
+        estadisticas = {}
+        total_proformas = 0
+        
+        for item in conteo:
+            modelo_display = dict(Proforma.ModeloTemplate.choices).get(item['modelo_template'], item['modelo_template'])
+            estadisticas[modelo_display] = {
+                'total': item['total'],
+                'valor': item['modelo_template']
+            }
+            total_proformas += item['total']
+        
+        # Añadir porcentajes
+        for modelo, datos in estadisticas.items():
+            datos['porcentaje'] = round((datos['total'] / total_proformas * 100), 2) if total_proformas > 0 else 0
+        
+        return Response({
+            'estadisticas_por_modelo': estadisticas,
+            'total_proformas': total_proformas,
+            'modelo_mas_usado': max(estadisticas.keys(), key=lambda k: estadisticas[k]['total']) if estadisticas else None
+        })
+    
+    @swagger_auto_schema(
         operation_description="Genera una copia de una proforma existente",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'mantener_modelo': openapi.Schema(
+                    type=openapi.TYPE_BOOLEAN,
+                    description="Si mantener el mismo modelo de template (default: true)"
+                ),
+                'nuevo_modelo': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Nuevo modelo de template para la copia"
+                ),
+            }
+        ),
         responses={
             201: ProformaSerializer,
             401: "No autenticado",
@@ -207,8 +470,18 @@ class ProformaViewSet(viewsets.ModelViewSet):
         """
         Crea una copia de la proforma actual con un nuevo número.
         Todos los ítems son también copiados.
+        Permite cambiar el modelo de template en la copia.
         """
         proforma_original = self.get_object()
+        mantener_modelo = request.data.get('mantener_modelo', True)
+        nuevo_modelo = request.data.get('nuevo_modelo', proforma_original.modelo_template)
+        
+        # Validar nuevo modelo si se especifica
+        if not mantener_modelo and nuevo_modelo not in [choice[0] for choice in Proforma.ModeloTemplate.choices]:
+            return Response(
+                {"error": f"Modelo inválido: {nuevo_modelo}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Crear una copia de la proforma
         proforma_nueva = Proforma.objects.create(
@@ -218,6 +491,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
             cliente=proforma_original.cliente,
             empresa=proforma_original.empresa,
             tipo_contratacion=proforma_original.tipo_contratacion,
+            modelo_template=nuevo_modelo,
             atencion_a=proforma_original.atencion_a,
             condiciones_pago=proforma_original.condiciones_pago,
             tiempo_entrega=proforma_original.tiempo_entrega,
@@ -240,6 +514,20 @@ class ProformaViewSet(viewsets.ModelViewSet):
                 codigo=item_original.codigo,
                 descripcion=item_original.descripcion,
                 unidad=item_original.unidad,
+                # Copiar todos los campos adicionales
+                cpc=item_original.cpc,
+                cudim=item_original.cudim,
+                nombre_generico=item_original.nombre_generico,
+                especificaciones_tecnicas=item_original.especificaciones_tecnicas,
+                presentacion=item_original.presentacion,
+                lote=item_original.lote,
+                fecha_vencimiento=item_original.fecha_vencimiento,
+                registro_sanitario=item_original.registro_sanitario,
+                serial=item_original.serial,
+                modelo=item_original.modelo,
+                marca=item_original.marca,
+                notas=item_original.notas,
+                observaciones=item_original.observaciones,
                 cantidad=item_original.cantidad,
                 precio_unitario=item_original.precio_unitario,
                 porcentaje_descuento=item_original.porcentaje_descuento,
@@ -251,12 +539,16 @@ class ProformaViewSet(viewsets.ModelViewSet):
         proforma_nueva.save()
         
         # Registrar en el historial
+        notas_historial = f"Duplicada de la proforma {proforma_original.numero}"
+        if not mantener_modelo:
+            notas_historial += f" con cambio de modelo a {proforma_nueva.get_titulo_modelo()}"
+        
         ProformaHistorial.objects.create(
             proforma=proforma_nueva,
-            accion=ProformaHistorial.TipoAccion.CREACION,
+            accion=ProformaHistorial.TipoAccion.DUPLICACION,
             estado_anterior='',
             estado_nuevo=proforma_nueva.estado,
-            notas=f"Duplicada de la proforma {proforma_original.numero}",
+            notas=notas_historial,
             created_by=request.user
         )
         
@@ -281,7 +573,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
         ),
         responses={
             200: ProformaSerializer,
-            400: "Estado inválido",
+            400: "Estado inválido o validación fallida",
             401: "No autenticado",
             403: "Permiso denegado",
             404: "Proforma no encontrada"
@@ -292,6 +584,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
         """
         Cambia el estado de una proforma y registra el cambio en el historial.
         Requiere el parámetro estado en el cuerpo de la solicitud.
+        Valida que la proforma cumpla con los requerimientos del modelo antes de enviarla.
         """
         proforma = self.get_object()
         estado = request.data.get('estado', None)
@@ -299,6 +592,17 @@ class ProformaViewSet(viewsets.ModelViewSet):
         estados_validos = [choice[0] for choice in Proforma.EstadoProforma.choices]
         
         if estado and estado in estados_validos:
+            # Validación especial para envío de proformas
+            if estado == Proforma.EstadoProforma.ENVIADA:
+                if not proforma.puede_ser_enviada():
+                    items_con_errores = proforma.validar_items_segun_modelo()
+                    return Response({
+                        "error": "No se puede enviar la proforma porque algunos ítems no cumplen con los campos requeridos del modelo actual.",
+                        "items_con_errores": len(items_con_errores),
+                        "modelo_actual": proforma.get_titulo_modelo(),
+                        "detalles": "Use el endpoint 'validar_items_modelo' para obtener más detalles."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             estado_anterior = proforma.estado
             proforma.estado = estado
             
@@ -413,6 +717,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
         """
         Genera y devuelve un PDF de la proforma.
         Permite seleccionar entre diferentes plantillas: classic, modern.
+        El PDF se adapta automáticamente al modelo de template de la proforma.
         """
         try:
             proforma = self.get_object()
@@ -435,7 +740,7 @@ class ProformaViewSet(viewsets.ModelViewSet):
                 from .pdf_templates.modern_template import ModernTemplate
                 pdf_generator = ModernTemplate(proforma)
             
-            # Generar el PDF
+            # Generar el PDF con configuración del modelo de template
             pdf_buffer = pdf_generator.generate()
             
             # Preparar la respuesta
@@ -444,8 +749,8 @@ class ProformaViewSet(viewsets.ModelViewSet):
                 content_type='application/pdf'
             )
             
-            # Establecer el nombre del archivo incluyendo la plantilla
-            filename = f"proforma_{proforma.numero}_{template_name}_{proforma.fecha_emision.strftime('%Y%m%d')}.pdf"
+            # Establecer el nombre del archivo incluyendo la plantilla y modelo
+            filename = f"proforma_{proforma.numero}_{template_name}_{proforma.modelo_template}_{proforma.fecha_emision.strftime('%Y%m%d')}.pdf"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             
             return response
@@ -476,18 +781,21 @@ class ProformaViewSet(viewsets.ModelViewSet):
             {
                 'nombre': 'classic',
                 'descripcion': 'Plantilla clásica profesional con colores azules',
-                'preview': 'Diseño conservador y formal'
+                'preview': 'Diseño conservador y formal',
+                'soporta_modelos': 'Todos los modelos de template'
             },
             {
                 'nombre': 'modern',
                 'descripcion': 'Plantilla moderna minimalista con colores verdes',
-                'preview': 'Diseño contemporáneo y limpio'
+                'preview': 'Diseño contemporáneo y limpio',
+                'soporta_modelos': 'Todos los modelos de template'
             }
         ]
         
         return Response({
             'plantillas_disponibles': plantillas,
-            'plantilla_default': 'classic'
+            'plantilla_default': 'classic',
+            'nota': 'Las plantillas se adaptan automáticamente al modelo de template de la proforma'
         })
 
 
@@ -502,7 +810,7 @@ class ProformaItemViewSet(viewsets.ModelViewSet):
     pagination_class = BasicStandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['proforma', 'tipo_item', 'producto_ofertado', 'producto_disponible']
-    search_fields = ['codigo', 'descripcion']
+    search_fields = ['codigo', 'cudim', 'descripcion', 'modelo', 'marca']
     ordering_fields = ['orden', 'codigo', 'precio_unitario', 'total']
     permission_classes = [permissions.IsAuthenticated]
     
@@ -548,6 +856,31 @@ class ProformaItemViewSet(viewsets.ModelViewSet):
         instance.delete()
         # Actualizar totales de la proforma
         proforma.save()
+    
+    @swagger_auto_schema(
+        operation_description="Valida múltiples ítems contra un modelo de template específico",
+        request_body=ProformaItemsValidacionSerializer,
+        responses={
+            200: "Validación exitosa",
+            400: "Error en la validación",
+            401: "No autenticado",
+            403: "Permiso denegado"
+        }
+    )
+    @action(detail=False, methods=['post'])
+    def validar_items_masivo(self, request):
+        """
+        Valida múltiples ítems contra un modelo de template específico.
+        Útil para validar antes de crear/actualizar múltiples ítems.
+        """
+        serializer = ProformaItemsValidacionSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response({
+                "validacion": "exitosa",
+                "mensaje": "Todos los ítems cumplen con los requerimientos del modelo",
+                "modelo_template": serializer.validated_data['modelo_template']
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @swagger_auto_schema(
         operation_description="Obtiene los ítems de una proforma específica",

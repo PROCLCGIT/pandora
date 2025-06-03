@@ -11,17 +11,18 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from '
 import { Separator } from '@/components/ui/separator';
 import { User, Search, PlusSquare, Edit3, Clock, FileText, ChevronDown, Filter,
   ArrowLeftRight, Download, Printer, AlertCircle, Share2, Settings2,
-  CheckSquare, Save, Loader2, Eye, RotateCcw,
+  CheckSquare, Save, Loader2, Eye, RotateCcw, Shield,
 } from 'lucide-react';
 
 
 // Importar componentes factorizados
 import ClienteSection from '../components/form/ClienteSection';
 import DetallesProformaSection from '../components/form/DetallesProformaSection';
-import ProductosServiciosTable from '../components/form/ProductosServiciosTable';
+import ProformaModelForm from '../components/form/ProformaModelForm';
 import ResumenSection from '../components/form/ResumenSection';
 import ProductosDisponiblesSelectionModal from '../components/modals/ProductosDisponiblesSelectionModal';
 import ProformasGuardadasModal from '../components/modals/ProformasGuardadasModal';
+import ValidationModal from '../components/modals/ValidationModal';
 import TemplateSelector from '../components/TemplateSelector';
 import ToolBarSection from '../components/form/ToolBarSection';
 import InfoBaseSection from '../components/form/InfoBaseSection';
@@ -70,6 +71,15 @@ export default function AddProformaPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [numeroProforma, setNumeroProforma] = useState('');
 
+  // NUEVO: Estados para el modelo de template
+  const [modeloTemplate, setModeloTemplate] = useState('basico');
+  const [camposConfig, setCamposConfig] = useState(null);
+  const [proformaCompleta, setProformaCompleta] = useState(null);
+  
+  // Estados para validación
+  const [mostrarModalValidacion, setMostrarModalValidacion] = useState(false);
+  const [validationResults, setValidationResults] = useState({ errors: [], warnings: [], info: [] });
+
   // Cargar borrador y configuración al iniciar (solo si no estamos editando)
   useEffect(() => {
     // No cargar borrador si estamos editando una proforma existente
@@ -109,6 +119,10 @@ export default function AddProformaPage() {
           if (draft.productos && draft.productos.length > 0) {
             setProductos(draft.productos);
           }
+          // NUEVO: Cargar modelo de template desde borrador
+          if (draft.modeloTemplate) {
+            setModeloTemplate(draft.modeloTemplate);
+          }
         } else {
           console.log('No se encontró borrador de proforma en localStorage.');
         }
@@ -136,14 +150,15 @@ export default function AddProformaPage() {
     const draft = {
       cliente,
       detallesProforma,
-      productos
+      productos,
+      modeloTemplate // NUEVO: Guardar modelo de template en borrador
     };
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     } catch (err) {
       console.warn('No se pudo guardar el borrador de proforma', err);
     }
-  }, [cliente, detallesProforma, productos, isEditMode, id]);
+  }, [cliente, detallesProforma, productos, modeloTemplate, isEditMode, id]);
 
   const [notas, setNotas] = useState('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
 
@@ -265,6 +280,19 @@ export default function AddProformaPage() {
       const itemsData = await proformaService.getProformaItems(proformaId);
       console.log('Items data loaded successfully:', itemsData);
       
+      // NUEVO: Establecer modelo de template desde los datos cargados
+      if (proformaData.modelo_template) {
+        setModeloTemplate(proformaData.modelo_template);
+      }
+      
+      // NUEVO: Establecer configuración de campos desde los datos cargados
+      if (proformaData.campos_visibles) {
+        setCamposConfig(proformaData.campos_visibles);
+      }
+      
+      // NUEVO: Establecer datos completos de la proforma para componente integrado
+      setProformaCompleta(proformaData);
+      
       // Cargar datos del cliente
       setCliente({
         id: proformaData.cliente,
@@ -289,7 +317,14 @@ export default function AddProformaPage() {
       const productosFormateados = (itemsData.results || []).map((item, index) => ({
         id: item.id,
         codigo: item.codigo,
+        cudim: item.cudim, // NUEVO: Incluir campos adicionales
         descripcion: item.descripcion,
+        modelo: item.modelo, // NUEVO
+        serial: item.serial, // NUEVO
+        lote: item.lote, // NUEVO
+        registro_sanitario: item.registro_sanitario, // NUEVO
+        fecha_vencimiento: item.fecha_vencimiento, // NUEVO
+        marca: item.marca, // NUEVO
         unidad_id: item.unidad,
         unidad_nombre: item.unidad_nombre,
         cantidad: item.cantidad,
@@ -312,7 +347,7 @@ export default function AddProformaPage() {
 
       toast({
         title: 'Éxito',
-        description: `Proforma ${proformaData.numero} cargada para edición`,
+        description: `Proforma ${proformaData.numero} cargada para edición (Modelo: ${proformaData.modelo_template_display || proformaData.modelo_template})`,
         variant: 'default'
       });
 
@@ -341,6 +376,21 @@ export default function AddProformaPage() {
       setSavedProformaId(null);
     } finally {
       setLoadingProforma(false);
+    }
+  };
+
+  // NUEVO: Manejar cambio de modelo de template
+  const handleModeloTemplateChange = (nuevoModelo) => {
+    console.log('Cambiando modelo de template de', modeloTemplate, 'a', nuevoModelo);
+    setModeloTemplate(nuevoModelo);
+    
+    // Si estamos editando una proforma existente, podríamos mostrar una advertencia
+    if (isEditMode && productos.length > 0) {
+      toast({
+        title: 'Modelo Cambiado',
+        description: `Modelo cambiado a ${nuevoModelo}. Verifique que todos los productos tienen los campos requeridos.`,
+        variant: 'default'
+      });
     }
   };
 
@@ -391,7 +441,7 @@ export default function AddProformaPage() {
       await proformaService.generatePDF(savedProformaId, template);
       toast({
         title: 'Éxito',
-        description: `PDF generado y descargado correctamente con plantilla ${template}`,
+        description: `PDF generado y descargado correctamente con plantilla ${template} (Modelo: ${modeloTemplate})`,
       });
       setShowTemplateSelector(false);
     } catch (error) {
@@ -450,7 +500,7 @@ export default function AddProformaPage() {
       await proformaService.previewPDF(savedProformaId, selectedTemplate);
       toast({
         title: 'Éxito',
-        description: `Vista previa del PDF abierta en nueva pestaña (plantilla ${selectedTemplate})`,
+        description: `Vista previa del PDF abierta en nueva pestaña (plantilla ${selectedTemplate}, modelo ${modeloTemplate})`,
       });
     } catch (error) {
       console.error('Error previewing PDF:', error);
@@ -472,6 +522,102 @@ export default function AddProformaPage() {
     }
   };
 
+  const handleValidarProductos = () => {
+    if (productos.length === 0) {
+      setValidationResults({ 
+        errors: ['No hay productos para validar'], 
+        warnings: [], 
+        info: [] 
+      });
+      setMostrarModalValidacion(true);
+      return;
+    }
+
+    // Obtener configuración del modelo actual
+    const modelosConfig = {
+      basico: {
+        campos: ['codigo', 'descripcion', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['Código', 'Descripción', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['codigo', 'descripcion']
+      },
+      cudin: {
+        campos: ['cudim', 'descripcion', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['CUDIN', 'Descripción', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['cudim', 'descripcion']
+      },
+      cudin_modelo: {
+        campos: ['cudim', 'descripcion', 'modelo', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['CUDIN', 'Descripción', 'Modelo', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['cudim', 'descripcion', 'modelo']
+      },
+      cudin_serie: {
+        campos: ['cudim', 'descripcion', 'serial', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['CUDIN', 'Descripción', 'Serie', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['cudim', 'descripcion', 'serial']
+      },
+      sanitario: {
+        campos: ['cudim', 'descripcion', 'lote', 'registro_sanitario', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['CUDIN', 'Descripción', 'Lote', 'Registro Sanitario', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['cudim', 'descripcion', 'lote', 'registro_sanitario']
+      },
+      completo: {
+        campos: ['codigo', 'cudim', 'registro_sanitario', 'fecha_vencimiento', 'descripcion', 'modelo', 'unidad', 'cantidad', 'precio_unitario', 'total'],
+        headers: ['Código', 'CUDIN', 'Registro', 'Fecha Venc.', 'Descripción', 'Modelo', 'Unidad', 'Cantidad', 'Precio Unit.', 'Total'],
+        requeridos: ['codigo', 'cudim', 'descripcion']
+      }
+    };
+
+    const config = modelosConfig[modeloTemplate] || modelosConfig.basico;
+    const errors = [];
+    const warnings = [];
+    const info = [];
+
+    // Función auxiliar para obtener el título del modelo
+    const getModeloTitulo = () => {
+      const titulos = {
+        basico: 'Básico',
+        cudin: 'CUDIN',
+        cudin_modelo: 'CUDIN + Modelo',
+        cudin_serie: 'CUDIN + Serie',
+        sanitario: 'Sanitario',
+        completo: 'Completo'
+      };
+      return titulos[modeloTemplate] || modeloTemplate;
+    };
+
+    // Agregar información sobre el modelo actual
+    info.push(`Modelo actual: ${getModeloTitulo()}`);
+    info.push(`Campos requeridos: ${config.requeridos.map(c => config.headers[config.campos.indexOf(c)]).join(', ')}`);
+
+    productos.forEach((item, index) => {
+      const erroresItem = [];
+      
+      config.requeridos.forEach(campo => {
+        const valor = item[campo];
+        if (!valor || (typeof valor === 'string' && !valor.trim())) {
+          erroresItem.push({
+            campo,
+            header: config.headers[config.campos.indexOf(campo)]
+          });
+        }
+      });
+
+      if (erroresItem.length > 0) {
+        const identificador = item.codigo || item.cudim || item.descripcion || `Producto ${index + 1}`;
+        const camposFaltantes = erroresItem.map(e => e.header).join(', ');
+        errors.push(`${identificador}: Faltan los campos ${camposFaltantes}`);
+      }
+    });
+
+    // Agregar advertencias si hay muchos errores
+    if (errors.length > 5) {
+      warnings.push(`Se encontraron errores en ${errors.length} productos. Considere revisar el modelo seleccionado.`);
+    }
+
+    setValidationResults({ errors, warnings, info });
+    setMostrarModalValidacion(true);
+  };
+
   const handleResetForm = () => {
     localStorage.removeItem(DRAFT_KEY);
     setCliente({});
@@ -491,6 +637,9 @@ export default function AddProformaPage() {
     setFieldErrors({});
     setSavedProformaId(null); // Also reset the saved proforma ID if one was loaded/saved
     setNumeroProforma(''); // Reset the proforma number
+    setModeloTemplate('basico'); // NUEVO: Reset modelo de template
+    setCamposConfig(null); // NUEVO: Reset configuración de campos
+    setProformaCompleta(null); // NUEVO: Reset datos de proforma completa
     toast({
       title: 'Formulario Reseteado',
       description: 'Los campos han sido limpiados y el borrador local eliminado.',
@@ -550,22 +699,44 @@ export default function AddProformaPage() {
         validationErrors.push('• Productos: Debe agregar al menos un producto');
         errors.productos = true;
       } else {
-        // Validar cada producto
+        // NUEVO: Validar según el modelo de template seleccionado
+        const modelosConfig = {
+          basico: ['codigo', 'descripcion'],
+          cudin: ['cudim', 'descripcion'],
+          cudin_modelo: ['cudim', 'descripcion', 'modelo'],
+          cudin_serie: ['cudim', 'descripcion', 'serial'],
+          sanitario: ['cudim', 'descripcion', 'lote', 'registro_sanitario'],
+          completo: ['codigo', 'cudim', 'descripcion']
+        };
+        
+        const camposRequeridos = modelosConfig[modeloTemplate] || ['codigo', 'descripcion'];
+        
+        // Validar cada producto según los campos requeridos del modelo
         const productosConErrores = [];
         productos.forEach((producto, index) => {
           const productoErrors = [];
           let tieneError = false;
           
-          if (!producto.codigo || (typeof producto.codigo === 'string' && producto.codigo.trim() === '')) {
-            productoErrors.push('código');
-            tieneError = true;
-          }
+          // Validar campos requeridos según el modelo
+          camposRequeridos.forEach(campo => {
+            const valor = producto[campo];
+            if (!valor || (typeof valor === 'string' && valor.trim() === '')) {
+              const nombreCampo = {
+                codigo: 'código',
+                cudim: 'CUDIM',
+                descripcion: 'descripción',
+                modelo: 'modelo',
+                serial: 'serie',
+                lote: 'lote',
+                registro_sanitario: 'registro sanitario'
+              }[campo] || campo;
+              
+              productoErrors.push(nombreCampo);
+              tieneError = true;
+            }
+          });
           
-          if (!producto.descripcion || (typeof producto.descripcion === 'string' && producto.descripcion.trim() === '')) {
-            productoErrors.push('descripción');
-            tieneError = true;
-          }
-          
+          // Validar campos universales
           if (!producto.cantidad || producto.cantidad <= 0) {
             productoErrors.push('cantidad válida');
             tieneError = true;
@@ -662,6 +833,7 @@ export default function AddProformaPage() {
         cliente: safeParseInt(cliente.id),
         empresa: safeParseInt(detallesProforma.empresa),
         tipo_contratacion: safeParseInt(detallesProforma.tipoContratacion),
+        modelo_template: modeloTemplate, // NUEVO: Incluir modelo de template
         atencion_a: ensureString(detallesProforma.atencion, 'N/A'), // Ensure it's never empty
         condiciones_pago: ensureString(detallesProforma.formaPago, '50% anticipo, 50% contra entrega'),
         tiempo_entrega: ensureString(detallesProforma.tiempoEntrega, '5 días hábiles'),
@@ -760,7 +932,7 @@ export default function AddProformaPage() {
             productoOfertadoId = producto.id;
           } else {
             // Fallback for manually added items
-            tipoItem = 'producto_disponible';
+            tipoItem = 'personalizado'; // NUEVO: Cambiar a personalizado para ítems creados manualmente
             productoDisponibleId = null;
             productoOfertadoId = null;
           }
@@ -777,7 +949,21 @@ export default function AddProformaPage() {
             precio_unitario: precioUnitario,
             porcentaje_descuento: porcentajeDescuento,
             total: total,
-            orden: index + 1
+            orden: index + 1,
+            // NUEVO: Incluir campos adicionales según el modelo
+            cpc: producto.cpc || '',
+            cudim: producto.cudim || '',
+            nombre_generico: producto.nombre_generico || '',
+            especificaciones_tecnicas: producto.especificaciones_tecnicas || '',
+            presentacion: producto.presentacion || '',
+            lote: producto.lote || '',
+            fecha_vencimiento: producto.fecha_vencimiento || null,
+            registro_sanitario: producto.registro_sanitario || '',
+            serial: producto.serial || '',
+            modelo: producto.modelo || '',
+            marca: producto.marca || '',
+            notas: producto.notas || '',
+            observaciones: producto.observaciones || ''
           };
           
           console.log(`[DEBUG] Item ${index + 1} data:`, itemData);
@@ -846,7 +1032,7 @@ export default function AddProformaPage() {
       
       toast({
         title: 'Éxito',
-        description: `Proforma ${response.numero || response.id} ${isEditMode ? 'actualizada' : 'creada'} correctamente`,
+        description: `Proforma ${response.numero || response.id} ${isEditMode ? 'actualizada' : 'creada'} correctamente (Modelo: ${modeloTemplate})`,
       });
 
       // Save the proforma ID and number for display and PDF generation
@@ -857,6 +1043,9 @@ export default function AddProformaPage() {
       console.log('🔍 Estado anterior de numeroProforma:', numeroProforma);
       
       setNumeroProforma(response.numero || '');
+      
+      // NUEVO: Actualizar datos completos de la proforma
+      setProformaCompleta(response);
       
       // Verificar que se actualizó
       setTimeout(() => {
@@ -897,7 +1086,8 @@ export default function AddProformaPage() {
                 'tipo_contratacion': 'Tipo de contratación',
                 'condiciones_pago': 'Condiciones de pago',
                 'tiempo_entrega': 'Tiempo de entrega',
-                'porcentaje_impuesto': 'Porcentaje de impuesto'
+                'porcentaje_impuesto': 'Porcentaje de impuesto',
+                'modelo_template': 'Modelo de template'
               };
               const fieldName = fieldTranslations[field] || field;
               return `${fieldName}: ${errorText}`;
@@ -935,7 +1125,8 @@ export default function AddProformaPage() {
     id,
     isEditMode,
     loadingProforma,
-    savedProformaId
+    savedProformaId,
+    modeloTemplate
   });
 
   return (
@@ -1000,6 +1191,12 @@ export default function AddProformaPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-blue-600 text-3xl font-bold">
           {isEditMode ? 'Editar Proforma' : 'Nueva Proforma'}
+          {/* NUEVO: Mostrar modelo de template en el título */}
+          {modeloTemplate !== 'basico' && (
+            <span className="text-lg font-normal text-gray-600 ml-2">
+              ({modeloTemplate.replace('_', ' + ').replace('cudin', 'CUDIN')})
+            </span>
+          )}
         </h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" title="Imprimir" className="h-8 w-8 p-0">
@@ -1054,6 +1251,9 @@ export default function AddProformaPage() {
         fieldErrors={fieldErrors}
         setFieldErrors={setFieldErrors}
         numeroProforma={numeroProforma}
+        modeloTemplate={modeloTemplate}
+        onModeloChange={handleModeloTemplateChange}
+        readOnly={false}
       />
 
       {/* Cliente + Detalles */}
@@ -1080,15 +1280,18 @@ export default function AddProformaPage() {
         onSelectProducts={() => setShowProductosModal(true)}
       />
 
-      {/* Tabla de Productos y Servicios */}
+      {/* NUEVO: Componente integrado de modelo de template y tabla de productos */}
       <div className={fieldErrors.productos ? 'ring-2 ring-red-500 rounded-lg' : ''}>
-        <ProductosServiciosTable 
+        <ProformaModelForm
+          proformaData={proformaCompleta}
           productos={productos}
           onProductosChange={setProductos}
           onTotalesChange={setTotales}
-          productosConErrores={fieldErrors.productosIndices || []}
-          onErrorClear={() => setFieldErrors(prev => ({...prev, productos: false, productosIndices: []}))}
+          onModeloChange={handleModeloTemplateChange}
+          modeloTemplate={modeloTemplate}
+          camposConfig={camposConfig}
           porcentajeImpuesto={detallesProforma.porcentajeImpuesto || 15}
+          readOnly={false}
         />
       </div>
 
@@ -1152,16 +1355,35 @@ export default function AddProformaPage() {
                     ID: {savedProformaId}
                   </span>
                 )}
+                {/* NUEVO: Mostrar modelo de template en la barra */}
+                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium ml-2">
+                  Modelo: {modeloTemplate}
+                </span>
               </div>
             ) : (
               <div className="flex items-center">
                 <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
                 <span>Complete los campos requeridos para crear una nueva proforma.</span>
+                {/* NUEVO: Mostrar modelo de template en la barra */}
+                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium ml-3">
+                  Modelo: {modeloTemplate}
+                </span>
               </div>
             )}
           </div>
           
           <div className="flex gap-3 w-full sm:w-auto">
+            {/* Validar Productos */}
+            <Button 
+              variant="outline"
+              onClick={handleValidarProductos}
+              disabled={!productos?.length}
+              title="Validar productos según el modelo seleccionado"
+              className="rounded-lg p-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+
             {/* Vista Previa */}
             <Button 
               variant="outline"
@@ -1176,18 +1398,12 @@ export default function AddProformaPage() {
                       ? "Debe seleccionar un cliente"
                       : "Ver vista previa del PDF"
               }
-              className="rounded-lg px-6 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+              className="rounded-lg p-2 border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               {loadingPreview ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Cargando...
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Visualizar
-                </>
+                <Eye className="h-4 w-4" />
               )}
             </Button>
 
@@ -1205,18 +1421,12 @@ export default function AddProformaPage() {
                       ? "Debe seleccionar un cliente"
                       : "Exportar proforma a PDF"
               }
-              className="rounded-lg px-6 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+              className="rounded-lg p-2 border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               {loadingPDF ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Exportando...
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </>
+                <Download className="h-4 w-4" />
               )}
             </Button>
 
@@ -1244,6 +1454,13 @@ export default function AddProformaPage() {
       </div>
         </div>
       </div>
+
+      {/* Modal de validación */}
+      <ValidationModal
+        isOpen={mostrarModalValidacion}
+        onClose={() => setMostrarModalValidacion(false)}
+        validationResults={validationResults}
+      />
     </>
   );
 }
