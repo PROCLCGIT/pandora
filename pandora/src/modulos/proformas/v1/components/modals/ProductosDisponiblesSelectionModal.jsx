@@ -151,7 +151,7 @@ const ProductosDisponiblesSelectionModal = ({
         tipo_item: isProductoDisponible ? 'producto_disponible' : 'producto_ofertado',
         codigo: product.codigo || product.code || '',
         nombre: product.nombre,
-        descripcion: product.descripcion || product.modelo || product.nombre || '',
+        descripcion: product.nombre || '', // Usar el nombre del producto como descripción
         precioUnitario: precio, // Frontend uses camelCase
         precio_unitario: precio, // Backend uses snake_case
         precio: precio, // Also include as 'precio' for compatibility

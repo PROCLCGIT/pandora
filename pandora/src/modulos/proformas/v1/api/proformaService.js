@@ -39,6 +39,8 @@ export const proformaService = {
       console.log('Creating proforma with data:', data);
       const response = await axios.post(`${API_URL}/proformas/`, data);
       console.log('Proforma created:', response.data);
+      console.log('🔍 [ProformaService] Número recibido del backend:', response.data?.numero);
+      console.log('🔍 [ProformaService] ID recibido del backend:', response.data?.id);
       return response.data;
     } catch (error) {
       console.error('Error creating proforma:', error);

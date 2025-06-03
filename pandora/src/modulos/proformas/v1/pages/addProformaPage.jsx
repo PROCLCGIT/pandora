@@ -68,6 +68,7 @@ export default function AddProformaPage() {
   const [empresas, setEmpresas] = useState([]);
   const [tiposContratacion, setTiposContratacion] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [numeroProforma, setNumeroProforma] = useState('');
 
   // Cargar borrador y configuración al iniciar (solo si no estamos editando)
   useEffect(() => {
@@ -305,6 +306,9 @@ export default function AddProformaPage() {
 
       setProductos(productosFormateados);
       setNotas(proformaData.notas || 'Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
+      
+      // Set the proforma number
+      setNumeroProforma(proformaData.numero || '');
 
       toast({
         title: 'Éxito',
@@ -486,6 +490,7 @@ export default function AddProformaPage() {
     setNotas('Precios incluyen IVA. Entrega en sus oficinas sin costo adicional dentro del perímetro urbano.');
     setFieldErrors({});
     setSavedProformaId(null); // Also reset the saved proforma ID if one was loaded/saved
+    setNumeroProforma(''); // Reset the proforma number
     toast({
       title: 'Formulario Reseteado',
       description: 'Los campos han sido limpiados y el borrador local eliminado.',
@@ -689,6 +694,9 @@ export default function AddProformaPage() {
         response = await proformaService.createProforma(proformaData);
       }
       
+      console.log('🔍 Respuesta del servidor completa:', response);
+      console.log('🔍 Número de proforma recibido:', response?.numero);
+      
       if (!response || !response.id) {
         throw new Error('La respuesta del servidor no contiene el ID de la proforma');
       }
@@ -841,8 +849,19 @@ export default function AddProformaPage() {
         description: `Proforma ${response.numero || response.id} ${isEditMode ? 'actualizada' : 'creada'} correctamente`,
       });
 
-      // Save the proforma ID for PDF generation
+      // Save the proforma ID and number for display and PDF generation
       setSavedProformaId(response.id);
+      
+      // Log para debugging
+      console.log('🔍 Actualizando numeroProforma con:', response.numero);
+      console.log('🔍 Estado anterior de numeroProforma:', numeroProforma);
+      
+      setNumeroProforma(response.numero || '');
+      
+      // Verificar que se actualizó
+      setTimeout(() => {
+        console.log('🔍 Estado de numeroProforma después de actualizar:', numeroProforma);
+      }, 100);
 
       // Clear localStorage draft after successful save
       try {
@@ -979,7 +998,7 @@ export default function AddProformaPage() {
       
       {/* Top Bar */}
       <div className="flex items-center justify-between">
-        <h1 className="text-blue-600 text-1xl font-bold">
+        <h1 className="text-blue-600 text-3xl font-bold">
           {isEditMode ? 'Editar Proforma' : 'Nueva Proforma'}
         </h1>
         <div className="flex flex-wrap gap-2">
@@ -1014,7 +1033,13 @@ export default function AddProformaPage() {
 
       {/* Sub-header */}
       <div className="flex items-center justify-between">
-        <span className="text-gray-600"># Se generará automáticamente</span>
+        <span className="text-gray-600">
+          {numeroProforma ? (
+            <span className="font-semibold text-blue-600 text-lg">#{numeroProforma}</span>
+          ) : (
+            '# Se generará automáticamente'
+          )}
+        </span>
         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
           Válida hasta: {detallesProforma.fechaVencimiento ? format(detallesProforma.fechaVencimiento, 'd/M/yyyy') : 'No establecida'}
         </span>
@@ -1028,6 +1053,7 @@ export default function AddProformaPage() {
         tiposContratacion={tiposContratacion}
         fieldErrors={fieldErrors}
         setFieldErrors={setFieldErrors}
+        numeroProforma={numeroProforma}
       />
 
       {/* Cliente + Detalles */}

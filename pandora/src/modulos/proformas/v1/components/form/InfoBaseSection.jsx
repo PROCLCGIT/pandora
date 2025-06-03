@@ -11,7 +11,8 @@ const InfoBaseSection = ({
   empresas,
   tiposContratacion,
   fieldErrors,
-  setFieldErrors 
+  setFieldErrors,
+  numeroProforma
 }) => {
   // Establecer valores por defecto cuando las listas se cargan
   useEffect(() => {
@@ -60,6 +61,16 @@ const InfoBaseSection = ({
       <div className="p-6">
       
       <div className="space-y-3">
+        {/* Número de Proforma */}
+        <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+          <label className="text-sm font-medium text-gray-700">
+            Número:
+          </label>
+          <div className="text-sm font-semibold text-blue-600">
+            {numeroProforma ? `#${numeroProforma}` : '# Se generará automáticamente'}
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Empresa */}
           <div className="grid grid-cols-[140px,1fr] items-center gap-3">
