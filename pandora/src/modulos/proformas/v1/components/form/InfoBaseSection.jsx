@@ -64,16 +64,45 @@ const InfoBaseSection = ({
       <div className="p-6">
       
       <div className="space-y-3">
-        {/* Número de Proforma */}
-        <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-          <label className="text-sm font-medium text-gray-700">
-            Número:
-          </label>
-          <div className="text-sm font-semibold text-blue-600">
-            {numeroProforma ? `#${numeroProforma}` : '# Se generará automáticamente'}
+        {/* Número de Proforma y Tipo de Contratación */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Número de Proforma */}
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              Número:
+            </label>
+            <div className="text-sm font-semibold text-blue-600">
+              {numeroProforma ? `#${numeroProforma}` : '# Se generará automáticamente'}
+            </div>
+          </div>
+          
+          {/* Contratación */}
+          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              Contratación: <span className="text-red-500">*</span>
+            </label>
+            <Select 
+              value={detallesProforma.tipoContratacion?.toString() || '1'}
+              onValueChange={(value) => {
+                setDetallesProforma({...detallesProforma, tipoContratacion: value});
+                setFieldErrors(prev => ({...prev, tipoContratacion: false}));
+              }}
+            >
+              <SelectTrigger className={`w-full bg-white h-8 text-sm ${fieldErrors.tipoContratacion ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}>
+                <SelectValue placeholder="Seleccione tipo de contratación" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposContratacion.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                    {tipo.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
+        {/* Empresa y Formato */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Empresa */}
           <div className="grid grid-cols-[140px,1fr] items-center gap-3">
@@ -99,37 +128,37 @@ const InfoBaseSection = ({
               </SelectContent>
             </Select>
           </div>
-          
-          {/* Tipo de Contrato */}
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">
-              Tipo de Contrato: <span className="text-red-500">*</span>
-            </label>
-            <Select 
-              value={detallesProforma.tipoContratacion?.toString() || '1'}
-              onValueChange={(value) => {
-                setDetallesProforma({...detallesProforma, tipoContratacion: value});
-                setFieldErrors(prev => ({...prev, tipoContratacion: false}));
-              }}
-            >
-              <SelectTrigger className={`w-full bg-white h-8 text-sm ${fieldErrors.tipoContratacion ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}>
-                <SelectValue placeholder="Seleccione tipo de contrato" />
-              </SelectTrigger>
-              <SelectContent>
-                {tiposContratacion.map((tipo) => (
-                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                    {tipo.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
+          {/* Formato (Modelo de Template) */}
+          {!readOnly && (
+            <div className="grid grid-cols-[140px,1fr] items-center gap-3">
+              <label className="text-sm font-medium text-gray-700">
+                Formato:
+              </label>
+              <Select 
+                value={modeloTemplate}
+                onValueChange={onModeloChange}
+              >
+                <SelectTrigger className="w-full bg-white h-8 text-sm border-gray-300">
+                  <SelectValue placeholder="Seleccione un modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basico">Básico (Código + Descripción)</SelectItem>
+                  <SelectItem value="cudin">CUDIN</SelectItem>
+                  <SelectItem value="cudin_modelo">CUDIN + Modelo</SelectItem>
+                  <SelectItem value="cudin_serie">CUDIN + Serie</SelectItem>
+                  <SelectItem value="sanitario">Sanitario (CUDIN + Lote + Registro)</SelectItem>
+                  <SelectItem value="completo">Completo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         
-        {/* Nombre de Proforma */}
+        {/* Descripción */}
         <div className="grid grid-cols-[140px,1fr] items-center gap-3">
           <label className="text-sm font-medium text-gray-700">
-            Nombre de Proforma: <span className="text-red-500">*</span>
+            Descripción: <span className="text-red-500">*</span>
           </label>
           <Input
             value={detallesProforma.nombre || ''}
@@ -141,31 +170,6 @@ const InfoBaseSection = ({
             className={`bg-white h-8 text-sm ${fieldErrors.nombre ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
           />
         </div>
-
-        {/* Modelo de Template */}
-        {!readOnly && (
-          <div className="grid grid-cols-[140px,1fr] items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">
-              Modelo de Template:
-            </label>
-            <Select 
-              value={modeloTemplate}
-              onValueChange={onModeloChange}
-            >
-              <SelectTrigger className="w-full bg-white h-8 text-sm border-gray-300">
-                <SelectValue placeholder="Seleccione un modelo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="basico">Básico (Código + Descripción)</SelectItem>
-                <SelectItem value="cudin">CUDIN</SelectItem>
-                <SelectItem value="cudin_modelo">CUDIN + Modelo</SelectItem>
-                <SelectItem value="cudin_serie">CUDIN + Serie</SelectItem>
-                <SelectItem value="sanitario">Sanitario (CUDIN + Lote + Registro)</SelectItem>
-                <SelectItem value="completo">Completo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
       </div>
     </div>
